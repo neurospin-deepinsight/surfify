@@ -9,10 +9,7 @@ A simple example on how to use the SphericalUNet architecture on the
 classification dataset.
 """
 
-import os
-import sys
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import torch
 from torch import nn
