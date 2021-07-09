@@ -1,14 +1,14 @@
 .. -*- mode: rst -*-
 
-|PythonVersion|_ |Coveralls|_ |Travis|_ |PyPi|_ |Doc|_ |CircleCI|_
+|PythonVersion|_ |Coveralls|_ |Travis|_ |PyPi|_ |Doc|_
 
 .. |PythonVersion| image:: https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue
 .. _PythonVersion: https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue
 
-.. |Coveralls| image:: https://coveralls.io/repos/neurospin/surfify/badge.svg?branch=master&service=github
+.. |Coveralls| image:: https://coveralls.io/repos/neurospin-deepinsight/surfify/badge.svg?branch=master&service=github
 .. _Coveralls: https://coveralls.io/github/neurospin/surfify
 
-.. |Travis| image:: https://travis-ci.com/neurospin/surfify.svg?branch=master
+.. |Travis| image:: https://travis-ci.com/neurospin-deepinsight/surfify.svg?branch=master
 .. _Travis: https://travis-ci.com/neurospin/surfify
 
 .. |PyPi| image:: https://badge.fury.io/py/surfify.svg
@@ -46,16 +46,16 @@ PyTorch toolbox to work with spherical surfaces.
 ```
 
 This work is made available by a `community of people
-<https://github.com/neurospin/surfify/blob/master/AUTHORS.rst>`_, amoung which the
+<https://github.com/neurospin-deepinsight/surfify/blob/master/AUTHORS.rst>`_, amoung which the
 CEA Neurospin BAOBAB laboratory.
 
 Important links
 ===============
 
-- `Official source code repo <https://github.com/neurospin/surfify>`_
-- `HTML stable documentation <https://surfify.readthedocs.io/en/v0.0.1>`_
+- `Official source code repo <https://github.com/neurospin-deepinsight/surfify>`_
+- HTML stable documentation: WIP
 - `HTML documentation <https://surfify.readthedocs.io/en/latest>`_
-- `Release notes <https://github.com/neurospin/surfify/blob/master/CHANGELOG.rst>`_
+- `Release notes <https://github.com/neurospin-deepinsight/surfify/blob/master/CHANGELOG.rst>`_
 
 Where to start
 ==============
@@ -76,5 +76,6 @@ Complete instructions are available `here
 License
 =======
 
-This project is under the followwing `LICENSE <LICENSE>`.
+This project is under the followwing
+`LICENSE <https://github.com/neurospin-deepinsight/surfify/blob/master/LICENSE.rst>`_.
 
