@@ -35,7 +35,7 @@ PyTorch toolbox to work with spherical surfaces.
   }
 
   @article{seong2018repa,
-        title={Spherical U-Net on Cortical Surfaces: Methods and Applications}, 
+        title={Geometric convolutional neural network for analyzing surface-based neuroimaging data}, 
         author={Seong, Si-Baek and Pae, Chongwon and Park, Hae-Jeong},
         journal={Frontiers in Neuroinformatics},
         year={2018}
