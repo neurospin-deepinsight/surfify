@@ -68,6 +68,7 @@ PROVIDES = ["surfify"]
 REQUIRES = [
     "numpy>=1.17.1",
     "scipy>=0.19.1",
+    "scikit-learn>=0.21.3",
     "matplotlib>=3.3.1",
     "torch>=1.8.1",
     "torchvision>=0.9.1",
