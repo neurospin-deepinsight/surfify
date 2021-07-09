@@ -53,6 +53,7 @@ EXTRANAME = "NeuroSpin webPage"
 EXTRAURL = (
     "https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/"
     "NeuroSpin.aspx")
+LINKS = {"deepinsight": "https://github.com/neurospin-deepinsight/deepinsight"}
 URL = "https://github.com/neurospin-deepinsight/surfify"
 DOWNLOAD_URL = "https://github.com/neurospin-deepinsight/surfify"
 LICENSE = "CeCILL-B"
