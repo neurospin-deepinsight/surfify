@@ -21,34 +21,38 @@
 surfify: Deep Learning Spherical Toolbox
 ========================================
 
-:+1: If you are using the code please add a star to the repository :+1:
-
-<p align="center">
-  <img width="500" alt="" src="https://media.springernature.com/original/springer-static/image/chp%3A10.1007%2F978-3-030-20351-1_67/MediaObjects/482832_1_En_67_Fig2_HTML.png">
-</p>
+\:+1: If you are using the code please add a star to the repository :+1:
 
 PyTorch toolbox to work with spherical surfaces.
 
-```
-@article{zhao2019dine,
-      title={Spherical U-Net on Cortical Surfaces: Methods and Applications}, 
-      author={Fenqiang Zhao and Shunren Xia and Zhengwang Wu and Dingna Duan and Li Wang and Weili Lin and John H Gilmore and Dinggang Shen and Gang Li},
-      journal={IPMI},
-      year={2019}
-}
+.. code::
 
-@article{seong2018repa,
-      title={Spherical U-Net on Cortical Surfaces: Methods and Applications}, 
-      author={Seong, Si-Baek and Pae, Chongwon and Park, Hae-Jeong},
-      journal={Frontiers in Neuroinformatics},
-      year={2018}
-}
-```
+  @article{zhao2019dine,
+        title={Spherical U-Net on Cortical Surfaces: Methods and Applications}, 
+        author={Fenqiang Zhao and Shunren Xia and Zhengwang Wu and Dingna Duan and Li Wang and Weili Lin and John H Gilmore and Dinggang Shen and Gang Li},
+        journal={IPMI},
+        year={2019}
+  }
+
+  @article{seong2018repa,
+        title={Spherical U-Net on Cortical Surfaces: Methods and Applications}, 
+        author={Seong, Si-Baek and Pae, Chongwon and Park, Hae-Jeong},
+        journal={Frontiers in Neuroinformatics},
+        year={2018}
+  }
 
 This work is made available by a `community of people
 <https://github.com/neurospin-deepinsight/surfify/blob/master/AUTHORS.rst>`_, amoung which the
 CEA Neurospin BAOBAB laboratory.
 
+.. image:: ./doc/source/_static/carousel/nihms-1568058-f0003.jpg
+    :width: 400px
+    :align: center
+    
+.. image:: ./doc/source/_static/carousel/nihms-1568058-f0006.jpg
+    :width: 400px
+    :align: center
+    
 Important links
 ===============
 
