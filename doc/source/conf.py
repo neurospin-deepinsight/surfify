@@ -15,19 +15,7 @@ import subprocess
 from distutils.version import LooseVersion
 import sphinx
 import pysphinxdoc
-from unittest.mock import MagicMock
 
-
-class Mock(MagicMock):
-    @classmethod
-    def __getattr__(cls, name):
-        return MagicMock(Module=object, VGG=object, ResNet=object,
-                         DenseNet=object, Inception3=object)
-MOCK_MODULES = [
-    'torch', 'torch.nn', 'torch.nn.functional', 'torch.utils',
-    'torch.utils.data', 'torch.autograd', 'torch.nn.modules',
-    'torch.nn.modules.loss']
-sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 installdir = os.path.abspath("../..")
 env = os.environ
@@ -36,10 +24,7 @@ if "PYTHONPATH" in env:
 else:
     env["PYTHONPATH"] = installdir
 cmd = ["sphinxdoc", "-v 2", "-p",  installdir, "-n", "surfify", "-o", "..",
-       "-m"] + MOCK_MODULES + ["matplotlib", "matplotlib.pyplot",
-       "matplotlib.colors", "mpl_toolkits.mplot3d",
-       "mpl_toolkits.mplot3d.art3d", "-r", "object", "-k", "Module",
-        "-i", "surfify"]
+       "-i", "surfify"]
 subprocess.check_call(cmd, env=env)
 sys.path.insert(0, installdir)
 
