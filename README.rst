@@ -65,7 +65,10 @@ Where to start
 ==============
 
 Examples are available in the
-`gallery <https://surfify.readthedocs.io/en/latest/generated/gallery.html>`_.
+`gallery <https://surfify.readthedocs.io/en/latest/auto_gallery/gallery.html>`_.
+You can also refer to the
+`API documentation <https://surfify.readthedocs.io/en/latest/generated/documentation.html>`_.
+
 
 Install
 =======
@@ -80,6 +83,6 @@ Complete instructions are available `here
 License
 =======
 
-This project is under the followwing
+This project is under the following
 `LICENSE <https://github.com/neurospin-deepinsight/surfify/blob/master/LICENSE.rst>`_.
 
