@@ -17,7 +17,7 @@ from torch.utils.data import DataLoader
 from surfify import utils
 from surfify import plotting
 from surfify import models
-from surfify.datasets import datasets
+from surfify import datasets
 
 #############################################################################
 # Inspect dataset
