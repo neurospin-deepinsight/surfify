@@ -14,10 +14,10 @@ import matplotlib.pyplot as plt
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from surfify.utils import icosahedron
-from surfify.plotting import plot_trisurf
-from surfify.models import SphericalUNet
-from surfify.datasets import make_classification, ClassificationDataset
+from surfify import utils
+from surfify import plotting
+from surfify import models
+from surfify.datasets import datasets
 
 #############################################################################
 # Inspect dataset
@@ -29,13 +29,13 @@ from surfify.datasets import make_classification, ClassificationDataset
 ico_order = 3
 n_classes = 3
 n_epochs = 20
-ico_vertices, ico_triangles = icosahedron(order=ico_order)
+ico_vertices, ico_triangles = utils.icosahedron(order=ico_order)
 n_vertices = len(ico_vertices)
-X, y = make_classification(ico_order, n_samples=40, n_classes=n_classes,
-                           scale=1, seed=42)
+X, y = datasets.make_classification(
+    ico_order, n_samples=40, n_classes=n_classes, scale=1, seed=42)
 print("Surface:", ico_vertices.shape, ico_triangles.shape)
 print("Data:", X.shape, y.shape)
-plot_trisurf(ico_vertices, ico_triangles, y, is_label=True)
+plotting.plot_trisurf(ico_vertices, ico_triangles, y, is_label=True)
 
 #############################################################################
 # Train the model
@@ -45,10 +45,10 @@ plot_trisurf(ico_vertices, ico_triangles, y, is_label=True)
 # optimizer. As it is obvious to segment the input classification dataset
 # an accuracy of 100% is expected.
 
-dataset = ClassificationDataset(
+dataset = datasets.ClassificationDataset(
     ico_order, n_samples=40, n_classes=n_classes, scale=1, seed=42)
 loader = DataLoader(dataset, batch_size=5, shuffle=True)
-model = SphericalUNet(
+model = models.SphericalUNet(
     in_order=ico_order, in_channels=n_classes, out_channels=n_classes,
     depth=2, start_filts=8, conv_mode="1ring", up_mode="transpose")
 loss_fn = nn.CrossEntropyLoss()
@@ -92,5 +92,5 @@ print("Test Error: \n Accuracy: {0:>0.1f}%, Avg loss: {1:>8f}".format(
 # Finally the predicted labels of the first sample are displayed. As expected
 # they corresspond exactly to the ground truth.
 
-plot_trisurf(ico_vertices, ico_triangles, y_pred[0], is_label=True)
+plotting.plot_trisurf(ico_vertices, ico_triangles, y_pred[0], is_label=True)
 plt.show()
