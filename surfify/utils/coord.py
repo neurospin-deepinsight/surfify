@@ -19,12 +19,6 @@ from scipy.interpolate import griddata, NearestNDInterpolator
 def cart2sph(x, y, z):
     """ Cartesian to spherical coordinate transform.
 
-    .. math::
-
-        \alpha = \arctan \left( \frac{y}{x} \right) \\
-        \beta = \arctan \left( \frac{z}{\sqrt{x^2 + y^2}} \right) \\
-        r = \sqrt{x^2 + y^2 + z^2}
-
     Parameters
     ----------
     x: float or array_like.
@@ -53,12 +47,6 @@ def cart2sph(x, y, z):
 
 def sph2cart(alpha, beta, r):
     """ Spherical to cartesian coordinate transform.
-
-    .. math::
-
-        x = r \cos \alpha \cos \beta \\
-        y = r \sin \alpha \cos \beta \\
-        z = r \sin \beta
 
     Parameters
     ----------
