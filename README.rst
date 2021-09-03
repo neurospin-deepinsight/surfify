@@ -41,6 +41,15 @@ PyTorch toolbox to work with spherical surfaces.
         year={2018}
   }
 
+  @article{kim2021vae,
+        author = {Jung-Hoon Kim and Yizhen Zhang and Kuan Han and Zheyu Wen and Minkyu Choi and Zhongming Liu},
+        title = {Representation learning of resting state fMRI with variational autoencoder},
+        journal = {NeuroImage},
+        volume = {241},
+        pages = {118423},
+        year = {2021}
+  }
+
 This work is made available by a `community of people
 <https://github.com/neurospin-deepinsight/surfify/blob/master/AUTHORS.rst>`_, amoung which the
 CEA Neurospin BAOBAB laboratory.
