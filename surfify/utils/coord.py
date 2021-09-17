@@ -14,6 +14,7 @@ Coordinate system tools.
 # Imports
 import numpy as np
 from scipy.interpolate import griddata, NearestNDInterpolator
+import scipy.spatial.transform as transform
 
 
 def cart2sph(x, y, z):
@@ -126,3 +127,28 @@ def grid2text(vertices, proj):
     proj_values = proj.flatten()
     interp = NearestNDInterpolator(grid_points, proj_values)
     return interp(points)
+
+
+def ico2ico(ico_ref_vertices, ico_moving_vertices):
+    """ Find a mapping between two icosahedrons: a simple rotation.
+
+    Parameters
+    ----------
+    ico_ref_vertices: array (N, 3)
+        the reference vertices.
+    ico_moving_vertices: array (N, 3)
+        the moving vertices.
+
+    Returns
+    -------
+    rotation: array (3, 3)
+        the best estimate of the rotation that transforms the moving vertices
+        to the reference.
+    rmsd: float
+        the root mean square distance between the given set of vectors after
+        alignment.
+    """
+    rotation, rmsd = transform.Rotation.align_vectors(
+        ico_ref_vertices, ico_moving_vertices)
+    rotation = rotation.as_matrix()
+    return rotation, rmsd

@@ -17,7 +17,8 @@ import warnings
 from .sampling import (
     interpolate, neighbors, downsample, neighbors_rec, icosahedron,
     number_of_ico_vertices, get_rectangular_projection)
-from .coord import cart2sph, sph2cart, text2grid, grid2text
+from .coord import (
+    cart2sph, sph2cart, text2grid, grid2text, ico2ico)
 
 
 # Global parameters
