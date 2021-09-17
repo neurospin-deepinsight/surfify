@@ -102,7 +102,7 @@ class SphericalUNet(nn.Module):
             interpolation, 'maxpad' for max pooling shifted zero padding,
             and 'zeropad' for classical zero padding.
         cachedir: str, default None
-            set tthis folder tu use smart caching speedup.
+            set this folder to use smart caching speedup.
         """
         logger.debug("SphericalUNet init...")
         super(SphericalUNet, self).__init__()
