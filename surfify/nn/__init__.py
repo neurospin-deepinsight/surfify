@@ -12,5 +12,6 @@ Suface dedicated modules.
 """
 
 from .modules import (
-    IcoRePaConv, IcoDiNeConv, IcoPool, IcoUpConv, IcoGenericUpConv,
-    IcoUpSample, IcoFixIndexUpSample, IcoMaxIndexUpSample)
+    IcoSpMaConv, IcoRePaConv, IcoDiNeConv, IcoPool, IcoUpConv,
+    IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample, IcoMaxIndexUpSample,
+    IcoSpMaConvTranspose)

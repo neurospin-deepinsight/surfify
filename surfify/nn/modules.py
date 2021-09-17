@@ -18,10 +18,137 @@ import torch
 import torch.nn as nn
 import numpy as np
 from ..utils import get_logger, debug_msg
+from .functional import circular_pad
 
 
 # Global parameters
 logger = get_logger()
+
+
+class IcoSpMaConv(nn.Module):
+    """ Define the convolutional layer on icosahedron discretized sphere using
+    spherical 2-d mapping & circular padding.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    IcoDiNeConv, IcoRePaConv
+
+    Examples
+    --------
+    >>> import torch
+    >>> from surfify.nn import IcoSpMaConv
+    >>> module = IcoSpMaConv(
+            in_feats=8, out_feats=16, kernel_size=3, stride=2, pad=1)
+    >>> proj_ico_x = torch.zeros((10, 8, 194, 194))
+    >>> proj_ico_x = module(proj_ico_x)
+    >>> proj_ico_x.shape
+    """
+    def __init__(self, in_feats, out_feats, kernel_size, stride=1, pad=0):
+        """ Init IcoSpMaConv.
+
+        Parameters
+        ----------
+        in_feats: int
+            input features/channels.
+        out_feats: int
+            output features/channels.
+        kernel_size: int or tuple
+            the convolutional kernel size.
+        stride: int or tuple, default 1
+            controls the stride for the cross-correlation.
+        pad: int or tuple (pad_azimuth, pad_elevation), default 0
+            the size of the padding.
+        """
+        super(IcoSpMaConv, self).__init__()
+        self.in_feats = in_feats
+        self.out_feats = out_feats
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.pad = pad
+        self.conv = nn.Conv2d(
+            in_channels=in_feats,
+            out_channels=out_feats,
+            kernel_size=kernel_size, stride=stride, padding=0)
+
+    def forward(self, x):
+        logger.debug("IcoSpMaConv...")
+        logger.debug(debug_msg("input", x))
+        x = circular_pad(x, pad=self.pad)
+        logger.debug(debug_msg("pad", x))
+        x = self.conv(x)
+        logger.debug(debug_msg("conv", x))
+        return x
+
+
+class IcoSpMaConvTranspose(nn.Module):
+    """ Define the transpose convolution on icosahedron discretized sphere
+    using spherical 2-d mapping & circular padding.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    IcoConv, IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample,
+    IcoMaxIndexUpSample
+
+    Examples
+    --------
+    >>> import torch
+    >>> from surfify.nn import IcoSpMaConvTranspose
+    >>> module = IcoSpMaConvTranspose(
+            in_feats=16, out_feats=8, kernel_size=4, stride=2, zero_pad=3,
+            pad=1)
+    >>> proj_ico_x = torch.zeros((10, 16, 96, 96))
+    >>> proj_ico_x = module(proj_ico_x)
+    >>> proj_ico_x.shape
+    """
+    def __init__(self, in_feats, out_feats, kernel_size, stride=1, pad=0,
+                 zero_pad=0):
+        """ Init IcoSpMaConvTranspose.
+
+        Parameters
+        ----------
+        in_feats: int
+            input features/channels.
+        out_feats: int
+            output features/channels.
+        kernel_size: int or tuple
+            the convolutional kernel size.
+        stride: int or tuple, default 1
+            controls the stride for the cross-correlation.
+        pad: int or tuple (pad_azimuth, pad_elevation), default 0
+            the size of the padding.
+        zero_pad: int or tuple, deffault 0
+            add a zero padding in bith axis befor the transpose convolution.
+        """
+        super(IcoSpMaConvTranspose, self).__init__()
+        self.in_feats = in_feats
+        self.out_feats = out_feats
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.pad = pad
+        self.zero_pad = zero_pad
+        self.tconv = nn.ConvTranspose2d(
+            in_channels=in_feats,
+            out_channels=out_feats,
+            kernel_size=kernel_size, stride=stride, padding=zero_pad)
+
+    def forward(self, x):
+        logger.debug("IcoSpMaConvTranspose...")
+        logger.debug(debug_msg("input", x))
+        x = circular_pad(x, pad=self.pad)
+        logger.debug(debug_msg("pad", x))
+        x = self.tconv(x)
+        logger.debug(debug_msg("transpose conv", x))
+        return x
 
 
 class IcoRePaConv(nn.Module):
@@ -35,7 +162,7 @@ class IcoRePaConv(nn.Module):
 
     See Also
     --------
-    IcoDiNeConv
+    IcoDiNeConv, IcoSpMaConv
 
     Examples
     --------
@@ -80,10 +207,10 @@ class IcoRePaConv(nn.Module):
         if self.neigh_weights.get_device() != device:
             self.neigh_weights = self.neigh_weights.to(device)
         logger.debug(debug_msg("input", x))
-        logger.debug(" weight: {0}".format(self.weight))
-        logger.debug(" neighbors indices: {0}".format(
+        logger.debug("  weight: {0}".format(self.weight))
+        logger.debug("  neighbors indices: {0}".format(
             self.neigh_indices.shape))
-        logger.debug(" neighbors weights: {0}".format(
+        logger.debug("  neighbors weights: {0}".format(
             self.neigh_weights.shape))
         n_samples = len(x)
         mat = x[:, :, self.neigh_indices.reshape(-1)].view(
@@ -115,7 +242,7 @@ class IcoDiNeConv(nn.Module):
 
     See Also
     --------
-    IcoRePaConv
+    IcoRePaConv, IcoSpMaConv
 
     Examples
     --------
@@ -132,7 +259,7 @@ class IcoDiNeConv(nn.Module):
     >>> ico2_x = module(ico2_x)
     >>> ico2_x.shape
     """
-    def __init__(self, in_feats, out_feats, neigh_indices, n_ring=1):
+    def __init__(self, in_feats, out_feats, neigh_indices):
         """ Init IcoDiNeConv.
 
         Parameters
@@ -157,8 +284,8 @@ class IcoDiNeConv(nn.Module):
         """
         logger.debug("IcoDiNeConv...")
         logger.debug(debug_msg("input", x))
-        logger.debug(" weight: {0}".format(self.weight))
-        logger.debug(" neighbors indices: {0}".format(
+        logger.debug("  weight: {0}".format(self.weight))
+        logger.debug("  neighbors indices: {0}".format(
             self.neigh_indices.shape))
         mat = x[:, :, self.neigh_indices.reshape(-1)].view(
             len(x), self.in_feats, self.n_vertices, self.neigh_size)
@@ -226,7 +353,7 @@ class IcoPool(nn.Module):
         n_vertices = int((x.size(2) + 6) / 4)
         assert self.n_vertices == n_vertices
         n_features = x.size(1)
-        logger.debug(" down neighbors indices: {0}".format(
+        logger.debug("  down neighbors indices: {0}".format(
             self.down_neigh_indices.shape))
         x = x[:, :, self.down_neigh_indices.reshape(-1)].view(
             len(x), n_features, n_vertices, self.neigh_size)
@@ -254,7 +381,8 @@ class IcoUpConv(nn.Module):
 
     See Also
     --------
-    IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample, IcoMaxIndexUpSample
+    IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample, IcoMaxIndexUpSample,
+    IcoSpMaConvTranspose
 
     Examples
     --------
@@ -331,8 +459,8 @@ class IcoUpConv(nn.Module):
         logger.debug("IcoUpConv: transpose conv...")
         logger.debug(debug_msg("input", x))
         n_samples, n_feats, n_vertices = x.size()
-        logger.debug(" weight: {0}".format(self.weight))
-        logger.debug(" neighbors indices: {0}".format(
+        logger.debug("  weight: {0}".format(self.weight))
+        logger.debug("  neighbors indices: {0}".format(
             self.neigh_indices.shape))
         x = x.permute(0, 2, 1)
         x = x.reshape(n_samples * n_vertices, n_feats)
@@ -368,7 +496,8 @@ class IcoGenericUpConv(nn.Module):
 
     See Also
     --------
-    IcoUpConv, IcoUpSample, IcoFixIndexUpSample, IcoMaxIndexUpSample
+    IcoUpConv, IcoUpSample, IcoFixIndexUpSample, IcoMaxIndexUpSample,
+    IcoSpMaConvTranspose
 
     Examples
     --------
@@ -433,8 +562,8 @@ class IcoGenericUpConv(nn.Module):
         logger.debug("IcoGenericUpConv: transpose conv...")
         logger.debug(debug_msg("input", x))
         n_samples, n_feats, n_vertices = x.size()
-        logger.debug(" weight: {0}".format(self.weight))
-        logger.debug(" neighbors indices: {0}".format(
+        logger.debug("  weight: {0}".format(self.weight))
+        logger.debug("  neighbors indices: {0}".format(
             self.neigh_indices.shape))
         x = x.permute(0, 2, 1)
         x = x.reshape(n_samples * n_vertices, n_feats)
@@ -468,7 +597,8 @@ class IcoUpSample(nn.Module):
 
     See Also
     --------
-    IcoFixIndexUpSample, IcoMaxIndexUpSample, IcoUpConv, IcoGenericUpConv
+    IcoFixIndexUpSample, IcoMaxIndexUpSample, IcoUpConv, IcoGenericUpConv,
+    IcoSpMaConvTranspose
 
     Examples
     --------
@@ -514,7 +644,7 @@ class IcoUpSample(nn.Module):
         n_vertices = x.size(2) * 4 - 6
         assert self.n_vertices == n_vertices
         n_features = x.size(1)
-        logger.debug(" up neighbors indices: {0}".format(
+        logger.debug("  up neighbors indices: {0}".format(
             self.up_neigh_indices.shape))
         x = x[:, :, self.up_neigh_indices.reshape(-1)].view(
             len(x), n_features, n_vertices, self.neigh_size)
@@ -542,7 +672,8 @@ class IcoFixIndexUpSample(nn.Module):
 
     See Also
     --------
-    IcoUpSample, IcoMaxIndexUpSample, IcoUpConv, IcoGenericUpConv
+    IcoUpSample, IcoMaxIndexUpSample, IcoUpConv, IcoGenericUpConv,
+    IcoSpMaConvTranspose
 
     Examples
     --------
@@ -592,7 +723,7 @@ class IcoFixIndexUpSample(nn.Module):
         n_vertices = x.size(2) * 4 - 6
         assert self.n_vertices == n_vertices
         n_features = x.size(1)
-        logger.debug(" up neighbors indices: {0}".format(
+        logger.debug("  up neighbors indices: {0}".format(
             self.up_neigh_indices.shape))
         x = x[:, :, self.up_neigh_indices[:, 0]]
         logger.debug(debug_msg("neighbors", x))
@@ -619,7 +750,8 @@ class IcoMaxIndexUpSample(nn.Module):
 
     See Also
     --------
-    IcoUpConv, IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample
+    IcoUpConv, IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample,
+    IcoSpMaConvTranspose
 
     Examples
     --------
@@ -675,9 +807,9 @@ class IcoMaxIndexUpSample(nn.Module):
         """
         logger.debug("IcoMaxIndexUpSample: max pooling driven zero padding...")
         logger.debug(debug_msg("input", x))
-        logger.debug(" neighbors indices: {0}".format(
+        logger.debug("  neighbors indices: {0}".format(
             self.neigh_indices.shape))
-        logger.debug(" max pool indices: {0}".format(max_pool_indices.shape))
+        logger.debug("  max pool indices: {0}".format(max_pool_indices.shape))
         logger.debug(debug_msg("input", x))
         n_samples, n_feats, n_raw_vertices = x.size()
         x = x.permute(0, 2, 1)
@@ -695,14 +827,14 @@ class IcoMaxIndexUpSample(nn.Module):
             vertices_indices[..., idx] = self.neigh_indices[idx][
                 max_pool_indices[..., idx]]
         vertices_indices = torch.from_numpy(vertices_indices).long()
-        logger.debug(" vertices indices: {0}".format(vertices_indices.shape))
+        logger.debug("  vertices indices: {0}".format(vertices_indices.shape))
         vertices_indices = vertices_indices.view(n_samples, -1)
-        logger.debug(" vertices indices: {0}".format(vertices_indices.shape))
+        logger.debug("  vertices indices: {0}".format(vertices_indices.shape))
         feats_indices = np.floor(
             np.linspace(0.0, float(n_feats), num=(n_raw_vertices * n_feats)))
         feats_indices[-1] -= 1
         feats_indices = torch.from_numpy(feats_indices).long()
-        logger.debug(" features indices: {0}".format(feats_indices.shape))
+        logger.debug("  features indices: {0}".format(feats_indices.shape))
         y[:, feats_indices, vertices_indices] = x
         logger.debug(debug_msg("interp", y))
         return y
