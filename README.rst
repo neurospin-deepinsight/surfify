@@ -9,10 +9,10 @@
 .. _Coveralls: https://coveralls.io/github/neurospin/surfify
 
 .. |Testing| image:: https://github.com/neurospin-deepinsight/surfify/actions/workflows/testing.yml/badge.svg
-.. _Travis: https://github.com/neurospin-deepinsight/surfify/actions
+.. _Testing: https://github.com/neurospin-deepinsight/surfify/actions
 
 .. |Pep8| image:: https://github.com/neurospin-deepinsight/surfify/actions/workflows/pep8.yml/badge.svg
-.. _Travis: https://github.com/neurospin-deepinsight/surfify/actions
+.. _Pep8: https://github.com/neurospin-deepinsight/surfify/actions
 
 .. |PyPi| image:: https://badge.fury.io/py/surfify.svg
 .. _PyPi: https://badge.fury.io/py/surfify

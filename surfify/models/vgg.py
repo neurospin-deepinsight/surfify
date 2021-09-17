@@ -66,9 +66,9 @@ class SphericalVGG(SphericalBase):
         self.final_flt = int(cfg[-2])
         self.top_flatten_dim = len(
             self.ico[self.input_order - self.n_layers + 1].vertices)
-        self.top_final = self.final_flt * self.top_flatten_dim
+        self.top_final = self.final_flt * 7
         self._make_encoder()
-        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        self.avgpool = nn.AdaptiveAvgPool1d((7))
         self.classifier = nn.Sequential(
             nn.Linear(self.top_final, hidden_dim),
             nn.ReLU(True),
@@ -222,7 +222,7 @@ class SphericalGVGG(nn.Module):
         self.n_layers = cfg.count("M")
         self.final_flt = int(cfg[-2])
         self.top_flatten_dim = int(self.input_dim / (2 ** self.n_layers))
-        self.top_final = self.final_flt * self.top_flatten_dim ** 2
+        self.top_final = self.final_flt * 7 ** 2
         self._make_encoder()
         self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
         self.classifier = nn.Sequential(
