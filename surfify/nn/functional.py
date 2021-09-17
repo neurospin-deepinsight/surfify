@@ -27,9 +27,11 @@ def circular_pad(x, pad):
     ----------
     x: Tensor (samples, channels, azimuth, elevation)
         input tensor.
-    pad: tuple (pad_azimuth, pad_elevation)
+    pad: int or tuple (pad_azimuth, pad_elevation)
         the size of the padding.
     """
+    if not isinstance(pad, list) and not isinstance(pad, tuple):
+        pad = [pad, pad]
     x = F.pad(x, (pad[1], pad[1], 0, 0), "constant", 0)
     x = F.pad(x, (0, 0, pad[0], pad[0]), "circular")
     return x
