@@ -17,6 +17,9 @@ import numpy as np
 from math import sqrt, degrees
 from sklearn.neighbors import BallTree
 import networkx as nx
+import nilearn.datasets
+
+from .io import read_gifti, ungzip
 
 
 def interpolate(vertices, target_vertices, target_triangles):
@@ -362,13 +365,22 @@ def get_rectangular_projection(node, size=5, zoom=5):
     return grid_in_sphere, grid_in_tplane
 
 
-def icosahedron(order=3):
+def icosahedron(order=3, use_freesurfer=False, freesurfer_root=None):
     """ Define an icosahedron mesh of any order.
+
+    Notes
+    -----
+    When using FreeSurfer tesselations only icosahedron of order 2, 4, 5, 6
+    or 7 are available.
 
     Parameters
     ----------
     order: int, default 3
         the icosahedron order.
+    use_freesurfer: bool, default False
+        optionaly use FreeSurfer tesselation.
+    freesurfer_root: str, default None
+        the location where the fsaverage template will be downloaded.
 
     Returns
     -------
@@ -377,56 +389,66 @@ def icosahedron(order=3):
     triangles: array (N, 3)
         the icosahedron triangles.
     """
-    middle_point_cache = {}
-    r = (1 + np.sqrt(5)) / 2
-    vertices = [
-        normalize([-1, r, 0]),
-        normalize([1, r, 0]),
-        normalize([-1, -r, 0]),
-        normalize([1, -r, 0]),
-        normalize([0, -1, r]),
-        normalize([0, 1, r]),
-        normalize([0, -1, -r]),
-        normalize([0, 1, -r]),
-        normalize([r, 0, -1]),
-        normalize([r, 0, 1]),
-        normalize([-r, 0, -1]),
-        normalize([-r, 0, 1])]
-    triangles = [
-        [0, 11, 5],
-        [0, 5, 1],
-        [0, 1, 7],
-        [0, 7, 10],
-        [0, 10, 11],
-        [1, 5, 9],
-        [5, 11, 4],
-        [11, 10, 2],
-        [10, 7, 6],
-        [7, 1, 8],
-        [3, 9, 4],
-        [3, 4, 2],
-        [3, 2, 6],
-        [3, 6, 8],
-        [3, 8, 9],
-        [4, 9, 5],
-        [2, 4, 11],
-        [6, 2, 10],
-        [8, 6, 7],
-        [9, 8, 1]]
+    if use_freesurfer:
+        fsaverage = nilearn.datasets.fetch_surf_fsaverage(
+            mesh="fsaverage{0}".format(order), data_dir=freesurfer_root)
+        vertices, triangles = read_gifti(ungzip(fsaverage.sphere_left))
+        vertices /= np.linalg.norm(vertices, axis=1, keepdims=True)
+        right_vertices, _ = read_gifti(ungzip(fsaverage.sphere_right))
+        right_vertices /= np.linalg.norm(right_vertices, axis=1, keepdims=True)
+        assert np.allclose(vertices, right_vertices)
+    else:
+        middle_point_cache = {}
+        r = (1 + np.sqrt(5)) / 2
+        vertices = [
+            normalize([-1, r, 0]),
+            normalize([1, r, 0]),
+            normalize([-1, -r, 0]),
+            normalize([1, -r, 0]),
+            normalize([0, -1, r]),
+            normalize([0, 1, r]),
+            normalize([0, -1, -r]),
+            normalize([0, 1, -r]),
+            normalize([r, 0, -1]),
+            normalize([r, 0, 1]),
+            normalize([-r, 0, -1]),
+            normalize([-r, 0, 1])]
+        triangles = [
+            [0, 11, 5],
+            [0, 5, 1],
+            [0, 1, 7],
+            [0, 7, 10],
+            [0, 10, 11],
+            [1, 5, 9],
+            [5, 11, 4],
+            [11, 10, 2],
+            [10, 7, 6],
+            [7, 1, 8],
+            [3, 9, 4],
+            [3, 4, 2],
+            [3, 2, 6],
+            [3, 6, 8],
+            [3, 8, 9],
+            [4, 9, 5],
+            [2, 4, 11],
+            [6, 2, 10],
+            [8, 6, 7],
+            [9, 8, 1]]
+        for idx in range(order):
+            subdiv = []
+            for tri in triangles:
+                v1 = middle_point(tri[0], tri[1], vertices, middle_point_cache)
+                v2 = middle_point(tri[1], tri[2], vertices, middle_point_cache)
+                v3 = middle_point(tri[2], tri[0], vertices, middle_point_cache)
+                subdiv.append([tri[0], v1, v3])
+                subdiv.append([tri[1], v2, v1])
+                subdiv.append([tri[2], v3, v2])
+                subdiv.append([v1, v2, v3])
+            triangles = subdiv
+        vertices = np.asarray(vertices)
+        triangles = np.asarray(triangles)
 
-    for idx in range(order):
-        subdiv = []
-        for tri in triangles:
-            v1 = middle_point(tri[0], tri[1], vertices, middle_point_cache)
-            v2 = middle_point(tri[1], tri[2], vertices, middle_point_cache)
-            v3 = middle_point(tri[2], tri[0], vertices, middle_point_cache)
-            subdiv.append([tri[0], v1, v3])
-            subdiv.append([tri[1], v2, v1])
-            subdiv.append([tri[2], v3, v2])
-            subdiv.append([v1, v2, v3])
-        triangles = subdiv
-
-    return np.asarray(vertices), np.asarray(triangles)
+    return vertices, triangles
 
 
 def normalize(vertex):
