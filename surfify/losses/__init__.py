@@ -8,13 +8,8 @@
 ##########################################################################
 
 """
-Common architectures.
+Common losses.
 """
 
-from .unet import SphericalUNet
-from .vae import SphericalVAE, SphericalGVAE
-from .vgg import (
-    SphericalVGG11, SphericalVGG13, SphericalVGG16, SphericalVGG19,
-    SphericalVGG11BN, SphericalVGG13BN, SphericalVGG16BN, SphericalVGG19BN,
-    SphericalGVGG11, SphericalGVGG13, SphericalGVGG16, SphericalGVGG19,
-    SphericalGVGG11BN, SphericalGVGG13BN, SphericalGVGG16BN, SphericalGVGG19BN)
+# Imports
+from .vae import SphericalVAELoss
