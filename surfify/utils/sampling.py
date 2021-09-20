@@ -12,11 +12,15 @@ Spherical sampling & associated utilities.
 """
 
 # Imports
+import os
 import collections
 import numpy as np
+from joblib import Memory
 from math import sqrt, degrees
 from sklearn.neighbors import BallTree
 import networkx as nx
+from nilearn.surface import load_surf_data, load_surf_mesh
+import time
 
 
 def interpolate(vertices, target_vertices, target_triangles):
@@ -273,6 +277,115 @@ def downsample(vertices, target_vertices):
     return nearest_idx.squeeze()
 
 
+def downsample_data(data, down_indices, neighs, aggregation=None):
+    """ Downsample data to smaller icosahedron
+
+    Parameters
+    ----------
+    data: array (n_samples, n_vertices, n_features)
+        data to be downsampled
+    down_indces: list
+        contains the downsample vertices indices in the upper order
+        icosahedron, for each downsampling
+    neighs: list
+        contains the neighbors of each vertex of the upper order
+        icosahedron, for each downsampling
+    aggregation: str, default None
+        aggregation strategy over the higher order neighborhoods: 'mean',
+        'median, 'max', 'min', 'sum' or None
+
+    Returns
+    -------
+    downsampled_data: array (n_samples, new_n_vertices, n_features)
+        downsampled data
+    """
+    assert aggregation in ['mean', 'median', 'max', 'min', 'sum', None]
+    if len(data.shape) < 3:
+        data = data[np.newaxis, :, :]
+    data = data.transpose((0, 2, 1))
+    for i in range(len(down_indices)):
+        if aggregation is not None:
+            down_neigh_indices = neighs[i][down_indices[i]]
+            n_vertices, neigh_size = down_neigh_indices.shape
+
+            data = data[:, :, down_neigh_indices].reshape(
+                    len(data), data.shape[1], n_vertices, neigh_size)
+            data = getattr(data, aggregation)(-1)
+        else:
+            data = data[:, :, down_indices[i]]
+    return data.transpose(0, 2, 1).squeeze()
+
+
+def downsample_ico(coordinates, triangles, by=1, new_coordinates=None):
+    """ Downsample an icosahedron to one with a smaller order
+
+    Parameters
+    ----------
+    coordinates: array (N, 3)
+        coordinates of the icosahedron to reduce
+    triangles: array (N, 3)
+        triangles of the icosahedron to reduce
+    by: int, default 1
+        number of orders to reduce the icosahedron by
+    new_coordinates: list or None, default None
+        list of the coordinates of each lower order icosahedron, of
+        length by. If not provided the default is to take the first
+        coordinates of the higher order icosahedron as new coordinates
+        for the lower order one
+
+    Returns
+    -------
+    new_coordinates: array (N, 3)
+        vertices of the newly downsampled icosahedorn
+    new_triangles: array (N, 3)
+        triangles of the newly downsampled icosahedron
+    """
+    assert new_coordinates is None \
+        or type(new_coordinates) is list and len(new_coordinates) == by
+
+    for i in range(by):
+        former_order = order_of_ico_from_vertices(len(coordinates))
+        next_n_vertices = number_of_ico_vertices(former_order - 1)
+        if new_coordinates is None:
+            new_coordinate = coordinates[:next_n_vertices]
+        else:
+            new_coordinate = new_coordinates[i]
+
+        new_triangles = []
+        down_indices = downsample(coordinates, new_coordinate)
+        old_neighbors = neighbors(coordinates, triangles, direct_neighbor=True)
+        old_neighbors = np.array(list(old_neighbors.values()))
+        for i, downer in enumerate(down_indices):
+            for j, neigh in enumerate(old_neighbors[downer]):
+                if neigh != downer:
+                    next_neigh = old_neighbors[downer][
+                        (j+1) % len(old_neighbors[downer])]
+                    neighs = old_neighbors[neigh]
+                    neighs1 = old_neighbors[next_neigh]
+                    candidate = [i]
+                    for neigh_order2 in neighs:
+                        if neigh_order2 in down_indices and \
+                           neigh_order2 != downer:
+                            indicein4 = down_indices.tolist().index(
+                                neigh_order2)
+                            candidate.append(indicein4)
+                            break
+                    for neigh_order2 in neighs1:
+                        if neigh_order2 in down_indices and \
+                           neigh_order2 != downer:
+                            indicein4 = down_indices.tolist().index(
+                                neigh_order2)
+                            candidate.append(indicein4)
+                            break
+                    if set(candidate) not in new_triangles and \
+                       len(candidate) == 3:
+                        new_triangles.append(set(candidate))
+        new_triangles = np.array([list(tri) for tri in new_triangles])
+        coordinates = new_coordinate
+        triangles = new_triangles
+    return new_coordinate, new_triangles
+
+
 def neighbors_rec(vertices, triangles, size=5, zoom=5):
     """ Build rectangular grid neighbors and weights.
 
@@ -309,6 +422,35 @@ def neighbors_rec(vertices, triangles, size=5, zoom=5):
             neighs[idx1, idx2] = ordered_neighs[:3]
             weights[idx1, idx2] = dist[neighs[idx1, idx2]]
     return neighs, weights, grid_in_sphere
+
+
+def recursively_find_neighbors(start_node, order, neighbors):
+    """ Recursively find neighbors from a starting node up to a certain order
+
+    Parameters
+    ----------
+    start_node: int
+        node to start from
+    order: int
+        order up to which to look for neighbors
+    neighbors: dict
+        neighbors for each node
+
+    returns
+    -------
+    indices: list
+        indices of the neighbors of order order or lower
+    """
+    indices = []
+    if order <= 0:
+        return [start_node]
+    for neigh in neighbors[start_node]:
+        if order == 1:
+            indices.append(neigh)
+        else:
+            indices += recursively_find_neighbors(neigh, order-1, neighbors)
+
+    return list(set(indices))
 
 
 def get_rectangular_projection(node, size=5, zoom=5):
@@ -429,6 +571,43 @@ def icosahedron(order=3):
     return np.asarray(vertices), np.asarray(triangles)
 
 
+def icosahedron_fs(hemi, order=7):
+    """ Loads the freesurfer icosahedron mesh of any order for the right
+    hemishpere. If the file associated to the order does not exist, it
+    builds the icosahedron by downsampling the icosahedron with the lowest
+    order that is of higher order than the one desired, and for which we
+    have the file
+
+    Parameters
+    ----------
+    hemi: string
+        hemisphere
+    order: int, default 7
+        the icosahedron order.
+
+    Returns
+    -------
+    vertices: array (N, 3)
+        the icosahedron vertices.
+    triangles: array (N, 3)
+        the icosahedron triangles.
+    """
+    assert hemi in ["rh", "lh"]
+    path = "/i2bm/local/freesurfer-6.0.0/subjects/fsaverage{}"\
+        "/surf/{}.sphere".format('' if order == 7 else order, hemi)
+    last_order = order
+    while not os.path.isfile(path) and last_order < 7:
+        last_order += 1
+        path = path.replace(
+            'fsaverage{}'.format('' if last_order-1 == 7 else last_order-1),
+            'fsaverage{}'.format('' if last_order == 7 else last_order))
+    vertices, triangles = load_surf_mesh(path)
+    if last_order != order:
+        vertices, triangles = downsample_ico(
+            vertices, triangles, by=last_order-order)
+    return vertices, triangles
+
+
 def normalize(vertex):
     """ Return vertex coordinates fixed to the unit sphere.
     """
@@ -474,3 +653,188 @@ def number_of_ico_vertices(order=3):
         the icosahedron triangles.
     """
     return 10 * 4 ** order + 2
+
+
+def order_of_ico_from_vertices(n_vertices):
+    """ Get the order of the icosahedron from the number of vertices it has
+
+    Parameters
+    ----------
+    n_vertices: int
+        the number of vertices of an icosahedron.
+
+    Returns
+    -------
+    order: int
+        the order of the icosahedron
+    """
+    order = np.log((n_vertices-2) / 10) / np.log(4)
+
+    if int(order) != order:
+        raise ValueError(
+            "This number of vertices does not correspond to those of a"
+            "regular icosahedron")
+    return int(order)
+
+
+def order_triangles_vertices(vertices, triangles, clockwise_from_center=True):
+    """ Order the triangles' vertices to be in a clockwise order when viewed
+    from the center of the sphere described by the icosahedron
+
+    Parameters
+    ----------
+    vertices: array (N, 3)
+        the icosahedron's vertices
+    triangles: array (M, 3)
+        the icosahedron's triangles
+    clockwise_from_center: bool
+        True for clockwise, False for counter clockwise
+
+    Returns
+    -------
+    reordered_triangles: array (N, 3)
+        triangles reordered
+    """
+    reordered_triangles = triangles.copy()
+    for i, triangle in enumerate(triangles):
+        A, B, C = vertices[triangle]
+        N = np.cross((B - A), (C - A))
+        w = N @ A
+        if (clockwise_from_center and w >= 0) or \
+           (not clockwise_from_center and w <= 0):
+            reordered_triangles[i] = triangle[[0, 2, 1]]
+    return reordered_triangles
+
+
+class MeshProjector:
+    """ Class to project an icosahedral mesh onto another
+
+    Attributes
+    ----------
+    mesh: array (N, 3)
+        mesh to project onto
+    template_mesh: array (N, 3)
+        mesh to project
+    triangles: array (M, 3)
+        triangles associated to the meshes
+    neighbors: dict
+        neighbors of each vertex
+    triangles_membership: dict
+        triangles that each vertex belong to
+    projections: array (N, 3)
+        coordinates of the projections
+    proj_membership: array(N,)
+        index of the triangle in which each projection belong
+    Bs: array (N, 3)
+        barycentric coordinates of each projection in the corresponding
+        triangle
+    eps: float
+        machine precision
+    """
+    def __init__(self, mesh, template_mesh, triangles, compute_bary=True,
+                 cachedir=None):
+        assert len(mesh) == len(template_mesh)
+        cached_neighbors = neighbors
+        if cachedir is not None:
+            self.memory = Memory(cachedir, verbose=0)
+            cached_neighbors = self.memory.cache(neighbors)
+        self.mesh = mesh
+        self.template_mesh = template_mesh
+        self.triangles = triangles
+        self.neighbors = cached_neighbors(template_mesh, triangles)
+        self.neighbors = {
+            key: neighs[1] for key, neighs in self.neighbors.items()}
+        self.triangles_membership = {
+            node: [idx for idx, tri in enumerate(triangles) if node in tri]
+            for node in range(len(mesh))}
+        self.projections = np.zeros((len(mesh), 3))
+        self.proj_membership = np.empty(len(mesh), dtype=int)
+        self.proj_membership[:] = -1
+        self.Bs = np.zeros((len(mesh), 3))
+        self.eps = np.finfo(np.float64).eps
+        if compute_bary:
+            cached_barycentric_coordinates = self.memory.cache(
+                self.get_barycentric_coordinates)
+            self.Bs, self.projections, self.proj_membership, = \
+                cached_barycentric_coordinates()
+
+    # def reccursively_find_membership(self, last_idx):
+    #     used_to_be_nan = []
+
+    #     for neigh in self.neighbors[last_idx]:
+    #         if neigh == last_idx:
+    #             continue
+    #         elif self.proj_membership[neigh] == -1:
+    #             found = False
+    #             for tri, triangle in enumerate(self.triangles):
+    #                 T = self.template_mesh[triangle]
+    #                 B = np.linalg.solve(T.T, self.mesh[neigh])
+    #                 eps = self.eps
+    #                 if sum((B >= 0) | (np.abs(B) <= self.eps)) == 3:
+    #                     found = True
+    #                     self.projections[neigh] = B @ T
+    #                     self.proj_membership[neigh] = tri
+    #                     self.Bs[neigh] = B
+    #                     used_to_be_nan.append(neigh)
+    #                     break
+    #             if not found:
+    #                 print(":'(")
+    #     for neigh in used_to_be_nan:
+    #         self.reccursively_find_membership(neigh)
+
+    def get_barycentric_coordinates(self):
+        """ Compute the barycentric coordinates
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+        Bs: array (N, 3)
+            barycentric coordinates of each projection in the corresponding
+            triangle
+        projections: array (N, 3)
+            coordinates of the projections
+        proj_membership: array(N,)
+            index of the triangle in which each projection belong
+        """
+        self.triangles = order_triangles_vertices(
+            self.template_mesh, self.triangles)
+        for node in range(len(self.mesh)):
+            found = False
+            for i, triangle in enumerate(self.triangles):
+                T = self.template_mesh[triangle]
+                B = np.linalg.solve(T.T, self.mesh[node])
+                if sum((B >= 0) | (np.abs(B) <= self.eps)) == 3:
+                    found = True
+                    self.projections[node] = B @ T
+                    self.proj_membership[node] = i
+                    self.Bs[node] = B
+                    break
+            if not found:
+                print(":'(")
+        return self.Bs, self.projections, self.proj_membership
+
+    def project(self, texture):
+        """ Project a texture onto the icosahedron
+
+        Parameters
+        ----------
+        texture: array (N, k)
+            texture associated to the template mesh
+
+        Returns
+        -------
+        new_texture: array (N, k)
+            projected texture on the mesh
+        """
+        if (self.proj_membership == -1).sum() > 0:
+            print((self.proj_membership == -1).sum())
+            raise AttributeError("You need to compute the barycentric "
+                                 "coordinates before projecting a texture")
+        new_texture = np.zeros(texture.shape)
+
+        for i in range(len(self.mesh)):
+            triangle = self.triangles[self.proj_membership[i]]
+            new_texture[i] = texture[triangle].T @ self.Bs[i]
+        return new_texture

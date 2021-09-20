@@ -8,18 +8,14 @@
 ##########################################################################
 
 """
-Suface utilities.
+Suface augmentations.
 """
 
 # Imports
 import logging
 import warnings
-from .sampling import (
-    interpolate, neighbors, downsample, neighbors_rec, icosahedron,
-    number_of_ico_vertices, order_of_ico_from_vertices,
-    get_rectangular_projection, icosahedron_fs,
-    downsample_ico, downsample_data, MeshProjector, recursively_find_neighbors)
-from .coord import cart2sph, sph2cart, text2grid, grid2text
+from .augmentation import (
+    SphericalAugmentation, SphericalRandomCut, SphericalRotation)
 
 
 # Global parameters
