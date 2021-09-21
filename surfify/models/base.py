@@ -73,7 +73,7 @@ class SphericalBase(nn.Module):
         self.use_freesurfer = use_freesurfer
         self.cachedir = cachedir
         self.memory = Memory(cachedir, verbose=0)
-        if conv_mode == "repa":
+        if conv_mode == "RePa":
             self.sconv = IcoRePaConv
         else:
             self.sconv = IcoDiNeConv
@@ -109,7 +109,7 @@ class SphericalBase(nn.Module):
                     conv_neighs = np.asarray(list(conv_neighs.values()))
                 logger.debug("- conv neighbors {0}: {1}".format(
                     order, conv_neighs.shape))
-            elif conv_mode == "RePa":
+            elif self.conv_mode == "RePa":
                 conv_neighs, conv_weights, _ = neighbors_rec_cached(
                     vertices, triangles, size=self.repa_size,
                     zoom=self.repa_zoom)

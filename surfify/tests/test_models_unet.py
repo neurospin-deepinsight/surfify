@@ -24,7 +24,8 @@ class TestModelsUNet(unittest.TestCase):
         self.n_classes = 2
         self.depth = 2
         self.start_filts = 8
-        self.conv_modes = ["1ring", "2ring", "repa"]
+        self.conv_modes = ["DiNe", "RePa"]
+        self.rings = [1, 2]
         self.up_modes = ["interp", "transpose", "maxpad", "zeropad"]
         self.X, self.y = make_classification(
             self.order, n_samples=40, n_classes=self.n_classes, scale=1,
@@ -45,14 +46,21 @@ class TestModelsUNet(unittest.TestCase):
                 in_order=self.order, in_channels=self.n_classes,
                 out_channels=self.n_classes, depth=self.depth,
                 start_filts=self.start_filts, conv_mode=conv_mode,
-                up_mode="interp")
+                up_mode="interp", use_freesurfer=False)
+            out = model(self.X)
+        for n_rings in self.rings:
+            model = SphericalUNet(
+                in_order=self.order, in_channels=self.n_classes,
+                out_channels=self.n_classes, depth=self.depth,
+                start_filts=self.start_filts, conv_mode="DiNe",
+                dine_size=n_rings, up_mode="interp", use_freesurfer=False)
             out = model(self.X)
         for up_mode in self.up_modes:
             model = SphericalUNet(
                 in_order=self.order, in_channels=self.n_classes,
                 out_channels=self.n_classes, depth=self.depth,
-                start_filts=self.start_filts, conv_mode="1ring",
-                up_mode=up_mode)
+                start_filts=self.start_filts, conv_mode="DiNe",
+                dine_size=1, up_mode=up_mode, use_freesurfer=False)
             out = model(self.X)
 
 
