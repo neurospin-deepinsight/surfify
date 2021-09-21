@@ -25,10 +25,20 @@ logger = get_logger()
 
 class SphericalVGG(SphericalBase):
     """ Spherical VGG architecture.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalGVGG
     """
     def __init__(self, input_channels, cfg, n_classes, input_order=5,
-                 conv_mode="DiNe", hidden_dim=4096, batch_norm=False,
-                 init_weights=True, cachedir=None):
+                 conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
+                 hidden_dim=4096, batch_norm=False, init_weights=True,
+                 use_freesurfer=True, cachedir=None):
         """ Init class.
 
         Parameters
@@ -44,6 +54,14 @@ class SphericalVGG(SphericalBase):
         conv_mode: str, default 'DiNe'
             use either 'RePa' - Rectangular Patch convolution method or 'DiNe'
             - 1 ring Direct Neighbor convolution method.
+        dine_size: int, default 1
+            the size of the spherical convolution filter, ie. the number of
+            neighbor rings to be considered.
+        repa_size: int, default 5
+            the size of the rectangular grid in the tangent space.
+        repa_zoom: int, default 5
+            a multiplicative factor applied to the rectangular grid in the
+            tangent space.
         hidden_dim: int, default 4096
             the 2-layer classification MLP number of hidden dims.
         batch_norm: bool, default False
@@ -51,13 +69,18 @@ class SphericalVGG(SphericalBase):
             layer.
         init_weights: bool, default True
             initialize network weights.
+        use_freesurfer: bool, default True
+            optionaly use surfify tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
+        logger.debug("SphericalVGG init...")
         cfg = cfg[:-1]
         super(SphericalVGG, self).__init__(
             input_order=input_order, n_layers=cfg.count("M"),
-            conv_mode=conv_mode, cachedir=cachedir)
+            conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
+            repa_zoom=repa_zoom, use_freesurfer=use_freesurfer,
+            cachedir=cachedir)
         self.input_channels = input_channels
         self.cfg = cfg
         self.n_classes = n_classes
@@ -101,7 +124,7 @@ class SphericalVGG(SphericalBase):
         x = torch.cat(
             (self.enc_left_conv(left_x), self.enc_right_conv(right_x)), dim=1)
         logger.debug(debug_msg("lh/rh path", x))
-        for mod in self.enc_w_conv.modules():
+        for mod in self.enc_w_conv.children():
             if isinstance(mod, IcoPool):
                 x = mod(x)[0]
             else:
@@ -189,6 +212,15 @@ class SphericalVGG(SphericalBase):
 
 class SphericalGVGG(nn.Module):
     """ Spherical Grided VGG architecture.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalVGG
     """
     def __init__(self, input_channels, cfg, n_classes, input_dim=194,
                  hidden_dim=4096, batch_norm=False, init_weights=True):
@@ -212,6 +244,7 @@ class SphericalGVGG(nn.Module):
         init_weights: bool, default True
             initialize network weights.
         """
+        logger.debug("SphericalGVGG init...")
         super(SphericalGVGG, self).__init__()
         self.input_channels = input_channels
         self.cfg = cfg

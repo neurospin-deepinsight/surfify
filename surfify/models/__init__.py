@@ -11,7 +11,7 @@
 Common architectures.
 """
 
-from .unet import SphericalUNet
+from .unet import SphericalUNet, SphericalGUNet
 from .vae import SphericalVAE, SphericalGVAE
 from .vgg import (
     SphericalVGG11, SphericalVGG13, SphericalVGG16, SphericalVGG19,

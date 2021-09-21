@@ -50,7 +50,8 @@ dataset = datasets.ClassificationDataset(
 loader = DataLoader(dataset, batch_size=5, shuffle=True)
 model = models.SphericalUNet(
     in_order=ico_order, in_channels=n_classes, out_channels=n_classes,
-    depth=2, start_filts=8, conv_mode="1ring", up_mode="transpose")
+    depth=2, start_filts=8, conv_mode="DiNe", dine_size=1, up_mode="transpose",
+    use_freesurfer=False)
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(
     model.parameters(), lr=0.1, momentum=0.99, weight_decay=1e-4)

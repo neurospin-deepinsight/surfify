@@ -33,11 +33,23 @@ class SphericalVAE(SphericalBase):
     Use either RePa - Rectangular Patch convolution method or DiNe - Direct
     Neighbor convolution method.
 
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalGVAE
+
+    References
+    ----------
     Representation Learning of Resting State fMRI with Variational
     Autoencoder, NeuroImage 2021.
     """
     def __init__(self, input_channels=1, input_order=5, latent_dim=64,
-                 conv_flts=[32, 32, 64, 64], conv_mode="DiNe",
+                 conv_flts=[32, 32, 64, 64], conv_mode="DiNe", dine_size=1,
+                 repa_size=5, repa_zoom=5, use_freesurfer=True,
                  cachedir=None):
         """ Init class.
 
@@ -54,12 +66,25 @@ class SphericalVAE(SphericalBase):
         conv_mode: str, default 'DiNe'
             use either 'RePa' - Rectangular Patch convolution method or 'DiNe'
             - 1 ring Direct Neighbor convolution method.
+        dine_size: int, default 1
+            the size of the spherical convolution filter, ie. the number of
+            neighbor rings to be considered.
+        repa_size: int, default 5
+            the size of the rectangular grid in the tangent space.
+        repa_zoom: int, default 5
+            a multiplicative factor applied to the rectangular grid in the
+            tangent space.
+        use_freesurfer: bool, default True
+            optionaly use surfify tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
+        logger.debug("SphericalVAE init...")
         super(SphericalVAE, self).__init__(
             input_order=input_order, n_layers=len(conv_flts),
-            conv_mode=conv_mode, cachedir=cachedir)
+            conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
+            repa_zoom=repa_zoom, use_freesurfer=use_freesurfer,
+            cachedir=cachedir)
         self.input_channels = input_channels
         self.latent_dim = latent_dim
         self.conv_flts = conv_flts
@@ -214,6 +239,17 @@ class SphericalGVAE(nn.Module):
 
     Use SpMa - Spherical Mapping convolution method.
 
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalVAE
+
+    References
+    ----------
     Representation Learning of Resting State fMRI with Variational
     Autoencoder, NeuroImage 2021.
     """
@@ -232,6 +268,7 @@ class SphericalGVAE(nn.Module):
         conv_flts: list of int
             the size of convolutional filters.
         """
+        logger.debug("SphericalGVAE init...")
         super(SphericalGVAE, self).__init__()
         self.input_channels = input_channels
         self.input_dim = input_dim
