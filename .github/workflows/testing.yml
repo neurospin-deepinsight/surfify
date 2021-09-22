@@ -35,6 +35,7 @@ jobs:
       run: |
         python setup.py nosetests
     - name: Coveralls
+      if: matrix.python-version == 3.9
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
