@@ -86,7 +86,7 @@ class SphericalVGG(SphericalBase):
         self.n_classes = n_classes
         self.batch_norm = batch_norm
         self.n_modules = len(cfg)
-        self.final_flt = int(cfg[-2])
+        self.final_flt = int(cfg[-1])
         self.top_flatten_dim = len(
             self.ico[self.input_order - self.n_layers + 1].vertices)
         self.top_final = self.final_flt * 7
@@ -176,9 +176,8 @@ class SphericalVGG(SphericalBase):
                 self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
             elif first_layer:
                 lconv = self.sconv(
-                    in_feats=input_channels,
-                    out_feats=(self.cfg[idx] // 2),
-                    neigh_indices=self.ico[order].conv_neighbor_indices)
+                    input_channels, (self.cfg[idx] // 2),
+                    self.ico[order].conv_neighbor_indices)
                 self.enc_left_conv.add_module("lconv_{0}".format(idx), lconv)
                 if self.batch_norm:
                     lbn = nn.BatchNorm1d(self.cfg[idx] // 2)
@@ -186,9 +185,8 @@ class SphericalVGG(SphericalBase):
                 lrelu = nn.ReLU(inplace=True)
                 self.enc_left_conv.add_module("lrelu_{0}".format(idx), lrelu)
                 rconv = self.sconv(
-                    in_feats=input_channels,
-                    out_feats=(self.cfg[idx] // 2),
-                    neigh_indices=self.ico[order].conv_neighbor_indices)
+                    input_channels, (self.cfg[idx] // 2),
+                    self.ico[order].conv_neighbor_indices)
                 self.enc_right_conv.add_module("rconv_{0}".format(idx), rconv)
                 if self.batch_norm:
                     rbn = nn.BatchNorm1d(self.cfg[idx] // 2)
@@ -198,9 +196,8 @@ class SphericalVGG(SphericalBase):
                 input_channels = self.cfg[idx] // 2
             else:
                 conv = self.sconv(
-                    in_feats=input_channels,
-                    out_feats=self.cfg[idx],
-                    neigh_indices=self.ico[order].conv_neighbor_indices)
+                    input_channels, self.cfg[idx],
+                    self.ico[order].conv_neighbor_indices)
                 self.enc_w_conv.add_module("conv_{0}".format(idx), conv)
                 if self.batch_norm:
                     bn = nn.BatchNorm1d(self.cfg[idx])
@@ -385,7 +382,8 @@ def class_factory(klass_name, klass_params, destination_module_globals):
         batch_norm = False
 
         def __init__(self, input_channels, n_classes, input_order=5,
-                     conv_mode="DiNe", hidden_dim=4096, init_weights=True,
+                     conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
+                     hidden_dim=4096, init_weights=True, use_freesurfer=True,
                      cachedir=None):
             if self.cfg is None:
                 raise ValueError("Please specify a configuration first.")
@@ -397,8 +395,12 @@ def class_factory(klass_name, klass_params, destination_module_globals):
                 n_classes=n_classes,
                 input_order=input_order,
                 conv_mode=conv_mode,
+                dine_size=dine_size,
+                repa_size=repa_size,
+                repa_zoom=repa_zoom,
                 hidden_dim=hidden_dim,
                 init_weights=init_weights,
+                use_freesurfer=use_freesurfer,
                 cachedir=cachedir)
 
     class SphericalGVGGBase(SphericalGVGG):

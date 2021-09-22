@@ -82,7 +82,7 @@ Where to start
 ==============
 
 Examples are available in the
-`gallery <https://surfify.readthedocs.io/en/latest/auto_gallery/gallery.html>`_.
+`gallery <https://surfify.readthedocs.io/en/latest/auto_gallery/index.html>`_.
 You can also refer to the
 `API documentation <https://surfify.readthedocs.io/en/latest/generated/documentation.html>`_.
 

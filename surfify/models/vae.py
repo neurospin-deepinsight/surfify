@@ -94,13 +94,11 @@ class SphericalVAE(SphericalBase):
 
         # define the encoder
         self.enc_left_conv = self.sconv(
-            in_feats=input_channels,
-            out_feats=int(self.conv_flts[0] / 2),
-            neigh_indices=self.ico[self.input_order].conv_neighbor_indices)
+            input_channels, int(self.conv_flts[0] / 2),
+            self.ico[self.input_order].conv_neighbor_indices)
         self.enc_right_conv = self.sconv(
-            in_feats=input_channels,
-            out_feats=int(self.conv_flts[0] / 2),
-            neigh_indices=self.ico[self.input_order].conv_neighbor_indices)
+            input_channels, int(self.conv_flts[0] / 2),
+            self.ico[self.input_order].conv_neighbor_indices)
         self.enc_w_conv = nn.Sequential()
         for idx in range(1, self.n_layers):
             order = self.input_order - idx
@@ -110,9 +108,8 @@ class SphericalVAE(SphericalBase):
                 pooling_type="mean")
             self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
             conv = self.sconv(
-                in_feats=self.conv_flts[idx - 1],
-                out_feats=self.conv_flts[idx],
-                neigh_indices=self.ico[order].conv_neighbor_indices)
+                self.conv_flts[idx - 1], self.conv_flts[idx],
+                self.ico[order].conv_neighbor_indices)
             self.enc_w_conv.add_module("down_{0}".format(idx), conv)
         self.enc_w_dense = nn.Linear(self.top_final, self.latent_dim * 2)
 
