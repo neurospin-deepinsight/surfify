@@ -74,4 +74,5 @@ REQUIRES = [
     "matplotlib>=3.3.1",
     "torch>=1.8.1",
     "torchvision>=0.9.1",
+    "nilearn>=0.8.0"
 ]

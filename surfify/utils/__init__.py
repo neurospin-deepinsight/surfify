@@ -19,7 +19,8 @@ from .sampling import (
     number_of_ico_vertices, order_of_ico_from_vertices,
     get_rectangular_projection, icosahedron_fs,
     downsample_ico, downsample_data, MeshProjector, recursively_find_neighbors)
-from .coord import cart2sph, sph2cart, text2grid, grid2text
+from .coord import (
+    cart2sph, sph2cart, text2grid, grid2text, ico2ico, texture2ico)
 
 
 # Global parameters

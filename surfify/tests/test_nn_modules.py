@@ -115,13 +115,11 @@ class TestNNModules(unittest.TestCase):
     def test_dine_conv(self):
         """ Test IcoDiNeConv module.
         """
-        for n_ring in (1, 2):
-            module = IcoDiNeConv(
-                in_feats=4, out_feats=4, neigh_indices=self.neighbor_indices,
-                n_ring=n_ring)
-            x = module(self.ico3_tensor)
-            self.assertTrue(x.shape[1] == self.ico3_tensor.shape[1])
-            self.assertTrue(x.shape[2] == len(self.ico3_vertices))
+        module = IcoDiNeConv(
+            in_feats=4, out_feats=4, neigh_indices=self.neighbor_indices)
+        x = module(self.ico3_tensor)
+        self.assertTrue(x.shape[1] == self.ico3_tensor.shape[1])
+        self.assertTrue(x.shape[2] == len(self.ico3_vertices))
 
     def test_repa_conv(self):
         """ Test IcoRePaConv module.

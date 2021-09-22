@@ -22,7 +22,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 def plot_trisurf(vertices, triangles, texture=None, vmin=None,
                  vmax=None, colorbar=True, fig=None, ax=None,
-                 is_label=False, alpha=1):
+                 is_label=False, alpha=1, edgecolors="black"):
     """ Display a triangular surface.
 
     Parameters
@@ -69,14 +69,11 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
     if texture is not None:
         norm = colors.Normalize(vmin=0, vmax=vmax, clip=False)
         facecolors = cm.coolwarm(norm(texture))
-        edgecolor = "black"
-        if alpha < 1:
-            edgecolor = "white"
         polygon = Poly3DCollection(triangle_vertices, facecolors=facecolors,
-                                   edgecolors=edgecolor, alpha=alpha)
+                                   edgecolors=edgecolors, alpha=alpha)
     else:
         polygon = Poly3DCollection(triangle_vertices, facecolors="white",
-                                   edgecolors="black", alpha=0.1)
+                                   edgecolors=edgecolors, alpha=0.1)
     ax.add_collection3d(polygon)
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)

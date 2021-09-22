@@ -8,10 +8,8 @@
 ##########################################################################
 
 """
-Suface dedicated modules.
+Common losses.
 """
 
-from .modules import (
-    IcoSpMaConv, IcoRePaConv, IcoDiNeConv, IcoPool, IcoUpConv,
-    IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample, IcoMaxIndexUpSample,
-    IcoSpMaConvTranspose)
+# Imports
+from .vae import SphericalVAELoss

@@ -16,8 +16,8 @@ class SphericalAugmentation(object):
     neighbors: dict
         neighbors of each vertex
     """
-    def __init__(self, cachedir, vertices, triangles):
-        memory = Memory(cachedir)
+    def __init__(self, cachedir, vertices, triangles, verbose=False):
+        memory = Memory(cachedir, verbose=int(verbose))
         cached_neighbors = memory.cache(neighbors)
         self.vertices = vertices
         self.triangles = triangles
@@ -40,9 +40,9 @@ class SphericalRotation(SphericalAugmentation):
     projector: surfify.utils.MeshProjector
         projector to project back onto the original icosahedron
     """
-    def __init__(self, cachedir, vertices, triangles, angles=(5, 0, 0),
-                 compute_bary=False):
-        super().__init__(cachedir, vertices, triangles)
+    def __init__(self, cachedir, vertices, triangles, verbose=False,
+                 angles=(5, 0, 0), compute_bary=False):
+        super().__init__(cachedir, vertices, triangles, verbose)
         self.rotation = Rotation.from_euler('xyz', angles, degrees=True)
         self.rotated_vertices = self.rotation.apply(vertices)
         self.projector = MeshProjector(vertices, self.rotated_vertices,
@@ -67,9 +67,9 @@ class SphericalRandomCut(SphericalAugmentation):
     cut_value: float
         value to replace to original values with on the icosahedron
     """
-    def __init__(self, cachedir, vertices, triangles, cut_size=3, n_cut=1,
-                 cut_value=0):
-        super().__init__(cachedir, vertices, triangles)
+    def __init__(self, cachedir, vertices, triangles, verbose=False,
+                 cut_size=3, n_cut=1, cut_value=0):
+        super().__init__(cachedir, vertices, triangles, verbose)
         self.cut_size = cut_size
         self.n_cut = n_cut
         self.cut_value = cut_value
