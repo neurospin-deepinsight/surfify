@@ -16,17 +16,14 @@ from mpl_toolkits.mplot3d import axes3d
 from surfify.plotting import plot_trisurf
 from surfify.utils import icosahedron, ico2ico
 
-# It will create a "nilearn_data" folder inyour home directory if not existing
-data_path = os.path.join(os.environ["HOME"], "nilearn_data")
-
 order = 3
 
-# We first build the reference icosahedron. Its values lie between -1 and 1
-vertices_norm, triangles_norm = icosahedron(order)
+# We first build the reference icosahedron
+vertices_norm, triangles_norm = icosahedron(order, standard_ico=True)
 print(vertices_norm.shape, triangles_norm.shape)
 
 # Then we fetch freesurfer's icosahedron of the same order
-vertices, triangles = icosahedron(order, True, data_path)
+vertices, triangles = icosahedron(order)
 print(vertices.shape, triangles.shape)
 
 # We try to find the optimal rotation between the icosahedron
@@ -58,7 +55,6 @@ plot_trisurf(vertices, triangles, fig=fig, ax=ax, alpha=0.3,
 # each other in each icosahedron (for instance they have the same absolute
 # values, only sign differs, for each dimension).
 # The 4 firsts work for the reference icosahedron
-
 vertices_of_interest_norm = vertices_norm[:4]
 
 # Now we search for 4 similar vertices in the fs icosahedron
@@ -105,8 +101,8 @@ fig, ax = plt.subplots(1, 1, subplot_kw={
         "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
 plot_trisurf(vertices_norm, triangles_norm, fig=fig, ax=ax, alpha=0.3,
              edgecolors="blue")
-plot_trisurf(best_rotation.apply(vertices), triangles, fig=fig, ax=ax, alpha=0.3,
-             edgecolors="green")
+plot_trisurf(best_rotation.apply(vertices), triangles, fig=fig, ax=ax,
+             alpha=0.3, edgecolors="green")
 
 # To easily solve this issue outlined in this example, you can find two
 # functions in the module utils of surfify. ico2ico allows you to find a
@@ -118,14 +114,15 @@ plot_trisurf(best_rotation.apply(vertices), triangles, fig=fig, ax=ax, alpha=0.3
 # icosahedron for instance, you simply need to use the original icosahedron
 # as reference
 
-# Here you can see how to use ico2ico
+# Here you can see how to use ico2ico. We also plot only half of the triangles
+# of each icosahedron so it clearly appears that they are the same
 rotation = ico2ico(vertices, vertices_norm)
 
 fig, ax = plt.subplots(1, 1, subplot_kw={
         "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
-plot_trisurf(vertices_norm, triangles_norm, fig=fig, ax=ax, alpha=0.3,
+plot_trisurf(vertices_norm, triangles_norm[::2], fig=fig, ax=ax, alpha=0.3,
              edgecolors="blue")
-plot_trisurf(rotation.apply(vertices), triangles, fig=fig, ax=ax, alpha=0.3,
-             edgecolors="green")
+plot_trisurf(rotation.apply(vertices), triangles[::2], fig=fig, ax=ax,
+             alpha=0.3, edgecolors="green")
 
 plt.show()

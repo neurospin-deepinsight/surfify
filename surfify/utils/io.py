@@ -13,6 +13,7 @@ Spherical i/o utilities.
 
 # Imports
 import os
+import sys
 import gzip
 import shutil
 import nibabel
@@ -121,3 +122,22 @@ def write_freesurfer(vertices, triangles, surf_file):
     nibabel.freesurfer.io.write_geometry(surf_file, vertices, triangles,
                                          create_stamp="",
                                          volume_info=None)
+
+
+class HidePrints:
+    def __init__(self, hide_all=False):
+        self.hide_all = hide_all
+
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, 'w')
+        if self.hide_all:
+            self._original_stderr = sys.stderr
+            sys.stderr = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        if self.hide_all:
+            sys.stderr.close()
+            sys.stderr = self._original_stderr

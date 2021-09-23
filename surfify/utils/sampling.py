@@ -10,16 +10,69 @@
 """
 Spherical sampling & associated utilities.
 """
-
 # Imports
 import os
+import sys
+import time
+import shutil
+import contextlib
 import collections
 import numpy as np
+from numpy.core.numeric import array_equal
 from joblib import Memory
 from sklearn.neighbors import BallTree
 import networkx as nx
 from nilearn.surface import load_surf_mesh
 from nilearn.datasets import fetch_surf_fsaverage
+
+from .io import HidePrints
+
+
+def normalize(vertex):
+    """ Return vertex coordinates fixed to the unit sphere.
+    """
+    x, y, z = vertex
+    length = np.sqrt(x**2 + y**2 + z**2)
+    return [idx / length for idx in (x, y, z)]
+
+
+R = (1 + np.sqrt(5)) / 2
+STANDARD_ICO = {
+    "vertices": [
+        normalize([-1, R, 0]),
+        normalize([1, R, 0]),
+        normalize([-1, -R, 0]),
+        normalize([1, -R, 0]),
+        normalize([0, -1, R]),
+        normalize([0, 1, R]),
+        normalize([0, -1, -R]),
+        normalize([0, 1, -R]),
+        normalize([R, 0, -1]),
+        normalize([R, 0, 1]),
+        normalize([-R, 0, -1]),
+        normalize([-R, 0, 1])],
+    "triangles": [
+        [0, 11, 5],
+        [0, 5, 1],
+        [0, 1, 7],
+        [0, 7, 10],
+        [0, 10, 11],
+        [1, 5, 9],
+        [5, 11, 4],
+        [11, 10, 2],
+        [10, 7, 6],
+        [7, 1, 8],
+        [3, 9, 4],
+        [3, 4, 2],
+        [3, 2, 6],
+        [3, 6, 8],
+        [3, 8, 9],
+        [4, 9, 5],
+        [2, 4, 11],
+        [6, 2, 10],
+        [8, 6, 7],
+        [9, 8, 1]]
+}
 
 
 def interpolate(vertices, target_vertices, target_triangles):
@@ -315,44 +368,44 @@ def downsample_data(data, down_indices, neighs, aggregation=None):
     return data.transpose(0, 2, 1).squeeze()
 
 
-def downsample_ico(coordinates, triangles, by=1, new_coordinates=None):
+def downsample_ico(vertices, triangles, by=1, new_vertices=None):
     """ Downsample an icosahedron to one with a smaller order
 
     Parameters
     ----------
-    coordinates: array (N, 3)
-        coordinates of the icosahedron to reduce
+    vertices: array (N, 3)
+        vertices of the icosahedron to reduce
     triangles: array (N, 3)
         triangles of the icosahedron to reduce
     by: int, default 1
         number of orders to reduce the icosahedron by
-    new_coordinates: list or None, default None
-        list of the coordinates of each lower order icosahedron, of
+    new_vertices: list or None, default None
+        list of the vertices of each lower order icosahedron, of
         length by. If not provided the default is to take the first
-        coordinates of the higher order icosahedron as new coordinates
+        vertices of the higher order icosahedron as new vertices
         for the lower order one
 
     Returns
     -------
-    new_coordinates: array (N, 3)
+    new_vertices: array (N, 3)
         vertices of the newly downsampled icosahedorn
     new_triangles: array (N, 3)
         triangles of the newly downsampled icosahedron
     """
-    assert new_coordinates is None \
-        or type(new_coordinates) is list and len(new_coordinates) == by
+    assert new_vertices is None \
+        or type(new_vertices) is list and len(new_vertices) == by
 
     for i in range(by):
-        former_order = order_of_ico_from_vertices(len(coordinates))
+        former_order = order_of_ico_from_vertices(len(vertices))
         next_n_vertices = number_of_ico_vertices(former_order - 1)
-        if new_coordinates is None:
-            new_coordinate = coordinates[:next_n_vertices]
+        if new_vertices is None:
+            new_vertice = vertices[:next_n_vertices]
         else:
-            new_coordinate = new_coordinates[i]
+            new_vertice = new_vertices[i]
 
         new_triangles = []
-        down_indices = downsample(coordinates, new_coordinate)
-        old_neighbors = neighbors(coordinates, triangles, direct_neighbor=True)
+        down_indices = downsample(vertices, new_vertice)
+        old_neighbors = neighbors(vertices, triangles, direct_neighbor=True)
         old_neighbors = np.array(list(old_neighbors.values()))
         for i, downer in enumerate(down_indices):
             for j, neigh in enumerate(old_neighbors[downer]):
@@ -380,9 +433,9 @@ def downsample_ico(coordinates, triangles, by=1, new_coordinates=None):
                        len(candidate) == 3:
                         new_triangles.append(set(candidate))
         new_triangles = np.array([list(tri) for tri in new_triangles])
-        coordinates = new_coordinate
+        vertices = new_vertice
         triangles = new_triangles
-    return new_coordinate, new_triangles
+    return new_vertice, new_triangles
 
 
 def neighbors_rec(vertices, triangles, size=5, zoom=5):
@@ -503,7 +556,7 @@ def get_rectangular_projection(node, size=5, zoom=5):
     return grid_in_sphere, grid_in_tplane
 
 
-def icosahedron_fs(hemi, path, order=7):
+def icosahedron_fs(hemi, path, order=7, verbose=True):
     """ Loads the freesurfer icosahedron mesh of any order for the right
     hemishpere. If the file associated to the order does not exist, it
     builds the icosahedron by downsampling the icosahedron with the lowest
@@ -528,45 +581,56 @@ def icosahedron_fs(hemi, path, order=7):
     """
     assert hemi in ["rh", "lh", "right", "left"]
 
-    surf_name = "fsaverage{0}".format("" if order == 7 else order)
+    surf_name = "fsaverage{0}".format(order)
     last_order = order
     error = True
-    while error and last_order < 7:
+    while error and last_order < 8:
         try:
-            fsaverage = fetch_surf_fsaverage(
-                mesh=surf_name, data_dir=path)
-        except:
+            if verbose:
+                fsaverage = fetch_surf_fsaverage(
+                    mesh=surf_name, data_dir=path)
+            else:
+                with HidePrints(hide_all=True):
+                    fsaverage = fetch_surf_fsaverage(
+                        mesh=surf_name, data_dir=path)
+        except ValueError as e:
             last_order += 1
             error = True
-            surf_name = "fsaverage{0}".format(
-                "" if last_order == 7 else last_order)
+            surf_name = "fsaverage{0}".format(last_order)
             continue
         error = False
-
     hemi = "right" if hemi == "rh" else "left" if hemi == "lh" else hemi
-    vertices, triangles = load_surf_mesh(fsaverage["sphere_{}".format(hemi)])
+    if verbose:
+        vertices, triangles = load_surf_mesh(
+            fsaverage["sphere_{}".format(hemi)])
+    else:
+        with HidePrints(hide_all=True):
+            vertices, triangles = load_surf_mesh(
+                fsaverage["sphere_{}".format(hemi)])
     if last_order != order:
         vertices, triangles = downsample_ico(
             vertices, triangles, by=last_order-order)
-    return vertices, triangles
+
+    # Freesurfer coordinates are between -100 and 100, we rather work with
+    # coordinates between -1 and 1
+    return vertices / 100, triangles
 
 
-def icosahedron(order=3, use_freesurfer=False, freesurfer_root=None):
+def icosahedron(order=3, path=None, standard_ico=False, verbose=False):
     """ Define an icosahedron mesh of any order.
-
-    Notes
-    -----
-    When using FreeSurfer tesselations only icosahedron of order 2, 4, 5, 6
-    or 7 are available.
 
     Parameters
     ----------
     order: int, default 3
         the icosahedron order.
-    use_freesurfer: bool, default False
-        optionaly use FreeSurfer tesselation.
-    freesurfer_root: str, default None
-        the location where the fsaverage template will be downloaded.
+    path: string, default None
+        path to store icosahedron data. If None, it will store it where
+        nilearn stores the data by default : in your home directory
+    standard_ico: bool, default False
+        if True, uses a standard icosahedron tessalation. Uses FreeSurfer
+        tessalation by default
+   verbose: bool, default False
+        wether to print nilearn data fetching outputs
 
     Returns
     -------
@@ -575,50 +639,11 @@ def icosahedron(order=3, use_freesurfer=False, freesurfer_root=None):
     triangles: array (N, 3)
         the icosahedron triangles.
     """
-    if use_freesurfer:
-        vertices, triangles = icosahedron_fs("left", freesurfer_root, order)
-        right_vertices, _ = icosahedron_fs("right", freesurfer_root, order)
-        assert np.allclose(vertices, right_vertices)
-        # Freesurfer coordinates are between -100 and 100, we rather work with
-        # coordinates between -1 and 1
-        vertices /= 100
-    else:
+    if standard_ico:
+        vertices = STANDARD_ICO["vertices"]
+        triangles = STANDARD_ICO["triangles"]
         middle_point_cache = {}
-        r = (1 + np.sqrt(5)) / 2
-        vertices = [
-            normalize([-1, r, 0]),
-            normalize([1, r, 0]),
-            normalize([-1, -r, 0]),
-            normalize([1, -r, 0]),
-            normalize([0, -1, r]),
-            normalize([0, 1, r]),
-            normalize([0, -1, -r]),
-            normalize([0, 1, -r]),
-            normalize([r, 0, -1]),
-            normalize([r, 0, 1]),
-            normalize([-r, 0, -1]),
-            normalize([-r, 0, 1])]
-        triangles = [
-            [0, 11, 5],
-            [0, 5, 1],
-            [0, 1, 7],
-            [0, 7, 10],
-            [0, 10, 11],
-            [1, 5, 9],
-            [5, 11, 4],
-            [11, 10, 2],
-            [10, 7, 6],
-            [7, 1, 8],
-            [3, 9, 4],
-            [3, 4, 2],
-            [3, 2, 6],
-            [3, 6, 8],
-            [3, 8, 9],
-            [4, 9, 5],
-            [2, 4, 11],
-            [6, 2, 10],
-            [8, 6, 7],
-            [9, 8, 1]]
+
         for idx in range(order):
             subdiv = []
             for tri in triangles:
@@ -632,16 +657,10 @@ def icosahedron(order=3, use_freesurfer=False, freesurfer_root=None):
             triangles = subdiv
         vertices = np.asarray(vertices)
         triangles = np.asarray(triangles)
+    else:
+        vertices, triangles = icosahedron_fs("left", path, order, verbose)
 
     return vertices, triangles
-
-
-def normalize(vertex):
-    """ Return vertex coordinates fixed to the unit sphere.
-    """
-    x, y, z = vertex
-    length = np.sqrt(x**2 + y**2 + z**2)
-    return [idx / length for idx in (x, y, z)]
 
 
 def middle_point(point_1, point_2, vertices, middle_point_cache):
