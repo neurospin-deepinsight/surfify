@@ -12,6 +12,7 @@ import unittest
 import torch
 from surfify.models import SphericalUNet
 from surfify.datasets import make_classification
+from surfify.utils import icosahedron
 
 
 class TestModelsUNet(unittest.TestCase):
@@ -21,13 +22,14 @@ class TestModelsUNet(unittest.TestCase):
         """ Setup test.
         """
         self.order = 3
+        self.vertices, _ = icosahedron(self.order)
         self.n_classes = 2
         self.depth = 2
         self.start_filts = 8
         self.conv_modes = ["1ring", "2ring", "repa"]
         self.up_modes = ["interp", "transpose", "maxpad", "zeropad"]
         self.X, self.y = make_classification(
-            self.order, n_samples=40, n_classes=self.n_classes, scale=1,
+            self.vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         self.X = torch.from_numpy(self.X)
         self.y = torch.from_numpy(self.y)

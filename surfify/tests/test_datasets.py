@@ -11,6 +11,7 @@
 import unittest
 from torch.utils.data import DataLoader
 from surfify.datasets import ClassificationDataset
+from surfify.utils import icosahedron
 
 
 class TestDatasets(unittest.TestCase):
@@ -19,7 +20,7 @@ class TestDatasets(unittest.TestCase):
     def setUp(self):
         """ Setup test.
         """
-        self.ico_order = 2
+        self.vertices, _ = icosahedron(2)
         self.n_classes = 3
         self.batch_size = 5
 
@@ -32,7 +33,7 @@ class TestDatasets(unittest.TestCase):
         """ Test ClassificationDataset dataset.
         """
         dataset = ClassificationDataset(
-            self.ico_order, n_samples=40, n_classes=self.n_classes, scale=1,
+            self.vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
         X, y = next(iter(loader))
