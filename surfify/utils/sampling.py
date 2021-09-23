@@ -11,14 +11,8 @@
 Spherical sampling & associated utilities.
 """
 # Imports
-import os
-import sys
-import time
-import shutil
-import contextlib
 import collections
 import numpy as np
-from numpy.core.numeric import array_equal
 from joblib import Memory
 from sklearn.neighbors import BallTree
 import networkx as nx
@@ -557,11 +551,11 @@ def get_rectangular_projection(node, size=5, zoom=5):
 
 
 def icosahedron_fs(hemi, path, order=7, verbose=True):
-    """ Loads the freesurfer icosahedron mesh of any order for the right
+    """ Loads the freesurfer icosahedron mesh of any order for a given
     hemishpere. If the file associated to the order does not exist, it
     builds the icosahedron by downsampling the icosahedron with the lowest
-    order that is of higher order than the one desired, and for which we
-    have the file
+    order that is of higher order than the one desired, and for which the
+    file exists
 
     Parameters
     ----------
@@ -576,7 +570,7 @@ def icosahedron_fs(hemi, path, order=7, verbose=True):
     -------
     vertices: array (N, 3)
         the icosahedron vertices.
-    triangles: array (N, 3)
+    triangles: array (M, 3)
         the icosahedron triangles.
     """
     assert hemi in ["rh", "lh", "right", "left"]
@@ -636,7 +630,7 @@ def icosahedron(order=3, path=None, standard_ico=False, verbose=False):
     -------
     vertices: array (N, 3)
         the icosahedron vertices.
-    triangles: array (N, 3)
+    triangles: array (M, 3)
         the icosahedron triangles.
     """
     if standard_ico:
@@ -644,7 +638,7 @@ def icosahedron(order=3, path=None, standard_ico=False, verbose=False):
         triangles = STANDARD_ICO["triangles"]
         middle_point_cache = {}
 
-        for idx in range(order):
+        for _ in range(order):
             subdiv = []
             for tri in triangles:
                 v1 = middle_point(tri[0], tri[1], vertices, middle_point_cache)
