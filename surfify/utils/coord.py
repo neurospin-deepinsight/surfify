@@ -184,8 +184,53 @@ def ico2ico(vertices, ref_vertices):
             best_rotation = rotation
     if it == n_permutations and best_rmse > 0:
         warnings.warn(
-            "A proper mapping between the two icosahedrons could not be find")
+            "A proper mapping between the two icosahedrons could not be find."
+            " The closest rotation has {} rmse".format(rmse))
     return best_rotation
+
+
+def find_corresponding_order(array, ref_array, tol=1e-4, axis=0):
+    """ Find corresponding order of row between two array
+    Raises an error if arrays are not the same up to a permutation
+
+    Parameters
+    ----------
+    array: array (N, )
+        the array to find the corresponding order for
+    ref_array: array (N, )
+        the reference array on which the order is base
+    axis: int
+        axis along which to compute the permutating order
+    tol: float, default 1e-4
+        tolerance for matching the values
+
+    Returns
+    -------
+    new_order: array (N)
+        the index corresponding to the ordering to match the first array
+        with the second one
+    """
+    # Find the corresponding ordering
+    array = np.asarray(array)
+    ref_array = np.asarray(ref_array)
+    if not np.array_equal(array.shape, ref_array.shape):
+        raise ValueError("The arrays must be permuted versions of each other,"
+                         " but these do not have the same shape")
+    new_order = []
+    other_dims = list(range(array.ndim))
+    other_dims.remove(axis)
+    other_dims = tuple(other_dims)
+    for i in range(len(array)):
+        dims = list(range(array.ndim))
+        dims.remove(axis)
+        idx = np.where(
+            np.isclose(array, np.take(ref_array, i, axis=axis), atol=tol).all(
+                other_dims))[0]
+        if len(idx) != 1:
+            raise ValueError("An element in the reference array was found 0"
+                             " or more than 1 time in the other one")
+        new_order.append(idx[0])
+    return new_order
 
 
 def texture2ico(texture, vertices, ref_vertices):
@@ -206,13 +251,10 @@ def texture2ico(texture, vertices, ref_vertices):
         the texture projected on the reference icosahedron
     """
     rotation = ico2ico(vertices, ref_vertices)
+    print(rotation.as_matrix())
 
     # Find the corresponding ordering
-    vertices = rotation.apply(vertices)
-    new_order = []
-    for i in range(len(vertices)):
-        idx = np.where(
-            np.isclose(vertices, ref_vertices[i], atol=1e-4).all(1))[0]
-        assert len(idx) == 1
-        new_order.append(idx[0])
+    new_vertices = rotation.apply(vertices)
+    new_order = find_corresponding_order(new_vertices, ref_vertices)
+
     return texture[new_order]

@@ -362,6 +362,71 @@ def downsample_data(data, down_indices, neighs, aggregation=None):
     return data.transpose(0, 2, 1).squeeze()
 
 
+def wrapper_data_downsampler(cachedir, from_order=7, to_order=6,
+                             standard_ico=False, aggregation=None):
+    """ Wrapper function to instatiate a fast data downsampler
+    Initializes all the objects a data downsampler can require
+
+    Parameters
+    ----------
+    cachedir: string
+        path to store the objects
+    from_order: int, default 7
+        order of the icosahedron on which is represented the data
+    to_order: int, default 6
+        order of the icosahedron to which we want to downsample the data
+    standard_ico: bool, default False
+        optionally uses surfify tesselation
+    aggregation: string, default None
+        aggregation strategy over the higher order neighborhoods: 'mean',
+        'median, 'max', 'min', 'sum' or None
+
+    Returns
+    -------
+    donwsampler: DownSampler instance
+        instance of the downsampler. By calling it with the data, returns
+        the data downsampled
+    """
+    assert from_order >= to_order
+    assert int(from_order) == from_order and from_order >= 0\
+        and from_order <= 7
+    assert int(to_order) == to_order and to_order >= 0
+
+    vertices, triangles = [], []
+    for i in range(from_order, to_order-1, -1):
+        new_vertices, new_triangles = icosahedron(
+            i, standard_ico=standard_ico, path=cachedir)
+        vertices.append(new_vertices)
+        triangles.append(new_triangles)
+    memory = Memory(cachedir, verbose=0)
+
+    cached_neighbors = memory.cache(neighbors)
+    neighs = []
+    if aggregation is not None:
+        for i in range(from_order-to_order):
+            new_neighs = cached_neighbors(
+                vertices[i], triangles[i], direct_neighbor=True)
+            new_neighs = np.array(list(new_neighs.values()))
+            neighs.append(new_neighs)
+
+    down_indices = []
+    for i in range(from_order-to_order):
+        down_indices.append(downsample(vertices[i], vertices[i+1]))
+
+    class Downsampler:
+        def __init__(self):
+            self.from_order = from_order
+            self.to_order = to_order
+            self.down_indices = down_indices
+            self.neighs = neighs
+            self.aggregation = aggregation
+
+        def __call__(self, data):
+            return downsample_data(data, self.down_indices,
+                                   self.neighs, self.aggregation)
+    return Downsampler()
+
+
 def downsample_ico(vertices, triangles, by=1, new_vertices=None):
     """ Downsample an icosahedron to one with a smaller order
 
