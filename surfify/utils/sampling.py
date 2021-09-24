@@ -634,10 +634,9 @@ def icosahedron(order=3, path=None, standard_ico=False, verbose=False):
         the icosahedron triangles.
     """
     if standard_ico:
-        vertices = STANDARD_ICO["vertices"]
-        triangles = STANDARD_ICO["triangles"]
+        vertices = STANDARD_ICO["vertices"].copy()
+        triangles = STANDARD_ICO["triangles"].copy()
         middle_point_cache = {}
-
         for _ in range(order):
             subdiv = []
             for tri in triangles:

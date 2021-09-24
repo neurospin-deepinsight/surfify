@@ -12,27 +12,22 @@ The spherical UNet architecture.
 """
 
 # Imports
-from collections import namedtuple
 import numpy as np
 import torch
 import torch.nn as nn
 from joblib import Memory
-from ..utils import (
-    icosahedron, neighbors, number_of_ico_vertices, downsample, interpolate,
-    neighbors_rec, get_logger, debug_msg)
+from ..utils import number_of_ico_vertices, get_logger, debug_msg
 from ..nn import (
     IcoUpConv, IcoMaxIndexUpSample, IcoFixIndexUpSample, IcoUpSample, IcoPool,
-    IcoDiNeConv, IcoRePaConv)
+    IcoSpMaConv, IcoSpMaConvTranspose)
+from .base import SphericalBase
 
 
 # Global parameters
 logger = get_logger()
-Ico = namedtuple("Ico", ["order", "vertices", "triangles", "neighbor_indices",
-                         "down_indices", "up_indices",
-                         "conv_neighbor_indices"])
 
 
-class SphericalUNet(nn.Module):
+class SphericalUNet(SphericalBase):
     """ The Spherical U-Net architecture.
 
     The architecture is built upon specific spherical surface convolution,
@@ -55,8 +50,7 @@ class SphericalUNet(nn.Module):
 
     See Also
     --------
-    IcoUpConv, IcoGenericUpConv, IcoUpSample, IcoFixIndexUpSample,
-    IcoMaxIndexUpSample, IcoRePaConv, IcoDiNeConv, IcoPool
+    SphericalGUNet
 
     Examples
     --------
@@ -66,18 +60,20 @@ class SphericalUNet(nn.Module):
     >>> vertices, triangles = icosahedron(order=2)
     >>> model = SphericalUNet(
             in_order=2, in_channels=2, out_channels=4, depth=2,
-            start_filts=8, conv_mode="1ring", up_mode="interp")
+            start_filts=8, conv_mode="DiNe", dine_size=1, up_mode="interp",
+            standard_ico=False)
     >>> x = torch.zeros((10, 2, len(vertices)))
     >>> out = model(x)
     >>> out.shape
 
     References
     ----------
-    .. [1] Zhao F, et al., Spherical U-Net on Cortical Surfaces: Methods and
-       Applications, IPMI, 2019.
+    Zhao F, et al., Spherical U-Net on Cortical Surfaces: Methods and
+    Applications, IPMI, 2019.
     """
     def __init__(self, in_order, in_channels, out_channels, depth=5,
-                 start_filts=32, conv_mode="1ring", up_mode="interp",
+                 start_filts=32, conv_mode="DiNe", dine_size=1, repa_size=5,
+                 repa_zoom=5, up_mode="interp", standard_ico=False,
                  cachedir=None):
         """ Init SphericalUNet.
 
@@ -93,85 +89,43 @@ class SphericalUNet(nn.Module):
             number of layers in the UNet.
         start_filts: int, default 32
             number of convolutional filters for the first conv.
-        conv_mode: str, default '1ring'
-            the size of the spherical convolution filter: '1ring' or '2ring'.
-            Can also use rectangular grid projection: 'repa'.
+        conv_mode: str, default 'DiNe'
+            use either 'RePa' - Rectangular Patch convolution method or 'DiNe'
+            - 1 ring Direct Neighbor convolution method..
+        dine_size: int, default 1
+            the size of the spherical convolution filter, ie. the number of
+            neighbor rings to be considered.
+        repa_size: int, default 5
+            the size of the rectangular grid in the tangent space.
+        repa_zoom: int, default 5
+            a multiplicative factor applied to the rectangular grid in the
+            tangent space.
         up_mode: str, default 'interp'
             type of upsampling: 'transpose' for transpose
             convolution (1 ring), 'interp' for nearest neighbor linear
             interpolation, 'maxpad' for max pooling shifted zero padding,
             and 'zeropad' for classical zero padding.
+        standard_ico: bool, default False
+            optionaly use surfify tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
         logger.debug("SphericalUNet init...")
-        super(SphericalUNet, self).__init__()
+        super(SphericalUNet, self).__init__(
+            input_order=in_order, n_layers=depth,
+            conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
+            repa_zoom=repa_zoom, standard_ico=standard_ico,
+            cachedir=cachedir)
         self.memory = Memory(cachedir, verbose=0)
         self.in_order = in_order
         self.depth = depth
-        self.conv_mode = conv_mode
         self.in_vertices = number_of_ico_vertices(order=in_order)
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.up_mode = up_mode
-        self.ico = {}
-        icosahedron_cached = self.memory.cache(icosahedron)
-        neighbors_cached = self.memory.cache(neighbors)
-        neighbors_rec_cached = self.memory.cache(neighbors_rec)
-        for order in range(1, in_order + 1):
-            vertices, triangles = icosahedron_cached(order=order)
-            logger.debug("- ico {0}: verts {1} - tris {2}".format(
-                order, vertices.shape, triangles.shape))
-            neighs = neighbors_cached(
-                vertices, triangles, depth=1, direct_neighbor=True)
-            neighs = np.asarray(list(neighs.values()))
-            logger.debug("- neighbors {0}: {1}".format(
-                order, neighs.shape))
-            if conv_mode == "1ring":
-                conv_neighs = neighs
-                logger.debug("- neighbors {0}: {1}".format(
-                    order, conv_neighs.shape))
-            elif conv_mode == "2ring":
-                conv_neighs = neighbors_cached(
-                    vertices, triangles, depth=2, direct_neighbor=True)
-                conv_neighs = np.asarray(list(conv_neighs.values()))
-                logger.debug("- neighbors {0}: {1}".format(
-                    order, conv_neighs.shape))
-            elif conv_mode == "repa":
-                conv_neighs, conv_weights, _ = neighbors_rec_cached(
-                    vertices, triangles, size=5, zoom=5)
-                logger.debug("- neighbors {0}: {1} - {2}".format(
-                    order, conv_neighs.shape, conv_weights.shape))
-                conv_neighs = (conv_neighs, conv_weights)
-            else:
-                raise ValueError("Unexptected convolution mode.")
-            self.ico[order] = Ico(
-                order=order, vertices=vertices, triangles=triangles,
-                neighbor_indices=neighs, down_indices=None, up_indices=None,
-                conv_neighbor_indices=conv_neighs)
-        downsample_cached = self.memory.cache(downsample)
-        for order in range(in_order, 1, -1):
-            down_indices = downsample_cached(
-                self.ico[order].vertices, self.ico[order - 1].vertices)
-            logger.debug("- down {0}: {1}".format(order, down_indices.shape))
-            self.ico[order] = self.ico[order]._replace(
-                down_indices=down_indices)
-        interpolate_cached = self.memory.cache(interpolate)
-        for order in range(1, in_order):
-            up_indices = interpolate_cached(
-                self.ico[order].vertices, self.ico[order + 1].vertices,
-                self.ico[order + 1].triangles)
-            up_indices = np.asarray(list(up_indices.values()))
-            logger.debug("- up {0}: {1}".format(order, up_indices.shape))
-            self.ico[order] = self.ico[order]._replace(
-                up_indices=up_indices)
         self.filts = [in_channels] + [
             start_filts * 2 ** idx for idx in range(depth)]
         logger.debug("- filters: {0}".format(self.filts))
-        if conv_mode == "repa":
-            self.sconv = IcoRePaConv
-        else:
-            self.sconv = IcoDiNeConv
 
         for idx in range(depth):
             order = self.in_order - idx
@@ -290,7 +244,7 @@ class DownBlock(nn.Module):
         if not first:
             self.pooling = IcoPool(
                 down_neigh_indices, down_indices, pool_mode)
-        self.block = nn.Sequential(
+        self.double_conv = nn.Sequential(
             conv_layer(in_ch, out_ch, conv_neigh_indices),
             nn.BatchNorm1d(out_ch, momentum=0.15, affine=True,
                            track_running_stats=False),
@@ -312,7 +266,7 @@ class DownBlock(nn.Module):
             if max_pool_indices is not None:
                 logger.debug(debug_msg("max pooling indices",
                                        max_pool_indices))
-        x = self.block(x)
+        x = self.double_conv(x)
         logger.debug(debug_msg("output", x))
         return x, max_pool_indices
 
@@ -381,6 +335,199 @@ class UpBlock(nn.Module):
             x1 = self.up(x1, max_pool_indices)
         else:
             x1 = self.up(x1)
+        logger.debug(debug_msg("upsampling", x1))
+        x = torch.cat((x1, x2), 1)
+        logger.debug(debug_msg("cat", x))
+        x = self.double_conv(x)
+        logger.debug(debug_msg("output", x))
+        return x
+
+
+class SphericalGUNet(nn.Module):
+    """ The Spherical Grided U-Net architecture.
+
+    The architecture is built upon specific spherical surface convolution,
+    pooling, and transposed convolution modules. It has an encoder path and
+    a decoder path, with a user-defined resolution steps. Different from the
+    standard U-Net, all 3×3 convolution are replaced with the SpMa
+    convolution.
+    In addition to the standard U-Net, before each convolution layer’s
+    rectified linear units (ReLU) activation function, a batch normalization
+    layer is added. The number of feature channels are double after each
+    surface pooling layer and halve at each transposed convolution or up
+    sampling layer.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalUNet
+
+    References
+    ----------
+    Zhao F, et al., Spherical U-Net on Cortical Surfaces: Methods and
+    Applications, IPMI, 2019.
+    """
+    def __init__(self, in_channels, out_channels, input_dim=192, depth=5,
+                 start_filts=32):
+        """ Init SphericalUNet.
+
+        Parameters
+        ----------
+        in_channels: int
+            input features/channels.
+        out_channels: int
+            output features/channels.
+        input_dim: int, default 192
+            the size of the converted 3-D surface to the 2-D grid.
+        depth: int, default 5
+            number of layers in the UNet.
+        start_filts: int, default 32
+            number of convolutional filters for the first conv.
+        """
+        logger.debug("SphericalGUNet init...")
+        super(SphericalGUNet, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.input_dim = input_dim
+        self.depth = depth
+        self.start_filts = start_filts
+        self.filts = [in_channels] + [
+            start_filts * 2 ** idx for idx in range(depth)]
+        logger.debug("- filters: {0}".format(self.filts))
+
+        for idx in range(depth):
+            logger.debug(
+                "- DownGBlock {0}: {1} -> {2}".format(
+                    idx, self.filts[idx], self.filts[idx + 1]))
+            block = DownGBlock(
+                in_ch=self.filts[idx],
+                out_ch=self.filts[idx + 1],
+                first=(True if idx == 0 else False))
+            setattr(self, "down{0}".format(idx + 1), block)
+
+        cnt = 1
+        for idx in range(depth - 1, 0, -1):
+            logger.debug("- UpGBlock {0}: {1} -> {2}".format(
+                cnt, self.filts[idx + 1], self.filts[idx]))
+            block = UpGBlock(
+                in_ch=self.filts[idx + 1],
+                out_ch=self.filts[idx])
+            setattr(self, "up{0}".format(cnt), block)
+            cnt += 1
+
+        logger.debug("- Conv 1x1 final: {0} -> {1}".format(
+            self.filts[1], out_channels))
+        self.conv_final = nn.Conv2d(
+            self.filts[1], out_channels, kernel_size=1, groups=1, stride=1)
+
+    def forward(self, x):
+        """ Forward method.
+        """
+        logger.debug("SphericalGUNet...")
+        logger.debug(debug_msg("input", x))
+        encoder_outs = []
+        for idx in range(1, self.depth + 1):
+            down_block = getattr(self, "down{0}".format(idx))
+            logger.debug("- filter {0}: {1}".format(idx, down_block))
+            x = down_block(x)
+            encoder_outs.append(x)
+        encoder_outs = encoder_outs[::-1]
+        for idx in range(1, self.depth):
+            up_block = getattr(self, "up{0}".format(idx))
+            logger.debug("- filter {0}: {1}".format(idx, up_block))
+            x_up = encoder_outs[idx]
+            x = up_block(x, x_up)
+        x = self.conv_final(x)
+        logger.debug(debug_msg("output", x))
+        return x
+
+
+class DownGBlock(nn.Module):
+    """ Downsampling block in grided spherical UNet:
+    max pooling => (conv => BN => ReLU) * 2
+    """
+    def __init__(self, in_ch, out_ch, first=False):
+        """ Init DownGBlock.
+
+        Parameters
+        ----------
+        in_ch: int
+            input features/channels.
+        out_ch: int
+            output features/channels.
+        first: bool, default False
+            if set skip the pooling block.
+        """
+        super(DownGBlock, self).__init__()
+        self.first = first
+        if not first:
+            self.pooling = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.double_conv = nn.Sequential(
+            IcoSpMaConv(in_feats=in_ch, out_feats=out_ch, kernel_size=3,
+                        pad=1),
+            nn.BatchNorm2d(out_ch, momentum=0.15, affine=True,
+                           track_running_stats=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            IcoSpMaConv(in_feats=out_ch, out_feats=out_ch, kernel_size=3,
+                        pad=1),
+            nn.BatchNorm2d(out_ch, momentum=0.15, affine=True,
+                           track_running_stats=False),
+            nn.LeakyReLU(0.2, inplace=True))
+
+    def forward(self, x):
+        """ Forward method.
+        """
+        logger.debug("- DownGBlock")
+        logger.debug(debug_msg("input", x))
+        if not self.first:
+            x = self.pooling(x)
+            logger.debug(debug_msg("pooling", x))
+        x = self.double_conv(x)
+        logger.debug(debug_msg("output", x))
+        return x
+
+
+class UpGBlock(nn.Module):
+    """ Define the upsamping block in grided spherical UNet:
+    upconv => (conv => BN => ReLU) * 2
+    """
+    def __init__(self, in_ch, out_ch):
+        """ Init UpGBlock.
+
+        Parameters
+        ----------
+        in_ch: int
+            input features/channels.
+        out_ch: int
+            output features/channels.
+        """
+        super(UpGBlock, self).__init__()
+        self.up = IcoSpMaConvTranspose(
+            in_feats=in_ch, out_feats=out_ch, kernel_size=4, stride=2, pad=1,
+            zero_pad=3)
+        self.double_conv = nn.Sequential(
+            IcoSpMaConv(in_feats=in_ch, out_feats=out_ch, kernel_size=3,
+                        pad=1),
+            nn.BatchNorm2d(out_ch, momentum=0.15, affine=True,
+                           track_running_stats=False),
+            nn.LeakyReLU(0.2, inplace=True),
+            IcoSpMaConv(in_feats=out_ch, out_feats=out_ch, kernel_size=3,
+                        pad=1),
+            nn.BatchNorm2d(out_ch, momentum=0.15, affine=True,
+                           track_running_stats=False),
+            nn.LeakyReLU(0.2, inplace=True))
+
+    def forward(self, x1, x2):
+        """ Forward method.
+        """
+        logger.debug("- UpGBlock")
+        logger.debug(debug_msg("input", x1))
+        logger.debug(debug_msg("skip", x2))
+        x1 = self.up(x1)
         logger.debug(debug_msg("upsampling", x1))
         x = torch.cat((x1, x2), 1)
         logger.debug(debug_msg("cat", x))

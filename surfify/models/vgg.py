@@ -25,10 +25,20 @@ logger = get_logger()
 
 class SphericalVGG(SphericalBase):
     """ Spherical VGG architecture.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalGVGG
     """
     def __init__(self, input_channels, cfg, n_classes, input_order=5,
-                 conv_mode="DiNe", hidden_dim=4096, batch_norm=False,
-                 init_weights=True, cachedir=None):
+                 conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
+                 hidden_dim=4096, batch_norm=False, init_weights=True,
+                 standard_ico=False, cachedir=None):
         """ Init class.
 
         Parameters
@@ -44,6 +54,14 @@ class SphericalVGG(SphericalBase):
         conv_mode: str, default 'DiNe'
             use either 'RePa' - Rectangular Patch convolution method or 'DiNe'
             - 1 ring Direct Neighbor convolution method.
+        dine_size: int, default 1
+            the size of the spherical convolution filter, ie. the number of
+            neighbor rings to be considered.
+        repa_size: int, default 5
+            the size of the rectangular grid in the tangent space.
+        repa_zoom: int, default 5
+            a multiplicative factor applied to the rectangular grid in the
+            tangent space.
         hidden_dim: int, default 4096
             the 2-layer classification MLP number of hidden dims.
         batch_norm: bool, default False
@@ -51,19 +69,24 @@ class SphericalVGG(SphericalBase):
             layer.
         init_weights: bool, default True
             initialize network weights.
+        standard_ico: bool, default False
+            optionaly use surfify tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
+        logger.debug("SphericalVGG init...")
         cfg = cfg[:-1]
         super(SphericalVGG, self).__init__(
             input_order=input_order, n_layers=cfg.count("M"),
-            conv_mode=conv_mode, cachedir=cachedir)
+            conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
+            repa_zoom=repa_zoom, standard_ico=standard_ico,
+            cachedir=cachedir)
         self.input_channels = input_channels
         self.cfg = cfg
         self.n_classes = n_classes
         self.batch_norm = batch_norm
         self.n_modules = len(cfg)
-        self.final_flt = int(cfg[-2])
+        self.final_flt = int(cfg[-1])
         self.top_flatten_dim = len(
             self.ico[self.input_order - self.n_layers + 1].vertices)
         self.top_final = self.final_flt * 7
@@ -101,7 +124,7 @@ class SphericalVGG(SphericalBase):
         x = torch.cat(
             (self.enc_left_conv(left_x), self.enc_right_conv(right_x)), dim=1)
         logger.debug(debug_msg("lh/rh path", x))
-        for mod in self.enc_w_conv.modules():
+        for mod in self.enc_w_conv.children():
             if isinstance(mod, IcoPool):
                 x = mod(x)[0]
             else:
@@ -153,9 +176,8 @@ class SphericalVGG(SphericalBase):
                 self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
             elif first_layer:
                 lconv = self.sconv(
-                    in_feats=input_channels,
-                    out_feats=(self.cfg[idx] // 2),
-                    neigh_indices=self.ico[order].conv_neighbor_indices)
+                    input_channels, (self.cfg[idx] // 2),
+                    self.ico[order].conv_neighbor_indices)
                 self.enc_left_conv.add_module("lconv_{0}".format(idx), lconv)
                 if self.batch_norm:
                     lbn = nn.BatchNorm1d(self.cfg[idx] // 2)
@@ -163,9 +185,8 @@ class SphericalVGG(SphericalBase):
                 lrelu = nn.ReLU(inplace=True)
                 self.enc_left_conv.add_module("lrelu_{0}".format(idx), lrelu)
                 rconv = self.sconv(
-                    in_feats=input_channels,
-                    out_feats=(self.cfg[idx] // 2),
-                    neigh_indices=self.ico[order].conv_neighbor_indices)
+                    input_channels, (self.cfg[idx] // 2),
+                    self.ico[order].conv_neighbor_indices)
                 self.enc_right_conv.add_module("rconv_{0}".format(idx), rconv)
                 if self.batch_norm:
                     rbn = nn.BatchNorm1d(self.cfg[idx] // 2)
@@ -175,9 +196,8 @@ class SphericalVGG(SphericalBase):
                 input_channels = self.cfg[idx] // 2
             else:
                 conv = self.sconv(
-                    in_feats=input_channels,
-                    out_feats=self.cfg[idx],
-                    neigh_indices=self.ico[order].conv_neighbor_indices)
+                    input_channels, self.cfg[idx],
+                    self.ico[order].conv_neighbor_indices)
                 self.enc_w_conv.add_module("conv_{0}".format(idx), conv)
                 if self.batch_norm:
                     bn = nn.BatchNorm1d(self.cfg[idx])
@@ -189,6 +209,15 @@ class SphericalVGG(SphericalBase):
 
 class SphericalGVGG(nn.Module):
     """ Spherical Grided VGG architecture.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalVGG
     """
     def __init__(self, input_channels, cfg, n_classes, input_dim=194,
                  hidden_dim=4096, batch_norm=False, init_weights=True):
@@ -212,6 +241,7 @@ class SphericalGVGG(nn.Module):
         init_weights: bool, default True
             initialize network weights.
         """
+        logger.debug("SphericalGVGG init...")
         super(SphericalGVGG, self).__init__()
         self.input_channels = input_channels
         self.cfg = cfg
@@ -352,7 +382,8 @@ def class_factory(klass_name, klass_params, destination_module_globals):
         batch_norm = False
 
         def __init__(self, input_channels, n_classes, input_order=5,
-                     conv_mode="DiNe", hidden_dim=4096, init_weights=True,
+                     conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
+                     hidden_dim=4096, init_weights=True, standard_ico=False,
                      cachedir=None):
             if self.cfg is None:
                 raise ValueError("Please specify a configuration first.")
@@ -364,8 +395,12 @@ def class_factory(klass_name, klass_params, destination_module_globals):
                 n_classes=n_classes,
                 input_order=input_order,
                 conv_mode=conv_mode,
+                dine_size=dine_size,
+                repa_size=repa_size,
+                repa_zoom=repa_zoom,
                 hidden_dim=hidden_dim,
                 init_weights=init_weights,
+                standard_ico=standard_ico,
                 cachedir=cachedir)
 
     class SphericalGVGGBase(SphericalGVGG):

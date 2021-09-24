@@ -37,6 +37,7 @@ class SphericalBase(nn.Module):
                              "conv_neighbor_indices"])
 
     def __init__(self, input_order, n_layers, conv_mode="DiNe",
+                 dine_size=1, repa_size=5, repa_zoom=5, standard_ico=True,
                  cachedir=None):
         """ Init class.
 
@@ -49,6 +50,16 @@ class SphericalBase(nn.Module):
         conv_mode: str, default 'DiNe'
             use either 'RePa' - Rectangular Patch convolution method or 'DiNe'
             - 1 ring Direct Neighbor convolution method.
+        dine_size: int, default 1
+            the size of the spherical convolution filter, ie. the number of
+            neighbor rings to be considered.
+        repa_size: int, default 5
+            the size of the rectangular grid in the tangent space.
+        repa_zoom: int, default 5
+            a multiplicative factor applied to the rectangular grid in the
+            tangent space.
+        standard_ico: bool, default True
+            optionaly use FreeSurfer tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
@@ -56,9 +67,13 @@ class SphericalBase(nn.Module):
         self.input_order = input_order
         self.n_layers = n_layers
         self.conv_mode = conv_mode
+        self.dine_size = dine_size
+        self.repa_size = repa_size
+        self.repa_zoom = repa_zoom
+        self.standard_ico = standard_ico
         self.cachedir = cachedir
         self.memory = Memory(cachedir, verbose=0)
-        if conv_mode == "repa":
+        if conv_mode == "RePa":
             self.sconv = IcoRePaConv
         else:
             self.sconv = IcoDiNeConv
@@ -76,8 +91,8 @@ class SphericalBase(nn.Module):
         for order in range(self.input_order - self.n_layers,
                            self.input_order + 1):
             vertices, triangles = icosahedron_cached(
-                order=order, use_freesurfer=True,
-                freesurfer_root=self.cachedir)
+                order=order, standard_ico=self.standard_ico,
+                path=self.cachedir)
             logger.debug("- ico {0}: verts {1} - tris {2}".format(
                 order, vertices.shape, triangles.shape))
             neighs = neighbors_cached(
@@ -85,12 +100,19 @@ class SphericalBase(nn.Module):
             neighs = np.asarray(list(neighs.values()))
             logger.debug("- neighbors {0}: {1}".format(order, neighs.shape))
             if self.conv_mode == "DiNe":
-                conv_neighs = neighs
+                if self.dine_size == 1:
+                    conv_neighs = neighs
+                else:
+                    conv_neighs = neighbors_cached(
+                        vertices, triangles, depth=self.dine_size,
+                        direct_neighbor=True)
+                    conv_neighs = np.asarray(list(conv_neighs.values()))
                 logger.debug("- conv neighbors {0}: {1}".format(
                     order, conv_neighs.shape))
-            elif conv_mode == "RePa":
+            elif self.conv_mode == "RePa":
                 conv_neighs, conv_weights, _ = neighbors_rec_cached(
-                    vertices, triangles, size=5, zoom=5)
+                    vertices, triangles, size=self.repa_size,
+                    zoom=self.repa_zoom)
                 logger.debug("- conv neighbors {0}: {1} - {2}".format(
                     order, conv_neighs.shape, conv_weights.shape))
                 conv_neighs = (conv_neighs, conv_weights)
@@ -103,6 +125,7 @@ class SphericalBase(nn.Module):
         downsample_cached = self.memory.cache(downsample)
         for order in range(
                 self.input_order, self.input_order - self.n_layers, -1):
+            print(self.standard_ico)
             down_indices = downsample_cached(
                 self.ico[order].vertices, self.ico[order - 1].vertices)
             logger.debug("- down {0}: {1}".format(order, down_indices.shape))
