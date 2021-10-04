@@ -36,7 +36,7 @@ class TestUtilsCoord(unittest.TestCase):
         pass
 
     def test_grid_projection(self):
-        """ Test the spherical texture to 2-d grid conversion and vis versa.
+        """ Test the spherical texture to 2-d grid conversion and vice versa.
         """
         proj_texture = utils.text2grid(self.ico_vertices, self.labels)
         texture = utils.grid2text(self.ico_vertices, proj_texture)
