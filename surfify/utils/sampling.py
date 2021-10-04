@@ -11,14 +11,15 @@
 Spherical sampling & associated utilities.
 """
 # Imports
+import os
+import tempfile
 import collections
 import numpy as np
+import networkx as nx
 from joblib import Memory
 from sklearn.neighbors import BallTree
-import networkx as nx
 from nilearn.surface import load_surf_mesh
 from nilearn.datasets import fetch_surf_fsaverage
-
 from .io import HidePrints
 
 
@@ -615,81 +616,49 @@ def get_rectangular_projection(node, size=5, zoom=5):
     return grid_in_sphere, grid_in_tplane
 
 
-def icosahedron_fs(hemi, path, order=7, verbose=True):
-    """ Loads the freesurfer icosahedron mesh of any order for a given
-    hemishpere. If the file associated to the order does not exist, it
-    builds the icosahedron by downsampling the icosahedron with the lowest
-    order that is of higher order than the one desired, and for which the
-    file exists
+def build_freesurfer_ico(ico_file):
+    """ Build FreeSurfer reference icosahedron by fetching existing data
+    and building lower orders using downsampling.
+
+    Freesurfer coordinates are between -100 and 100, and are rescaled between
+    -1 and 1.
 
     Parameters
     ----------
-    hemi: string
-        hemisphere
-    path: string
-        path to store the surface data
-    order: int, default 7
-        the icosahedron order.
-
-    Returns
-    -------
-    vertices: array (N, 3)
-        the icosahedron vertices.
-    triangles: array (M, 3)
-        the icosahedron triangles.
+    ico_file: str
+        path to the generated FreeSurfer reference icosahedron topologies.
     """
-    assert hemi in ["rh", "lh", "right", "left"]
-
-    surf_name = "fsaverage{0}".format(order)
-    last_order = order
-    error = True
-    while error and last_order < 8:
-        try:
-            if verbose:
+    data = {}
+    for order in range(7, 2, -1):
+        surf_name = "fsaverage{0}".format(order)
+        with HidePrints(hide_err=True):
+            with tempfile.TemporaryDirectory() as tmpdir:
                 fsaverage = fetch_surf_fsaverage(
-                    mesh=surf_name, data_dir=path)
-            else:
-                with HidePrints(hide_all=True):
-                    fsaverage = fetch_surf_fsaverage(
-                        mesh=surf_name, data_dir=path)
-        except ValueError as e:
-            last_order += 1
-            error = True
-            surf_name = "fsaverage{0}".format(last_order)
-            continue
-        error = False
-    hemi = "right" if hemi == "rh" else "left" if hemi == "lh" else hemi
-    if verbose:
-        vertices, triangles = load_surf_mesh(
-            fsaverage["sphere_{}".format(hemi)])
-    else:
-        with HidePrints(hide_all=True):
-            vertices, triangles = load_surf_mesh(
-                fsaverage["sphere_{}".format(hemi)])
-    if last_order != order:
-        vertices, triangles = downsample_ico(
-            vertices, triangles, by=last_order-order)
-
-    # Freesurfer coordinates are between -100 and 100, we rather work with
-    # coordinates between -1 and 1
-    return vertices / 100, triangles
+                    mesh=surf_name, data_dir=tmpdir)
+                vertices, triangles = load_surf_mesh(fsaverage["sphere_left"])
+            vertices /= 100.
+            data[surf_name + ".vertices"] = vertices.astype(np.float32)
+            data[surf_name + ".triangles"] = triangles
+    for order in range(2, -1, -1):
+        surf_name = "fsaverage{0}".format(order)
+        up_vertices = data["fsaverage{0}.vertices".format(order + 1)]
+        up_triangles = data["fsaverage{0}.triangles".format(order + 1)]
+        vertices, triangles = downsample_ico(up_vertices, up_triangles, by=1)
+        data[surf_name + ".vertices"] = vertices
+        data[surf_name + ".triangles"] = triangles
+    np.savez(ico_file, **data)
 
 
-def icosahedron(order=3, path=None, standard_ico=False, verbose=False):
+def icosahedron(order=3, standard_ico=False):
     """ Define an icosahedron mesh of any order.
 
     Parameters
     ----------
     order: int, default 3
         the icosahedron order.
-    path: string, default None
-        path to store icosahedron data. If None, it will store it where
-        nilearn stores the data by default : in your home directory
     standard_ico: bool, default False
-        if True, uses a standard icosahedron tessalation. Uses FreeSurfer
-        tessalation by default
-   verbose: bool, default False
-        wether to print nilearn data fetching outputs
+        optionally uses a standard icosahedron tessalation. FreeSurfer
+        tessalation is used by default.
 
     Returns
     -------
@@ -716,7 +685,17 @@ def icosahedron(order=3, path=None, standard_ico=False, verbose=False):
         vertices = np.asarray(vertices)
         triangles = np.asarray(triangles)
     else:
-        vertices, triangles = icosahedron_fs("left", path, order, verbose)
+        resource_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "resources")
+        resource_file = os.path.join(resource_dir, "freesurfer_icos.npz")
+        icos = np.load(resource_file)
+        surf_name = "fsaverage{0}".format(order)
+        try:
+            vertices = icos[surf_name + ".vertices"]
+            triangles = icos[surf_name + ".triangles"]
+        except Exception as err:
+            print("-- available topologies:", icos.files)
+            raise(err)
 
     return vertices, triangles
 
