@@ -26,10 +26,12 @@ import matplotlib.pyplot as plt
 
 ico_order = 3
 n_classes = 3
-ico_vertices, ico_triangles = utils.icosahedron(order=ico_order)
+standard_ico = False
+ico_vertices, ico_triangles = utils.icosahedron(
+    order=ico_order, standard_ico=standard_ico)
 n_vertices = len(ico_vertices)
 _, labels = datasets.make_classification(
-    ico_order, n_samples=40, n_classes=n_classes, scale=1, seed=42)
+    ico_vertices, n_samples=40, n_classes=n_classes, scale=1, seed=42)
 print("Surface:", ico_vertices.shape, ico_triangles.shape)
 print("Labels:", labels.shape)
 

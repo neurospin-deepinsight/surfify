@@ -23,6 +23,8 @@ class TestModelsUNet(unittest.TestCase):
         """ Setup test.
         """
         self.order = 3
+        self.vertices, _ = utils.icosahedron(
+            order=self.order, standard_ico=True)
         self.n_classes = 2
         self.depth = 2
         self.start_filts = 8
@@ -30,7 +32,7 @@ class TestModelsUNet(unittest.TestCase):
         self.rings = [1, 2]
         self.up_modes = ["interp", "transpose", "maxpad", "zeropad"]
         self.X, self.y = datasets.make_classification(
-            self.order, n_samples=40, n_classes=self.n_classes, scale=1,
+            self.vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         self.X = torch.from_numpy(self.X)
         self.y = torch.from_numpy(self.y)
@@ -48,21 +50,21 @@ class TestModelsUNet(unittest.TestCase):
                 in_order=self.order, in_channels=self.n_classes,
                 out_channels=self.n_classes, depth=self.depth,
                 start_filts=self.start_filts, conv_mode=conv_mode,
-                up_mode="interp", use_freesurfer=False)
+                up_mode="interp", standard_ico=True)
             out = model(self.X)
         for n_rings in self.rings:
             model = models.SphericalUNet(
                 in_order=self.order, in_channels=self.n_classes,
                 out_channels=self.n_classes, depth=self.depth,
                 start_filts=self.start_filts, conv_mode="DiNe",
-                dine_size=n_rings, up_mode="interp", use_freesurfer=False)
+                dine_size=n_rings, up_mode="interp", standard_ico=True)
             out = model(self.X)
         for up_mode in self.up_modes:
             model = models.SphericalUNet(
                 in_order=self.order, in_channels=self.n_classes,
                 out_channels=self.n_classes, depth=self.depth,
                 start_filts=self.start_filts, conv_mode="DiNe",
-                dine_size=1, up_mode=up_mode, use_freesurfer=False)
+                dine_size=1, up_mode=up_mode, standard_ico=True)
             out = model(self.X)
 
 
@@ -76,9 +78,10 @@ class TestModelsGUNet(unittest.TestCase):
         self.n_classes = 2
         self.depth = 2
         self.start_filts = 8
-        ico_vertices, ico_triangles = utils.icosahedron(order=self.order)
+        ico_vertices, _ = utils.icosahedron(
+            order=self.order, standard_ico=True)
         X, y = datasets.make_classification(
-            self.order, n_samples=40, n_classes=self.n_classes, scale=1,
+            ico_vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         self.X = []
         for sample_idx in range(X.shape[0]):
@@ -107,6 +110,5 @@ class TestModelsGUNet(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    from surfify.utils import setup_logging
-    setup_logging(level="debug")
+    utils.setup_logging(level="debug")
     unittest.main()

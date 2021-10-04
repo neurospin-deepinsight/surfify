@@ -14,19 +14,18 @@ Generate samples of synthetic data sets.
 # Imports
 import numpy as np
 from scipy.stats import norm
-import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
-from ..utils import icosahedron
 
 
-def make_classification(order, n_samples=40, n_classes=2, scale=1, seed=None):
+def make_classification(ico_vertices, n_samples=40, n_classes=2,
+                        scale=1, seed=None):
     """ Generate a random n-class classification problem.
 
     Parameters
     ----------
-    order: int
-        the icosahedron order.
+    ico_vertices: array (N, 3)
+        the icosahedron's vertices
     n_samples: int, default 40
         the number of gene rate samples.
     n_classes: int, default 2
@@ -52,7 +51,6 @@ def make_classification(order, n_samples=40, n_classes=2, scale=1, seed=None):
             "'n_features' values.")
 
     # Load surface
-    ico_vertices, ico_triangles = icosahedron(order=order)
     n_vertices = len(ico_vertices)
 
     # Generate labels
@@ -81,13 +79,14 @@ def make_classification(order, n_samples=40, n_classes=2, scale=1, seed=None):
 class ClassificationDataset(Dataset):
     """ Generate a random n-class classification dataset.
     """
-    def __init__(self, order, n_samples=40, n_classes=2, scale=1, seed=None):
+    def __init__(self, ico_vertices, n_samples=40, n_classes=2,
+                 scale=1, seed=None):
         """ Init ClassificationDataset.
 
         Parameters
         ----------
-        order: int
-            the icosahedron order.
+        ico_vertices: array (N, 3)
+            the icosahedron's vertices.
         n_samples: int, default 40
             the number of gene rate samples.
         n_classes: int, default 2
@@ -99,7 +98,7 @@ class ClassificationDataset(Dataset):
         """
         super(ClassificationDataset).__init__()
         self.X, y = make_classification(
-            order, n_samples, n_classes, scale, seed)
+            ico_vertices, n_samples, n_classes, scale, seed)
         y = np.expand_dims(y, axis=0)
         self.y = np.repeat(y, len(self.X), axis=0)
 

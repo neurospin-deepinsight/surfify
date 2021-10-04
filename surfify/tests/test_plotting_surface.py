@@ -9,7 +9,7 @@
 
 # Imports
 import unittest
-from surfify.utils import icosahedron
+from surfify import utils
 from surfify.plotting import plot_trisurf
 
 
@@ -19,7 +19,7 @@ class TestPlottingSurface(unittest.TestCase):
     def setUp(self):
         """ Setup test.
         """
-        self.vertices, self.triangles = icosahedron(order=2)
+        self.vertices, self.triangles = utils.icosahedron(order=2)
 
     def tearDown(self):
         """ Run after each test.
@@ -35,6 +35,5 @@ class TestPlottingSurface(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    from surfify.utils import setup_logging
-    setup_logging(level="debug")
+    utils.setup_logging(level="debug")
     unittest.main()

@@ -12,9 +12,11 @@ Coordinate system tools.
 """
 
 # Imports
+import warnings
+import itertools
 import numpy as np
 from scipy.interpolate import griddata, NearestNDInterpolator
-import scipy.spatial.transform as transform
+from scipy.spatial import transform
 
 
 def cart2sph(x, y, z):
@@ -129,26 +131,130 @@ def grid2text(vertices, proj):
     return interp(points)
 
 
-def ico2ico(ico_ref_vertices, ico_moving_vertices):
+def ico2ico(vertices, ref_vertices):
     """ Find a mapping between two icosahedrons: a simple rotation.
 
     Parameters
     ----------
-    ico_ref_vertices: array (N, 3)
+    vertices: array (N, 3)
+        the vertices to project
+    ref_vertices: array (N, 3)
         the reference vertices.
-    ico_moving_vertices: array (N, 3)
-        the moving vertices.
 
     Returns
     -------
-    rotation: array (3, 3)
-        the best estimate of the rotation that transforms the moving vertices
-        to the reference.
-    rmsd: float
-        the root mean square distance between the given set of vectors after
-        alignment.
+    rotation: scipy.spatial.tranform.Rotation
+        the rotation that transforms the vertices to the reference.
     """
-    rotation, rmsd = transform.Rotation.align_vectors(
-        ico_ref_vertices, ico_moving_vertices)
-    rotation = rotation.as_matrix()
-    return rotation, rmsd
+    assert len(vertices) == len(ref_vertices)
+
+    # We search for 4 vertices with same coordinate up to their sign
+    for i in range(len(vertices)):
+        coords_of_interest = ref_vertices[i]
+        idx_of_interest = (
+            np.abs(ref_vertices) == np.abs(coords_of_interest)).all(1)
+        if idx_of_interest.sum() == 4:
+            vertices_of_interest_ref = ref_vertices[idx_of_interest]
+            break
+
+    # Now we search for 4 similar vertices in the icosahedron to match
+    for i in range(len(vertices)):
+        coords_of_interest = vertices[i]
+        idx_of_interest = (
+            np.abs(vertices) == np.abs(coords_of_interest)).all(1)
+        if idx_of_interest.sum() == 4:
+            vertices_of_interest = vertices[idx_of_interest]
+            break
+
+    permutations = itertools.permutations(range(4))
+    n_permutations = np.math.factorial(4)
+    rmse = 1000
+    it = 0
+    best_rmse = rmse
+    best_rotation = None
+    while rmse > 0 and it < n_permutations:
+        it += 1
+        order = np.array(next(permutations))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            rotation, rmse = transform.Rotation.align_vectors(
+                vertices_of_interest_ref, vertices_of_interest[order])
+        if rmse < best_rmse:
+            best_rmse = rmse
+            best_rotation = rotation
+    if it == n_permutations and best_rmse > 0:
+        warnings.warn(
+            "A proper mapping between the two icosahedrons could not be find."
+            " The closest rotation has {} rmse".format(rmse))
+    return best_rotation
+
+
+def find_corresponding_order(array, ref_array, tol=1e-4, axis=0):
+    """ Find corresponding order of row between two array
+    Raises an error if arrays are not the same up to a permutation
+
+    Parameters
+    ----------
+    array: array (N, )
+        the array to find the corresponding order for
+    ref_array: array (N, )
+        the reference array on which the order is base
+    axis: int
+        axis along which to compute the permutating order
+    tol: float, default 1e-4
+        tolerance for matching the values
+
+    Returns
+    -------
+    new_order: array (N)
+        the index corresponding to the ordering to match the first array
+        with the second one
+    """
+    # Find the corresponding ordering
+    array = np.asarray(array)
+    ref_array = np.asarray(ref_array)
+    if not np.array_equal(array.shape, ref_array.shape):
+        raise ValueError("The arrays must be permuted versions of each other,"
+                         " but these do not have the same shape")
+    new_order = []
+    other_dims = list(range(array.ndim))
+    other_dims.remove(axis)
+    other_dims = tuple(other_dims)
+    for i in range(len(array)):
+        dims = list(range(array.ndim))
+        dims.remove(axis)
+        idx = np.where(
+            np.isclose(array, np.take(ref_array, i, axis=axis), atol=tol).all(
+                other_dims))[0]
+        if len(idx) != 1:
+            raise ValueError("An element in the reference array was found 0"
+                             " or more than 1 time in the other one")
+        new_order.append(idx[0])
+    return new_order
+
+
+def texture2ico(texture, vertices, ref_vertices):
+    """ Projects a texture associated to an icosahedron onto an other one.
+
+    Parameters
+    ----------
+    texture: array (N, K)
+        the texture associated to the vertices
+    vertices: array (N, 3)
+        the vertices corresponding to the texture
+    ref_vertices: array (N, 3)
+        the reference vertices
+
+    Returns
+    -------
+    texture: array (N, K)
+        the texture projected on the reference icosahedron
+    """
+    rotation = ico2ico(vertices, ref_vertices)
+    print(rotation.as_matrix())
+
+    # Find the corresponding ordering
+    new_vertices = rotation.apply(vertices)
+    new_order = find_corresponding_order(new_vertices, ref_vertices)
+
+    return texture[new_order]

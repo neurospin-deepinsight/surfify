@@ -8,10 +8,14 @@
 ##########################################################################
 
 # Imports
+import os
+import numpy as np
 import unittest
 from surfify.utils import (
     interpolate, neighbors, downsample, neighbors_rec, icosahedron,
-    number_of_ico_vertices)
+    number_of_ico_vertices, order_of_ico_from_vertices,
+    downsample_ico, wrapper_data_downsampler, setup_logging)
+from surfify.utils.coord import find_corresponding_order
 
 
 class TestUtilsSampling(unittest.TestCase):
@@ -20,6 +24,7 @@ class TestUtilsSampling(unittest.TestCase):
     def setUp(self):
         """ Setup test.
         """
+        self.cachedir = os.environ["HOME"]
         pass
 
     def tearDown(self):
@@ -31,8 +36,10 @@ class TestUtilsSampling(unittest.TestCase):
         """ Test icosahedron function.
         """
         for order in range(4):
-            vertices, triangles = icosahedron(order)
+            vertices, _ = icosahedron(order)
             self.assertTrue(len(vertices) == number_of_ico_vertices(order))
+            self.assertTrue(
+                order == order_of_ico_from_vertices(len(vertices)))
 
     def test_neighbors(self):
         """ Test neighbors function.
@@ -67,9 +74,29 @@ class TestUtilsSampling(unittest.TestCase):
         self.assertTrue(len(down_indexes) == len(target_vertices))
         self.assertTrue(all(down_indexes == range(len(target_vertices))))
 
+    def test_downsample_data(self):
+        """ Test downsample function.
+        """
+        downsampler = wrapper_data_downsampler(
+            self.cachedir, from_order=4, to_order=1, aggregation="mean")
+        data = np.ones((number_of_ico_vertices(6), 2))
+        data[:, 1] *= 2
+        downsampled_data = downsampler(data)
+        self.assertTrue(len(downsampled_data) == number_of_ico_vertices(1))
+        self.assertTrue((downsampled_data[:, 0] == 1).all())
+        self.assertTrue((downsampled_data[:, 1] == 2).all())
+
+    def test_downsample_ico(self):
+        """ Test downsample function.
+        """
+        vertices, triangles = icosahedron(order=4)
+        target_vertices, _ = icosahedron(order=1)
+        new_vertices, _ = downsample_ico(
+            vertices, triangles, by=3)
+        self.assertTrue(np.array_equal(target_vertices, new_vertices))
+
 
 if __name__ == "__main__":
 
-    from surfify.utils import setup_logging
     setup_logging(level="debug")
     unittest.main()

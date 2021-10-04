@@ -37,7 +37,7 @@ class SphericalBase(nn.Module):
                              "conv_neighbor_indices"])
 
     def __init__(self, input_order, n_layers, conv_mode="DiNe",
-                 dine_size=1, repa_size=5, repa_zoom=5, use_freesurfer=False,
+                 dine_size=1, repa_size=5, repa_zoom=5, standard_ico=True,
                  cachedir=None):
         """ Init class.
 
@@ -58,7 +58,7 @@ class SphericalBase(nn.Module):
         repa_zoom: int, default 5
             a multiplicative factor applied to the rectangular grid in the
             tangent space.
-        use_freesurfer: bool, default False
+        standard_ico: bool, default True
             optionaly use FreeSurfer tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
@@ -70,7 +70,7 @@ class SphericalBase(nn.Module):
         self.dine_size = dine_size
         self.repa_size = repa_size
         self.repa_zoom = repa_zoom
-        self.use_freesurfer = use_freesurfer
+        self.standard_ico = standard_ico
         self.cachedir = cachedir
         self.memory = Memory(cachedir, verbose=0)
         if conv_mode == "RePa":
@@ -91,8 +91,8 @@ class SphericalBase(nn.Module):
         for order in range(self.input_order - self.n_layers,
                            self.input_order + 1):
             vertices, triangles = icosahedron_cached(
-                order=order, use_freesurfer=self.use_freesurfer,
-                freesurfer_root=self.cachedir)
+                order=order, standard_ico=self.standard_ico,
+                path=self.cachedir)
             logger.debug("- ico {0}: verts {1} - tris {2}".format(
                 order, vertices.shape, triangles.shape))
             neighs = neighbors_cached(
@@ -125,6 +125,7 @@ class SphericalBase(nn.Module):
         downsample_cached = self.memory.cache(downsample)
         for order in range(
                 self.input_order, self.input_order - self.n_layers, -1):
+            print(self.standard_ico)
             down_indices = downsample_cached(
                 self.ico[order].vertices, self.ico[order - 1].vertices)
             logger.debug("- down {0}: {1}".format(order, down_indices.shape))

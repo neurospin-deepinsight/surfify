@@ -16,10 +16,12 @@ import logging
 import warnings
 from .sampling import (
     interpolate, neighbors, downsample, neighbors_rec, icosahedron,
-    number_of_ico_vertices, get_rectangular_projection)
+    number_of_ico_vertices, order_of_ico_from_vertices,
+    get_rectangular_projection, icosahedron_fs,
+    downsample_ico, downsample_data, MeshProjector,
+    recursively_find_neighbors, wrapper_data_downsampler)
 from .coord import (
-    cart2sph, sph2cart, text2grid, grid2text, ico2ico)
-
+    cart2sph, sph2cart, text2grid, grid2text, ico2ico, texture2ico)
 
 # Global parameters
 LEVELS = {

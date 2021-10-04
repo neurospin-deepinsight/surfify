@@ -22,7 +22,7 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 def plot_trisurf(vertices, triangles, texture=None, vmin=None,
                  vmax=None, colorbar=True, fig=None, ax=None,
-                 is_label=False):
+                 is_label=False, alpha=1, edgecolors="black"):
     """ Display a triangular surface.
 
     Parameters
@@ -70,10 +70,10 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
         norm = colors.Normalize(vmin=0, vmax=vmax, clip=False)
         facecolors = cm.coolwarm(norm(texture))
         polygon = Poly3DCollection(triangle_vertices, facecolors=facecolors,
-                                   edgecolors="black")
+                                   edgecolors=edgecolors, alpha=alpha)
     else:
         polygon = Poly3DCollection(triangle_vertices, facecolors="white",
-                                   edgecolors="black", alpha=0.1)
+                                   edgecolors=edgecolors, alpha=0.1)
     ax.add_collection3d(polygon)
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)
@@ -87,14 +87,14 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
             fig.colorbar(m, ax=ax, fraction=0.046, pad=0.04)
 
     # Get rid of the panes
-    ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
-    ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.xaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.set_pane_color((1.0, 1.0, 1.0, 0.0))
 
     # Get rid of the spines
-    ax.w_xaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
-    ax.w_yaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
-    ax.w_zaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.xaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.yaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
+    ax.zaxis.line.set_color((1.0, 1.0, 1.0, 0.0))
 
     # Get rid of the ticks
     ax.set_xticks([])

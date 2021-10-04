@@ -10,7 +10,8 @@
 # Imports
 import unittest
 from torch.utils.data import DataLoader
-from surfify.datasets import ClassificationDataset
+from surfify import datasets
+from surfify import utils
 
 
 class TestDatasets(unittest.TestCase):
@@ -19,7 +20,7 @@ class TestDatasets(unittest.TestCase):
     def setUp(self):
         """ Setup test.
         """
-        self.ico_order = 2
+        self.vertices, _ = utils.icosahedron(order=2)
         self.n_classes = 3
         self.batch_size = 5
 
@@ -31,8 +32,8 @@ class TestDatasets(unittest.TestCase):
     def test_classification_dataset(self):
         """ Test ClassificationDataset dataset.
         """
-        dataset = ClassificationDataset(
-            self.ico_order, n_samples=40, n_classes=self.n_classes, scale=1,
+        dataset = datasets.ClassificationDataset(
+            self.vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
         X, y = next(iter(loader))
@@ -42,6 +43,5 @@ class TestDatasets(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    from surfify.utils import setup_logging
-    setup_logging(level="debug")
+    utils.setup_logging(level="debug")
     unittest.main()

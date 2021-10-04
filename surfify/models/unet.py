@@ -61,7 +61,7 @@ class SphericalUNet(SphericalBase):
     >>> model = SphericalUNet(
             in_order=2, in_channels=2, out_channels=4, depth=2,
             start_filts=8, conv_mode="DiNe", dine_size=1, up_mode="interp",
-            use_freesurfer=False)
+            standard_ico=False)
     >>> x = torch.zeros((10, 2, len(vertices)))
     >>> out = model(x)
     >>> out.shape
@@ -73,7 +73,7 @@ class SphericalUNet(SphericalBase):
     """
     def __init__(self, in_order, in_channels, out_channels, depth=5,
                  start_filts=32, conv_mode="DiNe", dine_size=1, repa_size=5,
-                 repa_zoom=5, up_mode="interp", use_freesurfer=True,
+                 repa_zoom=5, up_mode="interp", standard_ico=False,
                  cachedir=None):
         """ Init SphericalUNet.
 
@@ -105,7 +105,7 @@ class SphericalUNet(SphericalBase):
             convolution (1 ring), 'interp' for nearest neighbor linear
             interpolation, 'maxpad' for max pooling shifted zero padding,
             and 'zeropad' for classical zero padding.
-        use_freesurfer: bool, default True
+        standard_ico: bool, default False
             optionaly use surfify tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
@@ -114,7 +114,7 @@ class SphericalUNet(SphericalBase):
         super(SphericalUNet, self).__init__(
             input_order=in_order, n_layers=depth,
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
-            repa_zoom=repa_zoom, use_freesurfer=use_freesurfer,
+            repa_zoom=repa_zoom, standard_ico=standard_ico,
             cachedir=cachedir)
         self.memory = Memory(cachedir, verbose=0)
         self.in_order = in_order
