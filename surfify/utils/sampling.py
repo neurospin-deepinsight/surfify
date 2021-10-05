@@ -10,6 +10,7 @@
 """
 Spherical sampling & associated utilities.
 """
+
 # Imports
 import os
 import tempfile
@@ -70,41 +71,34 @@ STANDARD_ICO = {
 }
 
 
-def interpolate(vertices, target_vertices, target_triangles):
-    """ Interpolate missing data.
-
-    Parameters
-    ----------
-    vertices: array (n_samples, n_dim)
-        points of data set.
-    target_vertices: array (n_query, n_dim)
-        points to find interpolated texture for.
-    target_triangles: array (n_query, 3)
-        the mesh geometry definition.
-
-    Returns
-    -------
-    interp_textures: array (n_query, n_feats)
-        the interplatedd textures.
-    """
-    interp_textures = collections.OrderedDict()
-    graph = vertex_adjacency_graph(target_vertices, target_triangles)
-    common_vertices = downsample(target_vertices, vertices)
-    missing_vertices = set(range(len(target_vertices))) - set(common_vertices)
-    for node in sorted(graph.nodes):
-        if node in common_vertices:
-            interp_textures[node] = [node] * 2
-        else:
-            node_neighs = [idx for idx in graph.neighbors(node)
-                           if idx in common_vertices]
-            node_weights = np.linalg.norm(
-                target_vertices[node_neighs] - target_vertices[node], axis=1)
-            interp_textures[node] = node_neighs
-    return interp_textures
-
-
 def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
     """ Build mesh vertices neighbors.
+
+    This is the base function to build Direct Neighbors (DiNe) kernels.
+
+    See Also
+    --------
+    neighbors_rec
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, neighbors
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico2_verts, ico2_tris = icosahedron(order=2)
+    >>> neighs = neighbors(ico2_verts, ico2_tris, direct_neighbor=True)
+    >>> fig, ax = plt.subplots(1, 1, subplot_kw={
+            "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
+    >>> plot_trisurf(ico2_verts, triangles=ico2_tris, colorbar=False, fig=fig,
+                     ax=ax)
+    >>> center = ico2_verts[0]
+    >>> for cnt, idx in enumerate(neighs[0]):
+    >>>     point = ico2_verts[idx]
+    >>>     ax.scatter(point[0], point[1], point[2], marker="o", c="red",
+                       s=100)
+    >>> ax.scatter(center[0], center[1], center[2], marker="o", c="blue",
+                   s=100)
+    >>> plt.show()
 
     Parameters
     ----------
@@ -120,18 +114,18 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
         vertices with each having only 5 direct neighbors; and 2) the
         remaining vertices with each having 6 direct neighbors. For those
         vertices with 6 neighbors, DiNe assigns the index 1 to the center
-        vertex and the indices 2–7 to its neighbors sequentially according
+        vertex and the indices 2-7 to its neighbors sequentially according
         to the angle between the vector of center vertex to neighboring vertex
         and the x-axis in the tangent plane. For the 12 vertices with only
         5 neighbors, DiNe assigns the indices both 1 and 2 to the center
-        vertex, and indices 3–7 to the neighbors in the same way as those
+        vertex, and indices 3-7 to the neighbors in the same way as those
         vertices with 6 neighbors.
 
     Returns
     --------
     neighs: dict
         a dictionary with vertices row index as keys and a dictionary of
-        neighbors vertices row indexes organized by rungs as values.
+        neighbors vertices row indexes organized by rings as values.
     """
     graph = vertex_adjacency_graph(vertices, triangles)
     neighs = collections.OrderedDict()
@@ -185,6 +179,14 @@ def vertex_adjacency_graph(vertices, triangles):
     """ Build a networkx graph representation of the vertices and
     their connections in the mesh.
 
+    Examples
+    --------
+    This is useful for getting nearby vertices for a given vertex,
+    potentially for some simple smoothing techniques.
+    >>> graph = mesh.vertex_adjacency_graph
+    >>> graph.neighbors(0)
+    > [1, 3, 4]
+
     Parameters
     ----------
     vertices: array (N, 3)
@@ -197,14 +199,6 @@ def vertex_adjacency_graph(vertices, triangles):
     graph: networkx.Graph
         Graph representing vertices and edges between
         them where vertices are nodes and edges are edges
-
-    Examples
-    ----------
-    This is useful for getting nearby vertices for a given vertex,
-    potentially for some simple smoothing techniques.
-    >>> graph = mesh.vertex_adjacency_graph
-    >>> graph.neighbors(0)
-    > [1, 3, 4]
     """
     graph = nx.Graph()
     graph.add_nodes_from(range(len(vertices)))
@@ -295,211 +289,33 @@ def triangles_to_edges(triangles, return_index=False):
     return edges, triangles_index
 
 
-def downsample(vertices, target_vertices):
-    """ Downsample by finding nearest neighbors.
-
-    Parameters
-    ----------
-    vertices: array (n_samples, n_dim)
-        points of data set.
-    target_vertices: array (n_query, n_dim)
-        points to find nearest neighbors for.
-
-    Returns
-    -------
-    nearest_idx: array (n_query, )
-        index of nearest neighbor in target_vertices for every point in
-        vertices.
-    """
-    if vertices.size == 0 or target_vertices.size == 0:
-        return np.array([], int), np.array([])
-    tree = BallTree(vertices, leaf_size=2)
-    distances, nearest_idx = tree.query(
-        target_vertices, return_distance=True, k=1)
-    n_duplicates = len(nearest_idx) - len(np.unique(nearest_idx))
-    if n_duplicates:
-        raise RuntimeError("Could not downsample proprely, '{0}' duplicates "
-                           "were found. Are you using an icosahedron "
-                           "mesh?".format(n_duplicates))
-    return nearest_idx.squeeze()
-
-
-def downsample_data(data, down_indices, neighs, aggregation=None):
-    """ Downsample data to smaller icosahedron
-
-    Parameters
-    ----------
-    data: array (n_samples, n_vertices, n_features)
-        data to be downsampled
-    down_indces: list
-        contains the downsample vertices indices in the upper order
-        icosahedron, for each downsampling
-    neighs: list
-        contains the neighbors of each vertex of the upper order
-        icosahedron, for each downsampling
-    aggregation: str, default None
-        aggregation strategy over the higher order neighborhoods: 'mean',
-        'median, 'max', 'min', 'sum' or None
-
-    Returns
-    -------
-    downsampled_data: array (n_samples, new_n_vertices, n_features)
-        downsampled data
-    """
-    assert aggregation in ['mean', 'median', 'max', 'min', 'sum', None]
-    if len(data.shape) < 3:
-        data = data[np.newaxis, :, :]
-    data = data.transpose((0, 2, 1))
-    for i in range(len(down_indices)):
-        if aggregation is not None:
-            down_neigh_indices = neighs[i][down_indices[i]]
-            n_vertices, neigh_size = down_neigh_indices.shape
-
-            data = data[:, :, down_neigh_indices].reshape(
-                    len(data), data.shape[1], n_vertices, neigh_size)
-            data = getattr(data, aggregation)(-1)
-        else:
-            data = data[:, :, down_indices[i]]
-    return data.transpose(0, 2, 1).squeeze()
-
-
-def wrapper_data_downsampler(cachedir, from_order=7, to_order=6,
-                             standard_ico=False, aggregation=None):
-    """ Wrapper function to instatiate a fast data downsampler
-    Initializes all the objects a data downsampler can require
-
-    Parameters
-    ----------
-    cachedir: string
-        path to store the objects
-    from_order: int, default 7
-        order of the icosahedron on which is represented the data
-    to_order: int, default 6
-        order of the icosahedron to which we want to downsample the data
-    standard_ico: bool, default False
-        optionally uses surfify tesselation
-    aggregation: string, default None
-        aggregation strategy over the higher order neighborhoods: 'mean',
-        'median, 'max', 'min', 'sum' or None
-
-    Returns
-    -------
-    donwsampler: DownSampler instance
-        instance of the downsampler. By calling it with the data, returns
-        the data downsampled
-    """
-    assert from_order >= to_order
-    assert int(from_order) == from_order and from_order >= 0\
-        and from_order <= 7
-    assert int(to_order) == to_order and to_order >= 0
-
-    vertices, triangles = [], []
-    for i in range(from_order, to_order-1, -1):
-        new_vertices, new_triangles = icosahedron(
-            i, standard_ico=standard_ico, path=cachedir)
-        vertices.append(new_vertices)
-        triangles.append(new_triangles)
-    memory = Memory(cachedir, verbose=0)
-
-    cached_neighbors = memory.cache(neighbors)
-    neighs = []
-    if aggregation is not None:
-        for i in range(from_order-to_order):
-            new_neighs = cached_neighbors(
-                vertices[i], triangles[i], direct_neighbor=True)
-            new_neighs = np.array(list(new_neighs.values()))
-            neighs.append(new_neighs)
-
-    down_indices = []
-    for i in range(from_order-to_order):
-        down_indices.append(downsample(vertices[i], vertices[i+1]))
-
-    class Downsampler:
-        def __init__(self):
-            self.from_order = from_order
-            self.to_order = to_order
-            self.down_indices = down_indices
-            self.neighs = neighs
-            self.aggregation = aggregation
-
-        def __call__(self, data):
-            return downsample_data(data, self.down_indices,
-                                   self.neighs, self.aggregation)
-    return Downsampler()
-
-
-def downsample_ico(vertices, triangles, by=1, new_vertices=None):
-    """ Downsample an icosahedron to one with a smaller order
-
-    Parameters
-    ----------
-    vertices: array (N, 3)
-        vertices of the icosahedron to reduce
-    triangles: array (N, 3)
-        triangles of the icosahedron to reduce
-    by: int, default 1
-        number of orders to reduce the icosahedron by
-    new_vertices: list or None, default None
-        list of the vertices of each lower order icosahedron, of
-        length by. If not provided the default is to take the first
-        vertices of the higher order icosahedron as new vertices
-        for the lower order one
-
-    Returns
-    -------
-    new_vertices: array (N, 3)
-        vertices of the newly downsampled icosahedorn
-    new_triangles: array (N, 3)
-        triangles of the newly downsampled icosahedron
-    """
-    assert new_vertices is None \
-        or type(new_vertices) is list and len(new_vertices) == by
-
-    for i in range(by):
-        former_order = order_of_ico_from_vertices(len(vertices))
-        next_n_vertices = number_of_ico_vertices(former_order - 1)
-        if new_vertices is None:
-            new_vertice = vertices[:next_n_vertices]
-        else:
-            new_vertice = new_vertices[i]
-
-        new_triangles = []
-        down_indices = downsample(vertices, new_vertice)
-        old_neighbors = neighbors(vertices, triangles, direct_neighbor=True)
-        old_neighbors = np.array(list(old_neighbors.values()))
-        for i, downer in enumerate(down_indices):
-            for j, neigh in enumerate(old_neighbors[downer]):
-                if neigh != downer:
-                    next_neigh = old_neighbors[downer][
-                        (j+1) % len(old_neighbors[downer])]
-                    neighs = old_neighbors[neigh]
-                    neighs1 = old_neighbors[next_neigh]
-                    candidate = [i]
-                    for neigh_order2 in neighs:
-                        if neigh_order2 in down_indices and \
-                           neigh_order2 != downer:
-                            indicein4 = down_indices.tolist().index(
-                                neigh_order2)
-                            candidate.append(indicein4)
-                            break
-                    for neigh_order2 in neighs1:
-                        if neigh_order2 in down_indices and \
-                           neigh_order2 != downer:
-                            indicein4 = down_indices.tolist().index(
-                                neigh_order2)
-                            candidate.append(indicein4)
-                            break
-                    if set(candidate) not in new_triangles and \
-                       len(candidate) == 3:
-                        new_triangles.append(set(candidate))
-        new_triangles = np.array([list(tri) for tri in new_triangles])
-        vertices = new_vertice
-        triangles = new_triangles
-    return new_vertice, new_triangles
-
-
 def neighbors_rec(vertices, triangles, size=5, zoom=5):
     """ Build rectangular grid neighbors and weights.
+
+    This is the base function to build Rectangular Patch (RePa) kernels.
+
+    See Also
+    --------
+    neighbors
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, neighbors_rec
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico2_verts, ico2_tris = icosahedron(order=2)
+    >>> neighs = neighbors_rec(ico2_verts, ico2_tris, size=3, zoom=3)
+    >>> fig, ax = plt.subplots(1, 1, subplot_kw={
+            "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
+    >>> plot_trisurf(ico2_verts, triangles=ico2_tris, colorbar=False, fig=fig,
+                     ax=ax)
+    >>> center = ico2_verts[0]
+    >>> for cnt, point in enumerate(neighs[2][0]):
+    >>>     ax.scatter(point[0], point[1], point[2], marker="o", c="red",
+                       s=100)
+    >>> ax.scatter(center[0], center[1], center[2], marker="o", c="blue",
+                   s=100)
+    >>> plt.show()
 
     Parameters
     ----------
@@ -536,37 +352,9 @@ def neighbors_rec(vertices, triangles, size=5, zoom=5):
     return neighs, weights, grid_in_sphere
 
 
-def recursively_find_neighbors(start_node, order, neighbors):
-    """ Recursively find neighbors from a starting node up to a certain order
-
-    Parameters
-    ----------
-    start_node: int
-        node to start from
-    order: int
-        order up to which to look for neighbors
-    neighbors: dict
-        neighbors for each node
-
-    returns
-    -------
-    indices: list
-        indices of the neighbors of order order or lower
-    """
-    indices = []
-    if order <= 0:
-        return [start_node]
-    for neigh in neighbors[start_node]:
-        if order == 1:
-            indices.append(neigh)
-        else:
-            indices += recursively_find_neighbors(neigh, order-1, neighbors)
-
-    return list(set(indices))
-
-
 def get_rectangular_projection(node, size=5, zoom=5):
-    """ Project rectangular grid in 2D sapce into 3D spherical space.
+    """ Project 2D rectangular grid defined in node tangent space into 3D
+    spherical space.
 
     Parameters
     ----------
@@ -591,7 +379,7 @@ def get_rectangular_projection(node, size=5, zoom=5):
     midsize = size // 2
 
     # Compute normal of the new projected x-axis and y-axis
-    node = node.copy() * zoom
+    node = node.copy()
     if node[0] != 0 or node[1] != 0:
         nx = np.cross(np.array([0, 0, 1]), node)
         ny = np.cross(node, nx)
@@ -599,21 +387,81 @@ def get_rectangular_projection(node, size=5, zoom=5):
         nx = np.array([1, 0, 0])
         ny = np.array([0, 1, 0])
     nx = nx / np.linalg.norm(nx)
-
     ny = ny / np.linalg.norm(ny)
 
     # Caculate the grid coordinate in tangent plane and project back on sphere
     grid_in_tplane = np.zeros((size ** 2, 3))
     grid_in_sphere = np.zeros((size ** 2, 3))
+    spacing = 1 / zoom
+    midsize *= spacing
     corner = node - midsize * nx + midsize * ny
     for row in range(size):
         for column in range(size):
-            point = corner - row * ny + column * nx
+            point = corner - row * spacing * ny + column * spacing * nx
             grid_in_tplane[row * size + column, :] = point
             grid_in_sphere[row * size + column, :] = (
-                point / np.linalg.norm(point) * zoom)
+                point / np.linalg.norm(point))
 
     return grid_in_sphere, grid_in_tplane
+
+
+def find_neighbors(start_node, order, neighbors):
+    """ Recursively find neighbors from a starting node up to a certain order.
+
+    See Also
+    --------
+    neighbors, neighbors_rec
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, neighbors_rec, find_neighbors
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico2_verts, ico2_tris = icosahedron(order=2)
+    >>> neighs = neighbors_rec(ico2_verts, ico2_tris, size=3, zoom=3)[0]
+    >>> neighs = neighs.reshape(len(neighs), -1)
+    >>> neighs = neighbors(ico2_verts, ico2_tris, depth=1,
+                           direct_neighbor=True)
+    >>> node = 0
+    >>> node_neighs = find_neighbors(node, order=3, neighbors=neighs)
+    >>> fig, ax = plt.subplots(1, 1, subplot_kw={
+            "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
+    >>> plot_trisurf(ico2_verts, triangles=ico2_tris, colorbar=False, fig=fig,
+                     ax=ax)
+    >>> center = ico2_verts[node]
+    >>> for cnt, idx in enumerate(node_neighs):
+    >>>     point = ico2_verts[idx]
+    >>>     ax.scatter(point[0], point[1], point[2], marker="o", c="red",
+                       s=100)
+    >>> ax.scatter(center[0], center[1], center[2], marker="o", c="blue",
+                   s=100)
+    >>> plt.show()
+
+    Parameters
+    ----------
+    start_node: int
+        node index to start search from.
+    order: int
+        order up to which to look for neighbors.
+    neighbors: dict
+        neighbors for each node as generated by the 'neighbors' or
+        'neighbors_rec' functions.
+
+    returns
+    -------
+    indices: list of int
+        the n-ring neighbors indices.
+    """
+    # TODO: why not using rings directly?
+    indices = []
+    if order <= 0:
+        return [start_node]
+    for neigh in neighbors[start_node]:
+        if order == 1:
+            indices.append(neigh)
+        else:
+            indices += find_neighbors(neigh, order - 1, neighbors)
+    return list(set(indices))
 
 
 def build_freesurfer_ico(ico_file):
@@ -651,6 +499,19 @@ def build_freesurfer_ico(ico_file):
 
 def icosahedron(order=3, standard_ico=False):
     """ Define an icosahedron mesh of any order.
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> print(ico3_verts.shape, ico3_tris.shape)
+    >>> fig, ax = plt.subplots(1, 1, subplot_kw={
+            "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
+    >>> plot_trisurf(ico3_verts, triangles=ico3_tris, colorbar=False, fig=fig,
+                     ax=ax)
+    >>> plt.show()
 
     Parameters
     ----------
@@ -701,7 +562,9 @@ def icosahedron(order=3, standard_ico=False):
 
 
 def middle_point(point_1, point_2, vertices, middle_point_cache):
-    """ Find a middle point and project to the unit sphere.
+    """ Find a middle point and project it to the unit sphere.
+
+    This function is only used to build an icosahedron geometry.
     """
     # We check if we have already cut this edge first to avoid duplicated verts
     smaller_index = min(point_1, point_2)
@@ -724,6 +587,17 @@ def middle_point(point_1, point_2, vertices, middle_point_cache):
 def number_of_ico_vertices(order=3):
     """ Get the number of vertices of an icosahedron of specific order.
 
+    See Also
+    --------
+    order_of_ico_from_vertices
+
+    Examples
+    --------
+    >>> from surfify.utils import number_of_ico_vertices, icosahedron
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> n_verts = number_of_ico_vertices(order=3)
+    >>> print(n_verts, ico3_verts.shape)
+
     Parameters
     ----------
     order: int, default 3
@@ -740,7 +614,18 @@ def number_of_ico_vertices(order=3):
 
 
 def order_of_ico_from_vertices(n_vertices):
-    """ Get the order of the icosahedron from the number of vertices it has
+    """ Get the order of an icosahedron from his number of vertices.
+
+    See Also
+    --------
+    number_of_ico_vertices
+
+    Examples
+    --------
+    >>> from surfify.utils import order_of_ico_from_vertices, icosahedron
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> order = order_of_ico_from_vertices(len(ico3_verts))
+    >>> print(order)
 
     Parameters
     ----------
@@ -752,45 +637,318 @@ def order_of_ico_from_vertices(n_vertices):
     order: int
         the order of the icosahedron
     """
-    order = np.log((n_vertices-2) / 10) / np.log(4)
-
+    order = np.log((n_vertices - 2) / 10) / np.log(4)
     if int(order) != order:
         raise ValueError(
-            "This number of vertices does not correspond to those of a"
-            "regular icosahedron")
+            "This number of vertices does not correspond to those of a "
+            "regular icosahedron.")
     return int(order)
 
 
-def order_triangles_vertices(vertices, triangles, clockwise_from_center=True):
-    """ Order the triangles' vertices to be in a clockwise order when viewed
-    from the center of the sphere described by the icosahedron
+def interpolate(vertices, target_vertices, target_triangles):
+    """ Interpolate icosahedron missing data by finding nearest neighbors.
+
+    Interpolation weights can be set to 1 for a regular icosahedron geometry.
+
+    See Also
+    --------
+    interpolate_data, downsample, downsample_data, downsample_ico
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, interpolate
+    >>> from surfify.datasets import make_classification
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico2_verts, ico2_tris = icosahedron(order=2)
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> X, y = make_classification(ico2_verts, n_samples=1, n_classes=3,
+                                   scale=1, seed=42)
+    >>> up_indices = interpolate(ico2_verts, ico3_verts, ico3_tris)
+    >>> up_indices = np.asarray(list(up_indices.values()))
+    >>> y_up = y[up_indices.reshape(-1)].reshape(up_indices.shape)
+    >>> y_up = np.mean(y_up, axis=-1)
+    >>> plot_trisurf(ico3_verts, triangles=ico3_tris, texture=y_up,
+                     is_label=False)
+    >>> plt.show()
+
+    Parameters
+    ----------
+    vertices: array (n_samples, n_dim)
+        points of data set.
+    target_vertices: array (n_query, n_dim)
+        points to find interpolated texture for.
+    target_triangles: array (n_query, 3)
+        the mesh geometry definition.
+
+    Returns
+    -------
+    interp_indices: array (n_query, n_feats)
+        the interpolation indices.
+    """
+    interp_indices = collections.OrderedDict()
+    interp_weights = collections.OrderedDict()
+    graph = vertex_adjacency_graph(target_vertices, target_triangles)
+    common_vertices = downsample(target_vertices, vertices)
+    missing_vertices = set(range(len(target_vertices))) - set(common_vertices)
+    for node in sorted(graph.nodes):
+        if node in common_vertices:
+            interp_indices[node] = [node] * 2
+            interp_weights[node] = [1., 1.]
+        else:
+            node_neighs = [idx for idx in graph.neighbors(node)
+                           if idx in common_vertices]
+            node_weights = np.linalg.norm(
+                target_vertices[node_neighs] - target_vertices[node], axis=1)
+            interp_indices[node] = node_neighs
+            interp_weights[node] = node_weights
+    return interp_indices
+
+
+def interpolate_data(data, by=1, up_indices=None):
+    """ Interpolate data/texture on the icosahedron to an upper order.
+
+    See Also
+    --------
+    interpolate, downsample, downsample_data, downsample_ico
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, interpolate_data
+    >>> from surfify.datasets import make_classification
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico2_verts, ico2_tris = icosahedron(order=2)
+    >>> ico4_verts, ico4_tris = icosahedron(order=4)
+    >>> X, y = make_classification(ico2_verts, n_samples=1, n_classes=3,
+                                   scale=1, seed=42)
+    >>> y = y.reshape(1, -1, 1)
+    >>> y_up = interpolate_data(y, by=2).squeeze()
+    >>> plot_trisurf(ico4_verts, triangles=ico4_tris, texture=y_up,
+                     is_label=False)
+    >>> plt.show()
+
+    Parameters
+    ----------
+    data: array (n_samples, n_vertices, n_features)
+        data to be upsampled.
+    by: int, default 1
+        number of orders to increase the icosahedron by.
+    up_indices: list of array, default None
+        optionally specify the list of consecutive upsampling vertices
+        indices.
+
+    Returns
+    -------
+    upsampled_data: array (n_samples, new_n_vertices, n_features)
+        upsampled data.
+    """
+    if len(data.shape) != 3:
+        raise ValueError(
+            "Unexpected input data. Must be (n_samples, n_vertices, "
+            "n_features) but got '{0}'.".format(data.shape))
+    if up_indices is None:
+        order = order_of_ico_from_vertices(data.shape[1])
+        ico_verts, _ = icosahedron(order)
+        up_indices = []
+        for up_order in range(order + 1, order + 1 + by, 1):
+            up_ico_verts, up_ico_tris = icosahedron(up_order)
+            _up_indices = interpolate(ico_verts, up_ico_verts, up_ico_tris)
+            up_indices.append(np.asarray(list(_up_indices.values())))
+            ico_verts = up_ico_verts
+    n_samples = len(data)
+    n_features = data.shape[-1]
+    for indices in up_indices:
+        n_new_vertices, n_neighs = indices.shape
+        data = data[:, indices.reshape(-1)].reshape(
+            n_samples, n_new_vertices, n_neighs, n_features)
+        data = np.mean(data, axis=2)
+    return data
+
+
+def downsample(vertices, target_vertices):
+    """ Downsample icosahedron vertices by finding nearest neighbors.
+
+    See Also
+    --------
+    downsample_data, downsample_ico, interpolate, interpolate_data
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, downsample
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico2_verts, ico2_tris = icosahedron(order=2)
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> down3to2 = downsample(ico3_verts, ico2_verts)
+    >>> ico3_down_vertices = ico3_verts[down3to2]
+    >>> fig, ax = plt.subplots(1, 1, subplot_kw={
+            "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
+    >>> plot_trisurf(ico3_verts, triangles=ico3_tris, colorbar=False, fig=fig,
+                     ax=ax)
+    >>> for cnt, point in enumerate(ico3_down_vertices):
+    >>>     ax.scatter(point[0], point[1], point[2], marker="o", c="red",
+                       s=100)
+    >>> plt.show()
+
+    Parameters
+    ----------
+    vertices: array (n_samples, n_dim)
+        points of data set.
+    target_vertices: array (n_query, n_dim)
+        points to find nearest neighbors for.
+
+    Returns
+    -------
+    nearest_idx: array (n_query, )
+        index of nearest neighbor in target_vertices for every point in
+        vertices.
+    """
+    if vertices.size == 0 or target_vertices.size == 0:
+        return np.array([], int), np.array([])
+    tree = BallTree(vertices, leaf_size=2)
+    distances, nearest_idx = tree.query(
+        target_vertices, return_distance=True, k=1)
+    n_duplicates = len(nearest_idx) - len(np.unique(nearest_idx))
+    if n_duplicates:
+        raise RuntimeError("Could not downsample proprely, '{0}' duplicates "
+                           "were found. Are you using an icosahedron "
+                           "mesh?".format(n_duplicates))
+    return nearest_idx.squeeze()
+
+
+def downsample_data(data, by=1, down_indices=None):
+    """ Downsample data/texture on the icosahedron to a lower order.
+
+    See Also
+    --------
+    downsample, downsample_ico, interpolate, interpolate_data
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, downsample_data
+    >>> from surfify.datasets import make_classification
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico2_verts, ico2_tris = icosahedron(order=2)
+    >>> ico4_verts, ico4_tris = icosahedron(order=4)
+    >>> X, y = make_classification(ico4_verts, n_samples=1, n_classes=3,
+                                   scale=1, seed=42)
+    >>> y = y.reshape(1, -1, 1)
+    >>> y_down = downsample_data(y, by=2).squeeze()
+    >>> plot_trisurf(ico2_verts, triangles=ico2_tris, texture=y_down,
+                     is_label=True)
+    >>> plt.show()
+
+    Parameters
+    ----------
+    data: array (n_samples, n_vertices, n_features)
+        data to be downsampled.
+    by: int, default 1
+        number of orders to reduce the icosahedron by.
+    down_indices: list of array, default None
+        optionally specify the list of consecutive downsampling vertices
+        indices.
+
+    Returns
+    -------
+    downsampled_data: array (n_samples, new_n_vertices, n_features)
+        downsampled data.
+    """
+    if len(data.shape) != 3:
+        raise ValueError(
+            "Unexpected input data. Must be (n_samples, n_vertices, "
+            "n_features) but got '{0}'.".format(data.shape))
+    if down_indices is None:
+        order = order_of_ico_from_vertices(data.shape[1])
+        ico_verts, _ = icosahedron(order)
+        down_indices = []
+        for low_order in range(order - 1, order - 1 - by, -1):
+            low_ico_verts, _ = icosahedron(low_order)
+            down_indices.append(downsample(ico_verts, low_ico_verts))
+            ico_verts = low_ico_verts
+    for indices in down_indices:
+        data = data[:, indices]
+    return data
+
+
+def downsample_ico(vertices, triangles, by=1, down_indices=None):
+    """ Downsample an icosahedron full geometry: vertices and triangles.
+
+    See Also
+    --------
+    downsample, downsample_data, interpolate, interpolate_data
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, downsample_ico
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico4_verts, ico4_tris = icosahedron(order=4)
+    >>> ico2_down_verts, ico2_down_tris = downsample_ico(
+            ico4_verts, ico4_tris, by=2)
+    >>> plot_trisurf(ico2_down_verts, triangles=ico2_down_tris, colorbar=False)
+    >>> plt.show()
 
     Parameters
     ----------
     vertices: array (N, 3)
-        the icosahedron's vertices
-    triangles: array (M, 3)
-        the icosahedron's triangles
-    clockwise_from_center: bool
-        True for clockwise, False for counter clockwise
+        vertices of the icosahedron to reduce.
+    triangles: array (N, 3)
+        triangles of the icosahedron to reduce.
+    by: int, default 1
+        number of orders to reduce the icosahedron by.
+    down_indices: list of array, default None
+        optionally specify the list of consecutive downsampling vertices
+        indices.
 
     Returns
     -------
-    reordered_triangles: array (N, 3)
-        triangles reordered
+    downsampled_vertices: array (M, 3)
+        vertices of the newly downsampled icosahedorn.
+    downsampled_triangles: array (M, 3)
+        triangles of the newly downsampled icosahedron.
     """
-    reordered_triangles = triangles.copy()
-    for i, triangle in enumerate(triangles):
-        A, B, C = vertices[triangle]
-        N = np.cross((B - A), (C - A))
-        w = N @ A
-        if (clockwise_from_center and w >= 0) or \
-           (not clockwise_from_center and w <= 0):
-            reordered_triangles[i] = triangle[[0, 2, 1]]
-    return reordered_triangles
+    for idx_order in range(by):
+
+        former_order = order_of_ico_from_vertices(len(vertices))
+        if down_indices is None:
+            new_vertices, _ = icosahedron(former_order - 1)
+            indices = downsample(vertices, new_vertices)
+        else:
+            indices = down_indices[idx_order]
+            new_vertices = vertices[indices]
+
+        new_triangles = []
+        former_neighbors = neighbors(vertices, triangles, direct_neighbor=True)
+        former_neighbors = np.array(list(former_neighbors.values()))
+        for idx_down, down_node in enumerate(indices):
+            for idx_neigh, neigh_node in enumerate(
+                    former_neighbors[down_node]):
+                if neigh_node != down_node:
+                    next_neigh_node = former_neighbors[down_node][
+                        (idx_neigh + 1) % len(former_neighbors[down_node])]
+                    neigh_node_neighs = former_neighbors[neigh_node]
+                    next_neigh_node_neighs = former_neighbors[next_neigh_node]
+                    candidates = [idx_down]
+                    for neighs in (neigh_node_neighs, next_neigh_node_neighs):
+                        for neigh_idx in neighs:
+                            if neigh_idx in indices and neigh_idx != down_node:
+                                candidates.append(
+                                    indices.tolist().index(neigh_idx))
+                                break
+                    if (set(candidates) not in new_triangles and
+                            len(candidates) == 3):
+                        new_triangles.append(set(candidates))
+
+        new_triangles = np.array([list(tri) for tri in new_triangles])
+        vertices = new_vertices
+        triangles = new_triangles
+
+    return new_vertices, new_triangles
 
 
-class MeshProjector:
+class MeshProjector(object):
     """ Class to project an icosahedral mesh onto another
 
     Attributes
@@ -842,35 +1000,8 @@ class MeshProjector:
             self.Bs, self.projections, self.proj_membership, = \
                 cached_barycentric_coordinates()
 
-    # def reccursively_find_membership(self, last_idx):
-    #     used_to_be_nan = []
-
-    #     for neigh in self.neighbors[last_idx]:
-    #         if neigh == last_idx:
-    #             continue
-    #         elif self.proj_membership[neigh] == -1:
-    #             found = False
-    #             for tri, triangle in enumerate(self.triangles):
-    #                 T = self.template_mesh[triangle]
-    #                 B = np.linalg.solve(T.T, self.mesh[neigh])
-    #                 eps = self.eps
-    #                 if sum((B >= 0) | (np.abs(B) <= self.eps)) == 3:
-    #                     found = True
-    #                     self.projections[neigh] = B @ T
-    #                     self.proj_membership[neigh] = tri
-    #                     self.Bs[neigh] = B
-    #                     used_to_be_nan.append(neigh)
-    #                     break
-    #             if not found:
-    #                 print(":'(")
-    #     for neigh in used_to_be_nan:
-    #         self.reccursively_find_membership(neigh)
-
     def get_barycentric_coordinates(self):
         """ Compute the barycentric coordinates
-
-        Parameters
-        ----------
 
         Returns
         -------
@@ -922,3 +1053,32 @@ class MeshProjector:
             triangle = self.triangles[self.proj_membership[i]]
             new_texture[i] = texture[triangle].T @ self.Bs[i]
         return new_texture
+
+
+def order_triangles_vertices(vertices, triangles, clockwise_from_center=True):
+    """ Order the triangles' vertices to be in a clockwise order when viewed
+    from the center of the sphere described by the icosahedron
+
+    Parameters
+    ----------
+    vertices: array (N, 3)
+        the icosahedron's vertices
+    triangles: array (M, 3)
+        the icosahedron's triangles
+    clockwise_from_center: bool
+        True for clockwise, False for counter clockwise
+
+    Returns
+    -------
+    reordered_triangles: array (N, 3)
+        triangles reordered
+    """
+    reordered_triangles = triangles.copy()
+    for i, triangle in enumerate(triangles):
+        A, B, C = vertices[triangle]
+        N = np.cross((B - A), (C - A))
+        w = N @ A
+        if (clockwise_from_center and w >= 0) or \
+           (not clockwise_from_center and w <= 0):
+            reordered_triangles[i] = triangle[[0, 2, 1]]
+    return reordered_triangles

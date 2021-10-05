@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+##########################################################################
+# NSAp - Copyright (C) CEA, 2021
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+"""
+Surface augmentation tools.
+"""
+
+# Imports
 import numpy as np
 from joblib import Memory
 from scipy.spatial.transform import Rotation
@@ -5,7 +19,7 @@ from surfify.utils import neighbors, MeshProjector, recursively_find_neighbors
 
 
 class SphericalAugmentation(object):
-    """ Meta-class for spherical augmentations
+    """ Meta-class for spherical augmentations.
 
     Attributes
     ----------
@@ -16,7 +30,7 @@ class SphericalAugmentation(object):
     neighbors: dict
         neighbors of each vertex
     """
-    def __init__(self, cachedir, vertices, triangles, verbose=False):
+    def __init__(self, vertices, triangles, cachedir, verbose=False):
         memory = Memory(cachedir, verbose=int(verbose))
         cached_neighbors = memory.cache(neighbors)
         self.vertices = vertices
@@ -29,7 +43,7 @@ class SphericalAugmentation(object):
 
 
 class SphericalRotation(SphericalAugmentation):
-    """ Rotation of the icosahedron's vertices
+    """ Rotation of the icosahedron's vertices.
 
     Attributes
     ----------
@@ -40,7 +54,7 @@ class SphericalRotation(SphericalAugmentation):
     projector: surfify.utils.MeshProjector
         projector to project back onto the original icosahedron
     """
-    def __init__(self, cachedir, vertices, triangles, verbose=False,
+    def __init__(self, vertices, triangles, cachedir, verbose=False,
                  angles=(5, 0, 0), compute_bary=False):
         super().__init__(cachedir, vertices, triangles, verbose)
         self.rotation = Rotation.from_euler('xyz', angles, degrees=True)
@@ -56,7 +70,7 @@ class SphericalRotation(SphericalAugmentation):
 
 
 class SphericalRandomCut(SphericalAugmentation):
-    """ Random cut of patches on the icosahedron
+    """ Random cut of patches on the icosahedron.
 
     Attributes
     ----------
@@ -67,7 +81,7 @@ class SphericalRandomCut(SphericalAugmentation):
     cut_value: float
         value to replace to original values with on the icosahedron
     """
-    def __init__(self, cachedir, vertices, triangles, verbose=False,
+    def __init__(self, vertices, triangles, cachedir, verbose=False,
                  cut_size=3, n_cut=1, cut_value=0):
         super().__init__(cachedir, vertices, triangles, verbose)
         self.cut_size = cut_size

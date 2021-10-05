@@ -8,7 +8,7 @@
 ##########################################################################
 
 """
-Suface augmentations.
+Surface augmentations.
 """
 
 # Imports
