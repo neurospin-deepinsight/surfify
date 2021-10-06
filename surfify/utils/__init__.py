@@ -18,7 +18,7 @@ from .sampling import (
     interpolate, interpolate_data, downsample, downsample_data, downsample_ico,
     neighbors, neighbors_rec, get_rectangular_projection, find_neighbors,
     icosahedron, number_of_ico_vertices, order_of_ico_from_vertices,
-    MeshProjector)
+    rotate_data, order_triangles)
 from .coord import (
     cart2sph, sph2cart, text2grid, grid2text, ico2ico, text2ico)
 

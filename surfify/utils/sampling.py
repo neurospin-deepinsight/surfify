@@ -17,7 +17,7 @@ import tempfile
 import collections
 import numpy as np
 import networkx as nx
-from joblib import Memory
+from scipy.spatial import transform
 from sklearn.neighbors import BallTree
 from nilearn.surface import load_surf_mesh
 from nilearn.datasets import fetch_surf_fsaverage
@@ -289,6 +289,7 @@ def triangles_to_edges(triangles, return_index=False):
     return edges, triangles_index
 
 
+# TODO: normalize weights (see rotate_data).
 def neighbors_rec(vertices, triangles, size=5, zoom=5):
     """ Build rectangular grid neighbors and weights.
 
@@ -452,7 +453,6 @@ def find_neighbors(start_node, order, neighbors):
     indices: list of int
         the n-ring neighbors indices.
     """
-    # TODO: why not using rings directly?
     indices = []
     if order <= 0:
         return [start_node]
@@ -519,7 +519,7 @@ def icosahedron(order=3, standard_ico=False):
         the icosahedron order.
     standard_ico: bool, default False
         optionally uses a standard icosahedron tessalation. FreeSurfer
-        tessalation is used by default.
+        tesselation is used by default.
 
     Returns
     -------
@@ -648,7 +648,7 @@ def order_of_ico_from_vertices(n_vertices):
 def interpolate(vertices, target_vertices, target_triangles):
     """ Interpolate icosahedron missing data by finding nearest neighbors.
 
-    Interpolation weights can be set to 1 for a regular icosahedron geometry.
+    Interpolation weights are set to 1 for a regular icosahedron geometry.
 
     See Also
     --------
@@ -872,6 +872,7 @@ def downsample_data(data, by=1, down_indices=None):
     return data
 
 
+# TODO: add a description of the method.
 def downsample_ico(vertices, triangles, by=1, down_indices=None):
     """ Downsample an icosahedron full geometry: vertices and triangles.
 
@@ -948,137 +949,105 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
     return new_vertices, new_triangles
 
 
-class MeshProjector(object):
-    """ Class to project an icosahedral mesh onto another
+def rotate_data(data, vertices, triangles, angles):
+    """ Rotate data/texture on an icosahedron.
 
-    Attributes
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, rotate_data
+    >>> from surfify.datasets import make_classification
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> X, y = make_classification(ico3_verts, n_samples=1, n_classes=3,
+                                   scale=1, seed=42)
+    >>> y_rot = rotate_data(y.reshape(1, -1, 1), ico3_verts, ico3_tris,
+                            (45, 0, 0)).squeeze()
+    >>> plot_trisurf(ico3_verts, triangles=ico3_tris, texture=y,
+                     is_label=False)
+    >>> plot_trisurf(ico3_verts, triangles=ico3_tris, texture=y_rot,
+                     is_label=False)
+    >>> plt.show()
+
+    Parameters
     ----------
-    mesh: array (N, 3)
-        mesh to project onto
-    template_mesh: array (N, 3)
-        mesh to project
-    triangles: array (M, 3)
-        triangles associated to the meshes
-    neighbors: dict
-        neighbors of each vertex
-    triangles_membership: dict
-        triangles that each vertex belong to
-    projections: array (N, 3)
-        coordinates of the projections
-    proj_membership: array(N,)
-        index of the triangle in which each projection belong
-    Bs: array (N, 3)
-        barycentric coordinates of each projection in the corresponding
-        triangle
-    eps: float
-        machine precision
+    data: array (n_samples, n_vertices, n_features)
+        data to be rotated.
+    vertices: array (N, 3)
+        vertices of the icosahedron.
+    triangles: array (N, 3)
+        triangles of the icosahedron.
+    angles: 3-uplet
+        the rotation angles in degrees for each axis (Euler representation).
+
+    Returns
+    -------
+    rotated_data: array (n_samples, n_vertices, n_features)
+        rotated data.
     """
-    def __init__(self, mesh, template_mesh, triangles, compute_bary=True,
-                 cachedir=None):
-        assert len(mesh) == len(template_mesh)
-        cached_neighbors = neighbors
-        if cachedir is not None:
-            self.memory = Memory(cachedir, verbose=0)
-            cached_neighbors = self.memory.cache(neighbors)
-        self.mesh = mesh
-        self.template_mesh = template_mesh
-        self.triangles = triangles
-        self.neighbors = cached_neighbors(template_mesh, triangles)
-        self.neighbors = {
-            key: neighs[1] for key, neighs in self.neighbors.items()}
-        self.triangles_membership = {
-            node: [idx for idx, tri in enumerate(triangles) if node in tri]
-            for node in range(len(mesh))}
-        self.projections = np.zeros((len(mesh), 3))
-        self.proj_membership = np.empty(len(mesh), dtype=int)
-        self.proj_membership[:] = -1
-        self.Bs = np.zeros((len(mesh), 3))
-        self.eps = np.finfo(np.float64).eps
-        if compute_bary:
-            cached_barycentric_coordinates = self.memory.cache(
-                self.get_barycentric_coordinates)
-            self.Bs, self.projections, self.proj_membership, = \
-                cached_barycentric_coordinates()
+    if len(data.shape) != 3:
+        raise ValueError(
+            "Unexpected input data. Must be (n_samples, n_vertices, "
+            "n_features) but got '{0}'.".format(data.shape))
 
-    def get_barycentric_coordinates(self):
-        """ Compute the barycentric coordinates
+    rotation = transform.Rotation.from_euler("xyz", angles, degrees=True)
+    rotated_vertices = rotation.apply(vertices)
 
-        Returns
-        -------
-        Bs: array (N, 3)
-            barycentric coordinates of each projection in the corresponding
-            triangle
-        projections: array (N, 3)
-            coordinates of the projections
-        proj_membership: array(N,)
-            index of the triangle in which each projection belong
-        """
-        self.triangles = order_triangles_vertices(
-            self.template_mesh, self.triangles)
-        for node in range(len(self.mesh)):
-            found = False
-            for i, triangle in enumerate(self.triangles):
-                T = self.template_mesh[triangle]
-                B = np.linalg.solve(T.T, self.mesh[node])
-                if sum((B >= 0) | (np.abs(B) <= self.eps)) == 3:
-                    found = True
-                    self.projections[node] = B @ T
-                    self.proj_membership[node] = i
-                    self.Bs[node] = B
-                    break
-            if not found:
-                print(":'(")
-        return self.Bs, self.projections, self.proj_membership
+    neighs = np.zeros((len(vertices), 3), dtype=int)
+    weights = np.zeros((len(vertices), 3), dtype=float)
+    for idx, point in enumerate(rotated_vertices):
+        dist = np.linalg.norm(vertices - point, axis=1)
+        ordered_neighs = np.argsort(dist)
+        neighs[idx] = ordered_neighs[:3]
+        weights[idx] = dist[neighs[idx]] / np.sum(dist[neighs[idx]])
+    n_samples = len(data)
+    n_features = data.shape[-1]
+    n_vertices, n_neighs = neighs.shape
+    flat_neighs = neighs.reshape(-1)
+    flat_weights = np.repeat(weights.reshape(1, -1, 1), n_samples, axis=0)
+    rotated_data = data[:, flat_neighs] * flat_weights
+    rotated_data = rotated_data.reshape(n_samples, n_vertices, n_neighs,
+                                        n_features)
+    rotated_data = np.sum(rotated_data, axis=2)
 
-    def project(self, texture):
-        """ Project a texture onto the icosahedron
-
-        Parameters
-        ----------
-        texture: array (N, k)
-            texture associated to the template mesh
-
-        Returns
-        -------
-        new_texture: array (N, k)
-            projected texture on the mesh
-        """
-        if (self.proj_membership == -1).sum() > 0:
-            print((self.proj_membership == -1).sum())
-            raise AttributeError("You need to compute the barycentric "
-                                 "coordinates before projecting a texture")
-        new_texture = np.zeros(texture.shape)
-
-        for i in range(len(self.mesh)):
-            triangle = self.triangles[self.proj_membership[i]]
-            new_texture[i] = texture[triangle].T @ self.Bs[i]
-        return new_texture
+    return rotated_data
 
 
-def order_triangles_vertices(vertices, triangles, clockwise_from_center=True):
-    """ Order the triangles' vertices to be in a clockwise order when viewed
-    from the center of the sphere described by the icosahedron
+def order_triangles(vertices, triangles, clockwise_from_center=True):
+    """ Order the icosahedron triangles to be in a clockwise order when viewed
+    from the center of the sphere.
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, order_triangles
+    >>> ico0_verts, ico0_tris = icosahedron(order=0)
+    >>> clockwise_ico0_tris = order_triangles(
+            ico0_verts, ico0_tris, clockwise_from_center=True)
+    >>> counter_clockwise_ico0_tris = order_triangles(
+            ico0_verts, ico0_tris, clockwise_from_center=False)
+    >>> print(clockwise_ico0_tris)
+    >>> print(counter_clockwise_ico0_tris)
 
     Parameters
     ----------
     vertices: array (N, 3)
-        the icosahedron's vertices
+        the icosahedron's vertices.
     triangles: array (M, 3)
-        the icosahedron's triangles
-    clockwise_from_center: bool
-        True for clockwise, False for counter clockwise
+        the icosahedron's triangles.
+    clockwise_from_center: bool, default True
+        optionally use counter clockwise order.
 
     Returns
     -------
-    reordered_triangles: array (N, 3)
-        triangles reordered
+    reordered_triangles: array (M, 3)
+        reordered triangles.
     """
     reordered_triangles = triangles.copy()
-    for i, triangle in enumerate(triangles):
-        A, B, C = vertices[triangle]
-        N = np.cross((B - A), (C - A))
-        w = N @ A
-        if (clockwise_from_center and w >= 0) or \
-           (not clockwise_from_center and w <= 0):
-            reordered_triangles[i] = triangle[[0, 2, 1]]
+    for idx, triangle in enumerate(triangles):
+        loc_x, loc_y, loc_z = vertices[triangle]
+        norm = np.cross((loc_y - loc_x), (loc_z - loc_x))
+        w = np.dot(norm, loc_x)
+        if ((clockwise_from_center and w >= 0) or
+                (not clockwise_from_center and w <= 0)):
+            reordered_triangles[idx] = triangle[[0, 2, 1]]
     return reordered_triangles
