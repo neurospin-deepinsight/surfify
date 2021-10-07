@@ -124,20 +124,31 @@ def write_freesurfer(vertices, triangles, surf_file):
                                          volume_info=None)
 
 
-class HidePrints:
-    def __init__(self, hide_all=False):
-        self.hide_all = hide_all
+class HidePrints(object):
+    """ This function securely redirect the standard outputs and errors. The
+    resulting object can be used as a context manager. On completion of the
+    context the default context is restored.
+    """
+    def __init__(self, hide_err=False):
+        """ Init class.
+
+        Parameters
+        ----------
+        hide_err: bool, default False
+            optionally hide the standard errors.
+        """
+        self.hide_err = hide_err
 
     def __enter__(self):
         self._original_stdout = sys.stdout
-        sys.stdout = open(os.devnull, 'w')
-        if self.hide_all:
+        sys.stdout = open(os.devnull, "w")
+        if self.hide_err:
             self._original_stderr = sys.stderr
-            sys.stderr = open(os.devnull, 'w')
+            sys.stderr = open(os.devnull, "w")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         sys.stdout.close()
         sys.stdout = self._original_stdout
-        if self.hide_all:
+        if self.hide_err:
             sys.stderr.close()
             sys.stderr = self._original_stderr
