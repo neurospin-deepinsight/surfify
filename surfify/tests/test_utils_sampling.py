@@ -12,9 +12,11 @@ import os
 import numpy as np
 import unittest
 from surfify.utils import (
-    interpolate, neighbors, downsample, neighbors_rec, icosahedron,
-    number_of_ico_vertices, order_of_ico_from_vertices,
-    downsample_ico, wrapper_data_downsampler, setup_logging)
+    downsample, downsample_data, downsample_ico,
+    interpolate, interpolate_data,
+    neighbors, neighbors_rec,
+    icosahedron, number_of_ico_vertices, order_of_ico_from_vertices,
+    setup_logging, find_neighbors, order_triangles, rotate_data)
 from surfify.utils.coord import find_corresponding_order
 
 
@@ -57,6 +59,14 @@ class TestUtilsSampling(unittest.TestCase):
             vertices, triangles, size=5, zoom=5)
         self.assertTrue(grid_in_sphere.shape == (len(vertices), 25, 3))
 
+    def test_find_neighbors(self):
+        """ Test find_neighbors function.
+        """
+        vertices, triangles = icosahedron(order=1)
+        neighs = neighbors(vertices, triangles, depth=1, direct_neighbor=True)
+        node_neighs = find_neighbors(0, order=1, neighbors=neighs)
+        self.assertTrue(len(node_neighs) == 6)
+
     def test_interpolate(self):
         """ Test interpolate function.
         """
@@ -64,6 +74,16 @@ class TestUtilsSampling(unittest.TestCase):
         target_vertices, _ = icosahedron(order=0)
         interp = interpolate(target_vertices, vertices, triangles)
         self.assertTrue(len(interp) == len(vertices))
+
+    def test_interpolate_data(self):
+        """ Test interpolate_data function.
+        """
+        n_ico1_vertices = number_of_ico_vertices(order=1)
+        n_ico3_vertices = number_of_ico_vertices(order=3)
+        data = np.ones((n_ico1_vertices, ), dtype=int)
+        data = data.reshape(1, -1, 1)
+        interp_data = interpolate_data(data, by=2).squeeze()
+        self.assertTrue(len(interp_data) == n_ico3_vertices)
 
     def test_downsample(self):
         """ Test downsample function.
@@ -75,16 +95,14 @@ class TestUtilsSampling(unittest.TestCase):
         self.assertTrue(all(down_indexes == range(len(target_vertices))))
 
     def test_downsample_data(self):
-        """ Test downsample function.
+        """ Test downsample_data function.
         """
-        downsampler = wrapper_data_downsampler(
-            self.cachedir, from_order=4, to_order=1, aggregation="mean")
-        data = np.ones((number_of_ico_vertices(6), 2))
-        data[:, 1] *= 2
-        downsampled_data = downsampler(data)
-        self.assertTrue(len(downsampled_data) == number_of_ico_vertices(1))
-        self.assertTrue((downsampled_data[:, 0] == 1).all())
-        self.assertTrue((downsampled_data[:, 1] == 2).all())
+        n_ico1_vertices = number_of_ico_vertices(order=1)
+        n_ico3_vertices = number_of_ico_vertices(order=3)
+        data = np.ones((n_ico3_vertices, ), dtype=int)
+        data = data.reshape(1, -1, 1)
+        down_data = downsample_data(data, by=2).squeeze()
+        self.assertTrue(len(down_data) == n_ico1_vertices)
 
     def test_downsample_ico(self):
         """ Test downsample function.
@@ -94,6 +112,27 @@ class TestUtilsSampling(unittest.TestCase):
         new_vertices, _ = downsample_ico(
             vertices, triangles, by=3)
         self.assertTrue(np.array_equal(target_vertices, new_vertices))
+
+    def test_rotate_data(self):
+        """ Test rotate_data function.
+        """
+        vertices, triangles = icosahedron(order=3)
+        n_vertices = len(vertices)
+        data = np.ones((n_vertices, ), dtype=int)
+        data = data.reshape(1, -1, 1)
+        rot_data = rotate_data(data, vertices, triangles, angles=(360, 0, 0))
+        self.assertTrue(np.allclose(data, rot_data))
+
+    def test_order_triangles(self):
+        """ Test order_triangles function.
+        """
+        vertices, triangles = icosahedron(order=0)
+        clockwise_tris = order_triangles(
+            vertices, triangles, clockwise_from_center=True)
+        counter_clockwise_tris = order_triangles(
+            vertices, triangles, clockwise_from_center=False)
+        self.assertTrue(np.allclose(clockwise_tris,
+                                    counter_clockwise_tris[:, (0, 2, 1)]))
 
 
 if __name__ == "__main__":

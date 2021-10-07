@@ -38,7 +38,7 @@ class TestUtilsCoord(unittest.TestCase):
         pass
 
     def test_grid_projection(self):
-        """ Test the spherical texture to 2-d grid conversion and vis versa.
+        """ Test text2grid & grid2text functions.
         """
         proj_texture = utils.text2grid(self.ico_vertices, self.labels)
         texture = utils.grid2text(self.ico_vertices, proj_texture)
@@ -54,18 +54,15 @@ class TestUtilsCoord(unittest.TestCase):
         self.assertTrue(np.array_equal(new_order, b))
 
     def test_ico2ico(self):
-        """ Test the matching between 2 icoshedron of the same order
+        """ Test ico2ico function.
         """
         rotation = utils.ico2ico(self.ico_vertices, self.ico_vertices_standard)
         rotation_inv = utils.ico2ico(
             self.ico_vertices_standard, self.ico_vertices)
-
         rotated_vertices = rotation.apply(self.ico_vertices)
         rotated_and_back_vertices = rotation_inv.apply(rotated_vertices)
-
         new_order = utils.coord.find_corresponding_order(
             rotated_vertices, self.ico_vertices_standard)
-
         self.assertTrue(np.allclose(
             self.ico_vertices_standard,
             rotated_vertices[new_order], atol=1e-4))
@@ -73,15 +70,14 @@ class TestUtilsCoord(unittest.TestCase):
             self.ico_vertices,
             rotated_and_back_vertices))
 
-    def test_texture2ico(self):
-        """ Test the texture projection on an other icosahedron
+    def test_text2ico(self):
+        """ Test text2ico function.
         """
         texture = self.labels
-        new_texture = utils.texture2ico(
+        new_texture = utils.text2ico(
             texture, self.ico_vertices, self.ico_vertices_standard)
-        new_and_back_texture = utils.texture2ico(
+        new_and_back_texture = utils.text2ico(
             new_texture, self.ico_vertices_standard, self.ico_vertices)
-
         self.assertTrue(np.allclose(texture, new_and_back_texture))
 
 

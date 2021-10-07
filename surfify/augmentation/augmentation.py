@@ -1,95 +1,191 @@
+# -*- coding: utf-8 -*-
+##########################################################################
+# NSAp - Copyright (C) CEA, 2021
+# Distributed under the terms of the CeCILL-B license, as published by
+# the CEA-CNRS-INRIA. Refer to the LICENSE file or to
+# http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
+# for details.
+##########################################################################
+
+"""
+Surface augmentation tools.
+"""
+
+# Imports
+import numbers
+import datetime
 import numpy as np
-from joblib import Memory
-from scipy.spatial.transform import Rotation
-from surfify.utils import neighbors, MeshProjector, recursively_find_neighbors
+from surfify.utils import neighbors, rotate_data, find_neighbors
 
 
-class SphericalAugmentation(object):
-    """ Meta-class for spherical augmentations
+class SphericalRandomRotation(object):
+    """ Rotation of the icosahedron's vertices.
 
-    Attributes
-    ----------
-    vertices: array (N, 3)
-        icosahedron's vertices
-    triangles: array (M, 3)
-        icosahdron's triangles
-    neighbors: dict
-        neighbors of each vertex
+    See Also
+    --------
+    rotate_data
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron
+    >>> from surfify.datasets import make_classification
+    >>> from surfify.augmentation import SphericalRandomRotation
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> X, y = make_classification(ico3_verts, n_samples=1, n_classes=3,
+                                   scale=1, seed=42)
+    >>> processor = SphericalRandomRotation(
+            ico3_verts, ico3_tris, angles=(45, 0, 0))
+    >>> y_rot = processor(y)
+    >>> plot_trisurf(ico3_verts, triangles=ico3_tris, texture=y_rot,
+                     is_label=False)
+    >>> plt.show()
     """
-    def __init__(self, cachedir, vertices, triangles, verbose=False):
-        memory = Memory(cachedir, verbose=int(verbose))
-        cached_neighbors = memory.cache(neighbors)
+    def __init__(self, vertices, triangles, angles=(5, 0, 0)):
+        """ Init class.
+
+        Parameters
+        ----------
+        vertices: array (N, 3)
+            icosahedron's vertices.
+        triangles: array (M, 3)
+            icosahdron's triangles.
+        angles: 3-uplet, default (5, 0, 0)
+            the rotation angles intervals in degrees for each axis (Euler
+            representation).
+        """
         self.vertices = vertices
         self.triangles = triangles
-        self.neighbors = cached_neighbors(
-            vertices, triangles, direct_neighbor=True)
+        self.angles = [interval(val) for val in angles]
 
-    def __call__(self):
-        raise NotImplementedError()
+    def __call__(self, data):
+        """ Rotates the provided vertices and projects the input data
+        accordingly.
+
+        Parameters
+        ----------
+        data: array (N, )
+            input data/texture.
+
+        Returns
+        -------
+        rot_data: arr (N, )
+            rotated input data.
+        """
+        np.random.seed(datetime.datetime.now().second +
+                       datetime.datetime.now().microsecond)
+        angles = [np.random.uniform(val[0], val[1]) for val in self.angles]
+        data = data.reshape(1, -1, 1)
+        return rotate_data(data, self.vertices, self.triangles,
+                           angles).squeeze()
 
 
-class SphericalRotation(SphericalAugmentation):
-    """ Rotation of the icosahedron's vertices
+class SphericalRandomCut(object):
+    """ Random cut of patches on the icosahedron: use Direct Neighbors (DiNe)
+    to build patches.
 
-    Attributes
-    ----------
-    rotation: scipy.spatial.transform.Rotation
-        instance of a rotation
-    rotated_vertices: array (N, 3)
-        vertices rotated by the rotation operation
-    projector: surfify.utils.MeshProjector
-        projector to project back onto the original icosahedron
+    See Also
+    --------
+    neighbors
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron
+    >>> from surfify.datasets import make_classification
+    >>> from surfify.augmentation import SphericalRandomCut
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> X, y = make_classification(ico3_verts, n_samples=1, n_classes=3,
+                                   scale=1, seed=42)
+    >>> processor = SphericalRandomCut(
+            ico3_verts, ico3_tris, replacement_value=5)
+    >>> y_cut = processor(y)
+    >>> plot_trisurf(ico3_verts, triangles=ico3_tris, texture=y_cut,
+                     is_label=True)
+    >>> plt.show()
     """
-    def __init__(self, cachedir, vertices, triangles, verbose=False,
-                 angles=(5, 0, 0), compute_bary=False):
-        super().__init__(cachedir, vertices, triangles, verbose)
-        self.rotation = Rotation.from_euler('xyz', angles, degrees=True)
-        self.rotated_vertices = self.rotation.apply(vertices)
-        self.projector = MeshProjector(vertices, self.rotated_vertices,
-                                       triangles, compute_bary, cachedir)
+    def __init__(self, vertices, triangles, neighs=None, n_rings=3,
+                 n_patches=1, replacement_value=0):
+        """ Init class.
 
-    def __call__(self, data, **kwargs):
-        """ Rotates the provided texture and projects it onto the mesh,
-        by considering it associated to the rotated mesh
+        Parameters
+        ----------
+        vertices: array (N, 3)
+            icosahedron's vertices.
+        triangles: array (M, 3)
+            icosahdron's triangles.
+        neighs: dict, default None
+            optionnaly specify the DiNe neighboors of each vertex as build
+            with `sufify.utils.neighbors`, ie. a dictionary with vertices row
+            index as keys and a dictionary of neighbors vertices row indexes
+            organized by rings as values.
+        n_rings: int, default 3
+            the number of neighboring rings from one node to be considered
+            during the ablation.
+        n_patches: int, default 1
+            the number of patches to be considered.
+        replacement_value: float, default 0
+            the replacement patch value.
         """
-        return self.projector.project(data)
+        self.vertices = vertices
+        self.triangles = triangles
+        if neighs is None:
+            self.neighs = neighbors(vertices, triangles, direct_neighbor=True)
+        else:
+            self.neighs = neighs
+        self.n_rings = n_rings
+        self.n_patches = n_patches
+        self.replacement_value = replacement_value
+
+    def __call__(self, data):
+        """ Applies the cut out (ablation) augmentation to the data.
+
+        Parameters
+        ----------
+        data: array (N, )
+            input data/texture.
+
+        Returns
+        -------
+        cut_data: arr (N, )
+            ablated input data.
+        """
+        data_cut = data.copy()
+        for idx in range(self.n_patches):
+            random_node = np.random.randint(0, len(self.vertices))
+            patch_indices = find_neighbors(
+                random_node, self.n_rings, self.neighs)
+            data_cut[patch_indices] = self.replacement_value
+        return data_cut
 
 
-class SphericalRandomCut(SphericalAugmentation):
-    """ Random cut of patches on the icosahedron
+def interval(obj, lower=None):
+    """ Create an interval.
 
-    Attributes
+    Parameters
     ----------
-    cut_size: int
-        neighborhood order of the cut
-    n_cut: int
-        number of cuts
-    cut_value: float
-        value to replace to original values with on the icosahedron
+    obj: 2-uplet or number
+        the object used to build the interval.
+    lower: number, default None
+        the lower bound of the interval. If not specified, a symetric
+        interval is generated.
+
+    Returns
+    -------
+    interval: 2-uplet
+        an interval.
     """
-    def __init__(self, cachedir, vertices, triangles, verbose=False,
-                 cut_size=3, n_cut=1, cut_value=0):
-        super().__init__(cachedir, vertices, triangles, verbose)
-        self.cut_size = cut_size
-        self.n_cut = n_cut
-        self.cut_value = cut_value
-
-    def cut_out(self, data):
-        """ Cuts out from data by randomly selecting the nodes to cut from
-        and replacing the values
-        """
-        new_data = np.copy(data)
-        indices_to_cut = []
-        for i in range(self.n_cut):
-            selected_node = int(np.random.rand()*len(self.vertices))
-            indices_to_cut += recursively_find_neighbors(
-                    start_node=selected_node, order=self.cut_size,
-                    neighbors=self.neighbors)
-        indices_to_cut = np.array(list(set(indices_to_cut)), dtype=int)
-        new_data[indices_to_cut] = self.cut_value
-        return new_data
-
-    def __call__(self, data, **kwargs):
-        """ Applies the cut out augmentation to the data
-        """
-        return self.cut_out(data)
+    if isinstance(obj, numbers.Number):
+        if obj < 0:
+            raise ValueError("Specified interval value must be positive.")
+        if lower is None:
+            lower = -obj
+        return (lower, obj)
+    if len(obj) != 2:
+        raise ValueError("Interval must be specified with 2 values.")
+    min_val, max_val = obj
+    if min_val > max_val:
+        raise ValueError("Wrong interval boudaries.")
+    return tuple(obj)
