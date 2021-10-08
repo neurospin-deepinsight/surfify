@@ -161,12 +161,12 @@ class SphericalRandomCut(object):
         return data_cut
 
 
-def interval(obj, lower=None):
+def interval(bound, lower=None):
     """ Create an interval.
 
     Parameters
     ----------
-    obj: 2-uplet or number
+    bound: 2-uplet or number
         the object used to build the interval.
     lower: number, default None
         the lower bound of the interval. If not specified, a symetric
@@ -177,15 +177,15 @@ def interval(obj, lower=None):
     interval: 2-uplet
         an interval.
     """
-    if isinstance(obj, numbers.Number):
-        if obj < 0:
+    if isinstance(bound, numbers.Number):
+        if bound < 0:
             raise ValueError("Specified interval value must be positive.")
         if lower is None:
-            lower = -obj
-        return (lower, obj)
-    if len(obj) != 2:
+            lower = -bound
+        return (lower, bound)
+    if len(bound) != 2:
         raise ValueError("Interval must be specified with 2 values.")
-    min_val, max_val = obj
+    min_val, max_val = bound
     if min_val > max_val:
-        raise ValueError("Wrong interval boudaries.")
-    return tuple(obj)
+        raise ValueError("Wrong interval boundaries.")
+    return tuple(bound)

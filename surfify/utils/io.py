@@ -16,7 +16,13 @@ import os
 import sys
 import gzip
 import shutil
+import inspect
 import nibabel
+import numpy as np
+from joblib import Memory
+from logging import getLogger
+
+logger = getLogger("surfify")
 
 
 def ungzip(path):
@@ -152,3 +158,67 @@ class HidePrints(object):
         if self.hide_err:
             sys.stderr.close()
             sys.stderr = self._original_stderr
+
+
+def compute_and_store(func, path):
+    """ Decorator allowing to compute and store a function's output to
+    access it faster on next same calls of the wrapped function
+
+    Parameters
+    ----------
+    func: callable
+        function to cache. It will receive arguments of the wrapped
+        function that have the same name as its arguments when
+        executed.
+    path: string
+        path to store the function's output.
+
+    Returns
+    -------
+    decorator: callable
+        the decorator that can use the cached function.
+    """
+    memory = Memory(path, verbose=0)
+    cached_func = memory.cache(func)
+    params = inspect.signature(func).parameters
+    logger.debug("compute_and_store decorator's params : ", params)
+    def decorate(func):
+        def wrapped(*args, **kwargs):
+            logger.debug("wrapped function args : ", len(args))
+            logger.debug("wrapped function kwargs : ", kwargs.keys())
+            wrapped_params = inspect.signature(func).parameters
+            logger.debug("wrapped function params : ", wrapped_params)
+            common_args = {
+                name: list(wrapped_params).index(name)
+                for name in params if name in wrapped_params}
+            # we want to use arguments that are common to both function by name
+            cached_func_args = dict((name, kwargs[name]) for name in common_args
+                                     if name in kwargs.keys())
+            to_remove = []
+            for name in common_args:
+                if name not in cached_func_args.keys():
+                    # if the param's index is lower than the len of args, then it uses
+                    # the default value
+                    if common_args[name] < len(args):
+                        cached_func_args[name] = args[common_args[name]]
+                        to_remove.append(common_args[name])
+                    else:
+                        cached_func_args[name] = wrapped_params[name].default
+
+            # If a param was previously added, we want to remove it from args so that
+            # the wrapped function only receive it once through the kwargs
+            to_remove = np.array(to_remove)
+            to_remove.sort()
+            args = list(args)
+            for i in to_remove:
+                del args[i]
+                to_remove -= 1
+
+            kwargs.update(cached_func_args)
+            new_kwargs = cached_func(**cached_func_args)
+            kwargs.update(new_kwargs)
+
+            response = func(*args, **kwargs)
+            return response
+        return wrapped
+    return decorate

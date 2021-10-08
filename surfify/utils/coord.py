@@ -307,7 +307,7 @@ def find_corresponding_order(array, ref_array, atol=1e-4, axis=0):
     atol: float, default 1e-4
         tolerance when matching the values.
     axis: int, default 0
-        axis along which to permutate ordering.
+        axis along which to permute ordering.
 
     Returns
     -------
@@ -324,8 +324,6 @@ def find_corresponding_order(array, ref_array, atol=1e-4, axis=0):
     other_dims.remove(axis)
     other_dims = tuple(other_dims)
     for idx in range(len(array)):
-        dims = list(range(array.ndim))
-        dims.remove(axis)
         match = np.isclose(array, np.take(ref_array, idx, axis=axis),
                            atol=atol).all(other_dims)
         idx = np.where(match)[0]
