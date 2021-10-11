@@ -868,7 +868,6 @@ def downsample_data(data, by=1, down_indices=None):
     return data
 
 
-# TODO: add a description of the method.
 def downsample_ico(vertices, triangles, by=1, down_indices=None):
     """ Downsample an icosahedron full geometry: vertices and triangles.
 
@@ -922,6 +921,13 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
         for idx_down, down_node in enumerate(indices):
             for idx_neigh, neigh_node in enumerate(
                     former_neighbors[down_node]):
+                # for each central node k (that belong to the smaller icosahedron),
+                # we look in its neighborhood. For each oriented pair of neighbor
+                # we search in their respective neighborhood for a vertice that
+                # is in the downsample indices and is not the base node k. This
+                # trio gives us a triangle of the smaller icosahedron. We consider
+                # the triangles as a list of sets because the order of vertices
+                # do not matter for each triangle
                 if neigh_node != down_node:
                     next_neigh_node = former_neighbors[down_node][
                         (idx_neigh + 1) % len(former_neighbors[down_node])]
