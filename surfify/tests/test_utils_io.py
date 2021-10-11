@@ -9,11 +9,14 @@
 
 # Imports
 from logging import warning
+import os
 import sys
 import warnings
 import unittest
+import numpy as np
+from time import time
 from io import StringIO
-from surfify.utils.io import HidePrints
+from surfify.utils.io import HidePrints, compute_and_store
 
 
 class TestUtilsSampling(unittest.TestCase):
@@ -55,6 +58,30 @@ class TestUtilsSampling(unittest.TestCase):
             print("hey", file=sys.stderr)
         sys.stderr = old_stderr
         self.assertTrue(mystderr.getvalue() == "")
+
+    def test_compute_and_store(self):
+        """ Test compute and store decorator
+        """
+        def multiplication(a, b):
+            for i in range(b):
+                a += a
+            return {"ab": a}
+
+        @compute_and_store(multiplication, os.environ["HOME"])
+        def fast_function(a, b, c, ab=None):
+            if ab is None:
+                ab = a * b
+            return ab * c
+
+        a = np.random.randint(1000, 5000)
+        t = time()
+        res_1 = fast_function(a, 1000, 5)
+        first_time = time() - t
+        t = time()
+        res_2 = fast_function(a, 1000, 5)
+        second_time = time() - t
+        self.assertTrue(second_time < first_time)
+        self.assertTrue(res_1 == res_2)
 
 
 if __name__ == "__main__":

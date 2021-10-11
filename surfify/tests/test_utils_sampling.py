@@ -65,7 +65,7 @@ class TestUtilsSampling(unittest.TestCase):
         vertices, triangles = icosahedron(order=1)
         neighs = neighbors(vertices, triangles, depth=1, direct_neighbor=True)
         node_neighs = find_neighbors(0, order=1, neighbors=neighs)
-        self.assertTrue(len(node_neighs) == 6)
+        self.assertTrue(all([node in node_neighs for node in neighs[0]]))
 
     def test_interpolate(self):
         """ Test interpolate function.
@@ -121,7 +121,11 @@ class TestUtilsSampling(unittest.TestCase):
         data = np.ones((n_vertices, ), dtype=int)
         data = data.reshape(1, -1, 1)
         rot_data = rotate_data(data, vertices, triangles, angles=(360, 0, 0))
+        rot_data_euclid = rotate_data(data, vertices, triangles,
+                                      angles=(360, 0, 0),
+                                      interpolation="euclidian")
         self.assertTrue(np.allclose(data, rot_data))
+        self.assertTrue(np.allclose(data, rot_data_euclid))
 
     def test_order_triangles(self):
         """ Test order_triangles function.

@@ -945,10 +945,11 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
     return new_vertices, new_triangles
 
 
-def find_interpolation_coefficients_rotation(
-    vertices, triangles, angles, interpolation="barycentric"):
+def find_rotation_interpol_coefs(vertices, triangles, angles,
+                                 interpolation="barycentric"):
     """ Function to compute interpolation coefficient asssociated to
-    a rotation of the provided icosahedron
+    a rotation of the provided icosahedron. Used by the 'rotate_data'
+    function.
 
     Parameters
     ----------
@@ -972,7 +973,7 @@ def find_interpolation_coefficients_rotation(
 
     """
     if interpolation not in ["euclidian", "barycentric"]:
-        raise ValueError("The interpolation should be one of 'euclidian'"
+        raise ValueError("The interpolation should be one of 'euclidian' "
                          "or 'barycentric'.")
 
     n_vertices = len(vertices)
@@ -991,18 +992,18 @@ def find_interpolation_coefficients_rotation(
     else:
         eps = np.finfo(np.float64).eps
         triangles = order_triangles(rotated_vertices, triangles)
-        # distances = np.linalg.norm(vertices[np.repeat(range(n_vertices), n_vertices)].reshape(n_vertices, n_vertices, 3) - rotated_vertices, axis=-1)
-        # closest_points = np.argmin(distances, axis=-1)
-        
+
         candidate_triangles = [[] for _ in range(n_vertices)]
         for tri in triangles:
             for node in tri:
                 candidate_triangles[node].append(tri)
         for idx, point in enumerate(vertices):
             found = False
-            # in order not to look in all the triangles for the barycentric coordinates,
-            # we only consider the triangles associated with the closest rotated vertice
-            closest_point = np.argmin(np.linalg.norm(point - rotated_vertices, axis=1))
+            # in order not to look in all the triangles for the barycentric
+            # coordinates, we only consider the triangles associated with
+            # the closest rotated vertice
+            closest_point = np.argmin(
+                np.linalg.norm(point - rotated_vertices, axis=1))
             for triangle in candidate_triangles[closest_point]:
                 T = rotated_vertices[triangle]
                 B = np.linalg.solve(T.T, point)
@@ -1012,20 +1013,24 @@ def find_interpolation_coefficients_rotation(
                     weights[idx] = B
                     break
             if not found:
-                raise RuntimeError("Barycentric coordinate for vertex {} was not found. "
-                                   "It may be due to a numerical error. You might want "
-                                   "to consider an other type of interpolation.".format(
-                                       idx
-                                   ))
+                raise RuntimeError(
+                    "Barycentric coordinate for vertex {} was not found. "
+                    "It may be due to a numerical error. You might want "
+                    "to consider an other type of interpolation.".format(
+                        idx
+                    ))
     return {"neighs": neighs, "weights": weights}
 
 
-@compute_and_store(find_interpolation_coefficients_rotation,
+@compute_and_store(find_rotation_interpol_coefs,
                    os.path.join(os.environ["HOME"], "tmpdir"))
 def rotate_data(data, vertices, triangles, angles,
                 interpolation="barycentric", neighs=None,
                 weights=None):
-    """ Rotate data/texture on an icosahedron.
+    """ Rotate data/texture on an icosahedron. the decorator allows
+    the user not to care about the interpolation weights and neighbors,
+    which are automatically computed and stored to be reused the first
+    time the function is called with given arguments.
 
     Examples
     --------
@@ -1046,7 +1051,7 @@ def rotate_data(data, vertices, triangles, angles,
 
     Parameters
     ----------
-    data: array (n_samples, n_vertices, n_features)
+    data: array (n_samples, N, n_features)
         data to be rotated.
     vertices: array (N, 3)
         vertices of the icosahedron.
@@ -1054,8 +1059,14 @@ def rotate_data(data, vertices, triangles, angles,
         triangles of the icosahedron.
     angles: 3-uplet
         the rotation angles in degrees for each axis (Euler representation).
-    interp_type: string, default barycentric
-        the type of interpolation to use, one of 'barycentric' and 'closest'
+    interpolation: string, default barycentric.
+        the type of interpolation to use, one of 'barycentric' and 'closest'.
+    neighs: array (N, 3) or None, default None
+        neighbors to interpolate from for each vertex. If None, the function
+        computes the neighbors via the provided interpolation method.
+    weights: array (N, 3) or None, default None
+        weights associated to each neighbors for each vertex.  If None, the
+        function computes the weights via the provided interpolation method.
 
     Returns
     -------
@@ -1068,8 +1079,10 @@ def rotate_data(data, vertices, triangles, angles,
             "n_features) but got '{0}'.".format(data.shape))
 
     if neighs is None or weights is None:
-        neighs, weights = find_interpolation_coefficients_rotation(
+        interp_coefs = find_rotation_interpol_coefs(
             vertices, triangles, angles, interpolation)
+        neighs = interp_coefs["neighs"]
+        weights = interp_coefs["weigths"]
     n_samples = len(data)
     n_features = data.shape[-1]
     n_vertices, n_neighs = neighs.shape
@@ -1085,7 +1098,8 @@ def rotate_data(data, vertices, triangles, angles,
 
 def order_triangles(vertices, triangles, clockwise_from_center=True):
     """ Order the icosahedron triangles to be in a clockwise order when viewed
-    from the center of the sphere.
+    from the center of the sphere. Used by the 'find_rotation_interpol_coefs'
+    for barycentric interpolation.
 
     Examples
     --------
@@ -1121,27 +1135,3 @@ def order_triangles(vertices, triangles, clockwise_from_center=True):
                 (not clockwise_from_center and w <= 0)):
             reordered_triangles[idx] = triangle[[0, 2, 1]]
     return reordered_triangles
-
-                    
-
-    def project(self, texture):
-        """ Project a texture onto the icosahedron
-        Parameters
-        ----------
-        texture: array (N, k)
-            texture associated to the template mesh
-        Returns
-        -------
-        new_texture: array (N, k)
-            projected texture on the mesh
-        """
-        if (self.proj_membership == -1).sum() > 0:
-            print((self.proj_membership == -1).sum())
-            raise AttributeError("You need to compute the barycentric "
-                                 "coordinates before projecting a texture")
-        new_texture = np.zeros(texture.shape)
-
-        for i in range(len(self.mesh)):
-            triangle = self.triangles[self.proj_membership[i]]
-            new_texture[i] = texture[triangle].T @ self.Bs[i]
-        return new_texture
