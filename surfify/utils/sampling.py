@@ -906,15 +906,13 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
         triangles of the newly downsampled icosahedron.
     """
     for idx_order in range(by):
-
         former_order = order_of_ico_from_vertices(len(vertices))
+        n_new_vertices = number_of_ico_vertices(former_order - 1)
         if down_indices is None:
-            new_vertices, _ = icosahedron(former_order - 1)
-            indices = downsample(vertices, new_vertices)
+            indices = np.arange(n_new_vertices)
         else:
             indices = down_indices[idx_order]
-            new_vertices = vertices[indices]
-
+        new_vertices = vertices[indices]
         new_triangles = []
         former_neighbors = neighbors(vertices, triangles, direct_neighbor=True)
         former_neighbors = np.array(list(former_neighbors.values()))
@@ -940,6 +938,7 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
                                 candidates.append(
                                     indices.tolist().index(neigh_idx))
                                 break
+
                     if (set(candidates) not in new_triangles and
                             len(candidates) == 3):
                         new_triangles.append(set(candidates))
@@ -947,7 +946,6 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
         new_triangles = np.array([list(tri) for tri in new_triangles])
         vertices = new_vertices
         triangles = new_triangles
-
     return new_vertices, new_triangles
 
 
