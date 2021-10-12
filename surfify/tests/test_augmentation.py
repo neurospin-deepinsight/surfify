@@ -33,7 +33,7 @@ class TestAugmentation(unittest.TestCase):
         """
         vertices, triangles = utils.icosahedron(order=3)
         n_vertices = len(vertices)
-        data = np.ones((n_vertices, ), dtype=int)
+        data = np.ones((n_vertices, 3), dtype=int)
         processor = augment.SphericalRandomRotation(
             vertices, triangles, angles=(10, 0, 0))
         data_rot = processor(data)
@@ -44,9 +44,9 @@ class TestAugmentation(unittest.TestCase):
         """
         vertices, triangles = utils.icosahedron(order=3)
         n_vertices = len(vertices)
-        data = np.ones((n_vertices, ), dtype=int)
+        data = np.ones((n_vertices, 3), dtype=int)
         processor = augment.SphericalRandomCut(
-            vertices, triangles, neighs=None, n_rings=3,
+            vertices, triangles, neighs=None, patch_size=3,
             n_patches=1, replacement_value=5)
         data_cut = processor(data)
         self.assertEqual(len(data), len(data_cut))
