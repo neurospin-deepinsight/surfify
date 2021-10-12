@@ -46,6 +46,11 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
     is_label: bool, default False
         optionally specify that the texture contains labels in order to
         use most representative neighboor interpolation.
+    alpha: float, default 1
+        number between 0 and 1 defining the opacity of the faces. Not use
+        when texture is None, where alpha is fixed at 0.1
+    edgecolors: string, default 'black'
+        name of the matplotlib color to use for the edges
     """
 
     # Parameters

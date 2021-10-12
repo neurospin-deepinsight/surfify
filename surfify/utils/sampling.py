@@ -105,7 +105,7 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
     ----------
     vertices: array (N, 3)
         the icosahedron vertices.
-    triangles: array (N, 3)
+    triangles: array (M, 3)
         the icosahedron triangles.
     depth: int, default 1
         depth to stop the neighbors search, only paths of length <= depth are
@@ -192,7 +192,7 @@ def vertex_adjacency_graph(vertices, triangles):
     ----------
     vertices: array (N, 3)
         the icosahedron vertices.
-    triangles: array (N, 3)
+    triangles: array (M, 3)
         the icosahedron triangles.
 
     Returns
@@ -606,10 +606,8 @@ def number_of_ico_vertices(order=3):
 
     Returns
     -------
-    vertices: array (N, 3)
-        the icosahedron vertices.
-    triangles: array (N, 3)
-        the icosahedron triangles.
+    n_vertices: int
+        number of vertices of the corresponding icosahedron
     """
     return 10 * 4 ** order + 2
 
@@ -890,7 +888,7 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
     ----------
     vertices: array (N, 3)
         vertices of the icosahedron to reduce.
-    triangles: array (N, 3)
+    triangles: array (M, 3)
         triangles of the icosahedron to reduce.
     by: int, default 1
         number of orders to reduce the icosahedron by.
@@ -900,9 +898,9 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
 
     Returns
     -------
-    downsampled_vertices: array (M, 3)
+    new_vertices: array (N', 3)
         vertices of the newly downsampled icosahedorn.
-    downsampled_triangles: array (M, 3)
+    new_triangles: array (M', 3)
         triangles of the newly downsampled icosahedron.
     """
     for idx_order in range(by):
