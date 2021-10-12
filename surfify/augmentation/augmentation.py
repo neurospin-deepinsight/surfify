@@ -42,7 +42,8 @@ class SphericalRandomRotation(object):
                      is_label=False)
     >>> plt.show()
     """
-    def __init__(self, vertices, triangles, angles=(5, 0, 0)):
+    def __init__(self, vertices, triangles, angles=(5, 0, 0), fixed_angle=True,
+                 interpolation="barycentric"):
         """ Init class.
 
         Parameters
@@ -54,10 +55,22 @@ class SphericalRandomRotation(object):
         angles: 3-uplet, default (5, 0, 0)
             the rotation angles intervals in degrees for each axis (Euler
             representation).
+        fixed_angle: bool, default True
+            if True changes the angle of the rotation at each call. This option
+            slows down the training as the rotation needs to be initialiazed at
+            each call
+        interpolation: string, default 'barycentric'
+            type of interpolation to use by the rotate_data function, see
+            rotate_data
         """
         self.vertices = vertices
         self.triangles = triangles
         self.angles = [interval(val) for val in angles]
+        self.fixed_angle = fixed_angle
+        if fixed_angle:
+            self.angles = [
+                np.random.uniform(val[0], val[1]) for val in self.angles]
+        self.interpolation = interpolation
 
     def __call__(self, data):
         """ Rotates the provided vertices and projects the input data
@@ -75,9 +88,10 @@ class SphericalRandomRotation(object):
         """
         np.random.seed(datetime.datetime.now().second +
                        datetime.datetime.now().microsecond)
-        angles = [np.random.uniform(val[0], val[1]) for val in self.angles]
-        data = data.reshape(1, -1, 1)
-        return rotate_data(data, self.vertices, self.triangles,
+        angles = self.angles
+        if not self.fixed_angle:
+            angles = [np.random.uniform(val[0], val[1]) for val in self.angles]
+        return rotate_data(data[np.newaxis, :], self.vertices, self.triangles,
                            angles).squeeze()
 
 
@@ -106,7 +120,7 @@ class SphericalRandomCut(object):
                      is_label=True)
     >>> plt.show()
     """
-    def __init__(self, vertices, triangles, neighs=None, n_rings=3,
+    def __init__(self, vertices, triangles, neighs=None, patch_size=3,
                  n_patches=1, replacement_value=0):
         """ Init class.
 
@@ -135,7 +149,7 @@ class SphericalRandomCut(object):
             self.neighs = neighbors(vertices, triangles, direct_neighbor=True)
         else:
             self.neighs = neighs
-        self.n_rings = n_rings
+        self.patch_size = patch_size
         self.n_patches = n_patches
         self.replacement_value = replacement_value
 
@@ -156,7 +170,7 @@ class SphericalRandomCut(object):
         for idx in range(self.n_patches):
             random_node = np.random.randint(0, len(self.vertices))
             patch_indices = find_neighbors(
-                random_node, self.n_rings, self.neighs)
+                random_node, self.patch_size, self.neighs)
             data_cut[patch_indices] = self.replacement_value
         return data_cut
 

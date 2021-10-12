@@ -12,15 +12,12 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
-from surfify.utils import icosahedron
+from surfify.utils import icosahedron, neighbors
 from surfify.plotting import plot_trisurf
-from surfify.augmentation import SphericalRotation, SphericalRandomCut
-
-# It will create a "joblib" folder inyour home directory if it does not exist
-cachedir = os.environ["HOME"]
+from surfify.augmentation import SphericalRandomRotation, SphericalRandomCut
 
 coords, triangles = icosahedron(order=3)
-
+neighs = neighbors(coords, triangles, direct_neighbor=True)
 print(coords.shape)
 print(triangles.shape)
 
@@ -32,10 +29,10 @@ print(triangles.shape)
 
 tri_texture = np.array([[1, 1]]*len(coords))
 augmentations = []
-print("initializing augmentations...")
-for idx in range(5):
-    aug = SphericalRandomCut(cachedir, coords, triangles, cut_size=4-idx,
-                             n_cut=idx+1)
+print("initializing random cut augmentations...")
+for idx in tqdm(range(5)):
+    aug = SphericalRandomCut(coords, triangles, neighs=neighs, patch_size=4-idx,
+                             n_patches=idx+1)
     augmentations.append(aug)
 
 fig, ax = plt.subplots(2, 3, subplot_kw={
@@ -59,19 +56,18 @@ for idx in range(5):
 # Display 90° rotations of a texture on the icosahedron following the x axis
 # (green)
 
-tri_texture = np.array([[1, 1]] + [[0]*2]*(len(coords)-1), dtype=int)
+tri_texture = np.array([[1, 1]] + [[0, 0]]*(len(coords)-1))
 
 rotated_coords = []
 augmentations = []
+print("initializing random rotation augmentations...")
 for idx, angle in enumerate(tqdm(range(90, 271, 90))):
-    aug = SphericalRotation(cachedir, coords, triangles, angles=(angle, 0, 0),
-                            compute_bary=True)
+    aug = SphericalRandomRotation(coords, triangles, angles=(angle, 0, 0))
 
     augmentations.append(aug)
 
-# Each spherical augmentation has the mesh neighbors as attribute
-neighbors = augmentations[0].neighbors[0]
-tri_texture[neighbors] = [1, 1]
+# We also set the vertices neighbouring vertex 0 to 1
+tri_texture[neighs[0]] = [1, 1]
 
 fig, ax = plt.subplots(2, 2, subplot_kw={
         "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
@@ -89,6 +85,7 @@ for idx, angle in enumerate(range(90, 271, 90)):
     ax[(idx+1) // 2, (idx+1) % 2].plot([0, 0], [0, 0], [-1, 1], c='red')
     ax[(idx+1) // 2, (idx+1) % 2].plot([0, 0], [-1, 1], [0, 0], c='blue')
     ax[(idx+1) // 2, (idx+1) % 2].plot([-1, 1], [0, 0], [0, 0], c='green')
+    print("Angle rotation {}: {}".format(idx, augmentations[idx].angles))
     plot_trisurf(coords, triangles, augmented_texture[:, 0],
                  ax=ax[(idx+1) // 2, (idx+1) % 2], fig=fig,
                  colorbar=colorbar, alpha=0.3, edgecolors="white")
