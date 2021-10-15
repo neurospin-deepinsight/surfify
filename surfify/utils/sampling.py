@@ -1081,7 +1081,7 @@ def rotate_data(data, vertices, triangles, angles,
         interp_coefs = find_rotation_interpol_coefs(
             vertices, triangles, angles, interpolation)
         neighs = interp_coefs["neighs"]
-        weights = interp_coefs["weigths"]
+        weights = interp_coefs["weights"]
     n_samples = len(data)
     n_features = data.shape[-1]
     n_vertices, n_neighs = neighs.shape
