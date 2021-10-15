@@ -991,7 +991,7 @@ def find_rotation_interpol_coefs(vertices, triangles, angles,
             neighs[idx] = ordered_neighs[:3]
             weights[idx] = dist[neighs[idx]] / np.sum(dist[neighs[idx]])
     else:
-        eps = np.finfo(np.float64).eps
+        eps = np.finfo(np.float32).eps
         triangles = order_triangles(rotated_vertices, triangles)
 
         candidate_triangles = [[] for _ in range(n_vertices)]

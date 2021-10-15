@@ -17,7 +17,6 @@ from surfify.utils import (
     neighbors, neighbors_rec,
     icosahedron, number_of_ico_vertices, order_of_ico_from_vertices,
     setup_logging, find_neighbors, order_triangles, rotate_data)
-from surfify.utils.coord import find_corresponding_order
 
 
 class TestUtilsSampling(unittest.TestCase):
