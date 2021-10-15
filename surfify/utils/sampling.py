@@ -22,7 +22,7 @@ from scipy.spatial import transform
 from sklearn.neighbors import BallTree
 from nilearn.surface import load_surf_mesh
 from nilearn.datasets import fetch_surf_fsaverage
-from .io import HidePrints, compute_and_store
+from .io import HidePrints
 
 
 def normalize(vertex):
@@ -961,8 +961,8 @@ def find_rotation_interpol_coefs(vertices, triangles, angles,
         triangles of the icosahedron to reduce.
     angles: 3-uplet
         the rotation angles in degrees for each axis (Euler representation).
-    interpolation: string, default 'barycentric'
-        type of interpolation to use. One of 'euclidian' or 'barycentric'
+    interpolation: str, default 'barycentric'
+        type of interpolation to use: 'euclidian' or 'barycentric'.
 
     Returns
     -------
@@ -972,7 +972,6 @@ def find_rotation_interpol_coefs(vertices, triangles, angles,
             for each vertice
         weights: array (N, 3)
             weights associated to each of these neighbors
-
     """
     if interpolation not in ["euclidian", "barycentric"]:
         raise ValueError("The interpolation should be one of 'euclidian' "
@@ -1024,8 +1023,6 @@ def find_rotation_interpol_coefs(vertices, triangles, angles,
     return {"neighs": neighs, "weights": weights}
 
 
-@compute_and_store(find_rotation_interpol_coefs,
-                   os.path.join(os.environ["HOME"], "tmpdir"))
 def rotate_data(data, vertices, triangles, angles,
                 interpolation="barycentric", neighs=None,
                 weights=None):
@@ -1061,8 +1058,8 @@ def rotate_data(data, vertices, triangles, angles,
         triangles of the icosahedron.
     angles: 3-uplet
         the rotation angles in degrees for each axis (Euler representation).
-    interpolation: string, default barycentric.
-        the type of interpolation to use, one of 'barycentric' and 'closest'.
+    interpolation: str, default 'barycentric'.
+        the type of interpolation to use: 'euclidean' or 'barycentric'.
     neighs: array (N, 3) or None, default None
         neighbors to interpolate from for each vertex. If None, the function
         computes the neighbors via the provided interpolation method.
