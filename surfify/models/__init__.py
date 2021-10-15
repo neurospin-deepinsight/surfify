@@ -15,7 +15,7 @@ from .base import SphericalBase
 from .unet import SphericalUNet, SphericalGUNet
 from .vae import SphericalVAE, SphericalGVAE
 from .vgg import (
-    SphericalVGG,
+    SphericalVGG, SphericalGVGG,
     SphericalVGG11, SphericalVGG13, SphericalVGG16, SphericalVGG19,
     SphericalVGG11BN, SphericalVGG13BN, SphericalVGG16BN, SphericalVGG19BN,
     SphericalGVGG11, SphericalGVGG13, SphericalGVGG16, SphericalGVGG19,
