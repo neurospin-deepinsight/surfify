@@ -154,6 +154,5 @@ class TestNNModules(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    from surfify.utils import setup_logging
-    setup_logging(level="debug")
+    utils.setup_logging(level="debug")
     unittest.main()

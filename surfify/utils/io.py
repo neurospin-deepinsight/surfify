@@ -13,9 +13,16 @@ Spherical i/o utilities.
 
 # Imports
 import os
+import sys
 import gzip
 import shutil
+import inspect
 import nibabel
+import numpy as np
+from joblib import Memory
+from logging import getLogger
+
+logger = getLogger("surfify")
 
 
 def ungzip(path):
@@ -121,3 +128,108 @@ def write_freesurfer(vertices, triangles, surf_file):
     nibabel.freesurfer.io.write_geometry(surf_file, vertices, triangles,
                                          create_stamp="",
                                          volume_info=None)
+
+
+class HidePrints(object):
+    """ This function securely redirect the standard outputs and errors. The
+    resulting object can be used as a context manager. On completion of the
+    context the default context is restored.
+    """
+    def __init__(self, hide_err=False):
+        """ Init class.
+
+        Parameters
+        ----------
+        hide_err: bool, default False
+            optionally hide the standard errors.
+        """
+        self.hide_err = hide_err
+
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        sys.stdout = open(os.devnull, "w")
+        if self.hide_err:
+            self._original_stderr = sys.stderr
+            sys.stderr = open(os.devnull, "w")
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        if self.hide_err:
+            sys.stderr.close()
+            sys.stderr = self._original_stderr
+
+
+def compute_and_store(func, cachedir=None):
+    """ Decorator allowing to compute and store a function's output to
+    access them faster on the next calls of the wrapped function.
+
+    Notes
+    -----
+    The decorator input function and the decorated function must have
+    overlaping arguments. The decorator input function must also returns
+    a dictionnary containing the items to be stored.
+
+    Parameters
+    ----------
+    func: callable
+        function to cache. It will receive arguments of the wrapped
+        function that have the same name as its arguments when
+        executed.
+    cachedir: str, default None
+        the path of the base directory to use as a data store or None.
+        If None is given, no caching is done and the Memory object is
+        completely transparent.
+
+    Returns
+    -------
+    decorator: callable
+        the decorated function that can use the cached function outputs.
+    """
+    memory = Memory(cachedir, verbose=0)
+    cached_func = memory.cache(func)
+    params = inspect.signature(func).parameters
+    logger.debug("compute_and_store decorator's params : {}".format(params))
+
+    def decorate(func):
+        def wrapped(*args, **kwargs):
+            logger.debug("wrapped function args : {}".format(len(args)))
+            logger.debug("wrapped function kwargs : {}".format(kwargs.keys()))
+            wrapped_params = inspect.signature(func).parameters
+            logger.debug("wrapped function params : {}".format(wrapped_params))
+            common_args = {
+                name: list(wrapped_params).index(name)
+                for name in params if name in wrapped_params}
+            # we want to use arguments that are common to both function by name
+            cached_func_args = dict(
+                (name, kwargs[name]) for name in common_args
+                if name in kwargs.keys())
+            for name in common_args:
+                if name not in cached_func_args.keys():
+                    # if the param's index is lower than the len of args and is
+                    # not entered as kwargs, then it uses the default value
+                    if common_args[name] < len(args):
+                        cached_func_args[name] = args[common_args[name]]
+                    else:
+                        cached_func_args[name] = wrapped_params[name].default
+
+            logger.debug("cached function kwargs : {}".format(
+                cached_func_args))
+            if len(params) != len(cached_func_args):
+                raise ValueError(
+                    "The decorator input function and the decorated function "
+                    "must have overlaping arguments.")
+            new_kwargs = cached_func(**cached_func_args)
+            if not isinstance(new_kwargs, dict):
+                raise ValueError(
+                    "The decorator input function must also returns a "
+                    "dictionnary containing the items to be stored.")
+            kwargs.update(new_kwargs)
+
+            logger.debug("wrapped function args : {}".format(args))
+            logger.debug("wrapped function kwargs : {}".format(kwargs))
+            response = func(*args, **kwargs)
+            return response
+        return wrapped
+
+    return decorate

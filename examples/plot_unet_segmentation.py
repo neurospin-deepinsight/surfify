@@ -26,13 +26,15 @@ from surfify import datasets
 # First we load the classification dataset (with 3 classes) and inspect the
 # genrated labels.
 
+standard_ico = True
 ico_order = 3
 n_classes = 3
 n_epochs = 20
-ico_vertices, ico_triangles = utils.icosahedron(order=ico_order)
+ico_vertices, ico_triangles = utils.icosahedron(
+    order=ico_order, standard_ico=standard_ico)
 n_vertices = len(ico_vertices)
 X, y = datasets.make_classification(
-    ico_order, n_samples=40, n_classes=n_classes, scale=1, seed=42)
+    ico_vertices, n_samples=40, n_classes=n_classes, scale=1, seed=42)
 print("Surface:", ico_vertices.shape, ico_triangles.shape)
 print("Data:", X.shape, y.shape)
 plotting.plot_trisurf(ico_vertices, ico_triangles, y, is_label=True)
@@ -46,12 +48,12 @@ plotting.plot_trisurf(ico_vertices, ico_triangles, y, is_label=True)
 # an accuracy of 100% is expected.
 
 dataset = datasets.ClassificationDataset(
-    ico_order, n_samples=40, n_classes=n_classes, scale=1, seed=42)
+    ico_vertices, n_samples=40, n_classes=n_classes, scale=1, seed=42)
 loader = DataLoader(dataset, batch_size=5, shuffle=True)
 model = models.SphericalUNet(
     in_order=ico_order, in_channels=n_classes, out_channels=n_classes,
     depth=2, start_filts=8, conv_mode="DiNe", dine_size=1, up_mode="transpose",
-    use_freesurfer=False)
+    standard_ico=standard_ico)
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(
     model.parameters(), lr=0.1, momentum=0.99, weight_decay=1e-4)

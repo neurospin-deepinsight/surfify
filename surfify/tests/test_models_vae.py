@@ -25,9 +25,10 @@ class TestModelsVAE(unittest.TestCase):
         self.order = 3
         self.n_classes = 2
         self.depth = 2
-        ico_vertices, ico_triangles = utils.icosahedron(order=self.order)
+        ico_vertices, _ = utils.icosahedron(
+            order=self.order, standard_ico=True)
         self.X, _ = datasets.make_classification(
-            self.order, n_samples=40, n_classes=self.n_classes, scale=1,
+            ico_vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         self.X = torch.from_numpy(self.X)
 
@@ -42,12 +43,12 @@ class TestModelsVAE(unittest.TestCase):
         model = models.SphericalVAE(
             input_channels=self.n_classes, input_order=self.order,
             latent_dim=32,  conv_mode="DiNe", dine_size=1,
-            conv_flts=[32, 64], use_freesurfer=False)
+            conv_flts=[32, 64], standard_ico=True)
         out = model(self.X, self.X)
         model = models.SphericalVAE(
             input_channels=self.n_classes, input_order=self.order,
             latent_dim=32, conv_mode="RePa", repa_size=5, repa_zoom=5,
-            conv_flts=[32, 64], use_freesurfer=False)
+            conv_flts=[32, 64], standard_ico=True)
         out = model(self.X, self.X)
 
 
@@ -60,9 +61,10 @@ class TestModelsGVAE(unittest.TestCase):
         self.order = 3
         self.n_classes = 2
         self.depth = 2
-        ico_vertices, ico_triangles = utils.icosahedron(order=self.order)
+        ico_vertices, _ = utils.icosahedron(
+            order=self.order, standard_ico=True)
         X, _ = datasets.make_classification(
-            self.order, n_samples=40, n_classes=self.n_classes, scale=1,
+            ico_vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         self.X = []
         for sample_idx in range(X.shape[0]):
@@ -89,6 +91,5 @@ class TestModelsGVAE(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    from surfify.utils import setup_logging
-    setup_logging(level="debug")
+    utils.setup_logging(level="debug")
     unittest.main()

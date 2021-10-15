@@ -38,7 +38,7 @@ class SphericalVGG(SphericalBase):
     def __init__(self, input_channels, cfg, n_classes, input_order=5,
                  conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
                  hidden_dim=4096, batch_norm=False, init_weights=True,
-                 use_freesurfer=True, cachedir=None):
+                 standard_ico=False, cachedir=None):
         """ Init class.
 
         Parameters
@@ -69,7 +69,7 @@ class SphericalVGG(SphericalBase):
             layer.
         init_weights: bool, default True
             initialize network weights.
-        use_freesurfer: bool, default True
+        standard_ico: bool, default False
             optionaly use surfify tesselation.
         cachedir: str, default None
             set this folder to use smart caching speedup.
@@ -79,7 +79,7 @@ class SphericalVGG(SphericalBase):
         super(SphericalVGG, self).__init__(
             input_order=input_order, n_layers=cfg.count("M"),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
-            repa_zoom=repa_zoom, use_freesurfer=use_freesurfer,
+            repa_zoom=repa_zoom, standard_ico=standard_ico,
             cachedir=cachedir)
         self.input_channels = input_channels
         self.cfg = cfg
@@ -383,7 +383,7 @@ def class_factory(klass_name, klass_params, destination_module_globals):
 
         def __init__(self, input_channels, n_classes, input_order=5,
                      conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
-                     hidden_dim=4096, init_weights=True, use_freesurfer=True,
+                     hidden_dim=4096, init_weights=True, standard_ico=False,
                      cachedir=None):
             if self.cfg is None:
                 raise ValueError("Please specify a configuration first.")
@@ -400,7 +400,7 @@ def class_factory(klass_name, klass_params, destination_module_globals):
                 repa_zoom=repa_zoom,
                 hidden_dim=hidden_dim,
                 init_weights=init_weights,
-                use_freesurfer=use_freesurfer,
+                standard_ico=standard_ico,
                 cachedir=cachedir)
 
     class SphericalGVGGBase(SphericalGVGG):

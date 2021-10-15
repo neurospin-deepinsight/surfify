@@ -27,12 +27,13 @@ class TestModelsVGG(unittest.TestCase):
         self.n_samples_per_class = 40
         self.depth = 2
         self.cfg = [64, "M", 128, "M"]
-        ico_vertices, ico_triangles = utils.icosahedron(order=self.order)
+        ico_vertices, _ = utils.icosahedron(
+            order=self.order, standard_ico=True)
         X1, _ = datasets.make_classification(
-            self.order, n_samples=self.n_samples_per_class,
+            ico_vertices, n_samples=self.n_samples_per_class,
             n_classes=self.n_classes, scale=1, seed=42)
         X2, _ = datasets.make_classification(
-            self.order, n_samples=self.n_samples_per_class,
+            ico_vertices, n_samples=self.n_samples_per_class,
             n_classes=self.n_classes, scale=1, seed=82)
         self.X = np.concatenate((X1, X2), axis=0)
         self.y = np.asarray(
@@ -52,13 +53,13 @@ class TestModelsVGG(unittest.TestCase):
             input_channels=self.n_classes, cfg=self.cfg,
             n_classes=self.n_classes, input_order=self.order, conv_mode="DiNe",
             dine_size=1, hidden_dim=128, init_weights=True,
-            use_freesurfer=False)
+            standard_ico=True)
         out = model(self.X, self.X)
         model = models.SphericalVGG(
             input_channels=self.n_classes, cfg=self.cfg,
             n_classes=self.n_classes, input_order=self.order, conv_mode="RePa",
             repa_size=5, repa_zoom=5, hidden_dim=128, init_weights=True,
-            use_freesurfer=False)
+            standard_ico=True)
         out = model(self.X, self.X)
 
 
@@ -72,12 +73,13 @@ class TestModelsGVGG(unittest.TestCase):
         self.n_classes = 2
         self.n_samples_per_class = 40
         self.depth = 2
-        ico_vertices, ico_triangles = utils.icosahedron(order=self.order)
+        ico_vertices, _ = utils.icosahedron(
+            order=self.order, standard_ico=True)
         X1, _ = datasets.make_classification(
-            self.order, n_samples=self.n_samples_per_class,
+            ico_vertices, n_samples=self.n_samples_per_class,
             n_classes=self.n_classes, scale=1, seed=42)
         X2, _ = datasets.make_classification(
-            self.order, n_samples=self.n_samples_per_class,
+            ico_vertices, n_samples=self.n_samples_per_class,
             n_classes=self.n_classes, scale=1, seed=82)
         X = np.concatenate((X1, X2), axis=0)
         self.y = np.asarray(
@@ -108,6 +110,5 @@ class TestModelsGVGG(unittest.TestCase):
 
 if __name__ == "__main__":
 
-    from surfify.utils import setup_logging
-    setup_logging(level="debug")
+    utils.setup_logging(level="debug")
     unittest.main()

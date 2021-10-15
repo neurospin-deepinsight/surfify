@@ -18,7 +18,7 @@ infopath = os.path.join(os.path.dirname(__file__), "surfify", "info.py")
 with open(infopath) as open_file:
     exec(open_file.read(), release_info)
 pkgdata = {
-    "surfify": ["tests/*.py", ],
+    "surfify": ["tests/*.py", "resources/freesurfer_icos.npz"],
 }
 
 
