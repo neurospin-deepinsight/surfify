@@ -25,7 +25,7 @@ def make_classification(ico_vertices, n_samples=40, n_classes=2,
     Parameters
     ----------
     ico_vertices: array (N, 3)
-        the icosahedron's vertices
+        the icosahedron's vertices.
     n_samples: int, default 40
         the number of gene rate samples.
     n_classes: int, default 2

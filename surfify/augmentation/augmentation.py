@@ -15,7 +15,9 @@ Surface augmentation tools.
 import numbers
 import datetime
 import numpy as np
-from surfify.utils import neighbors, rotate_data, find_neighbors
+from surfify.utils import (
+    neighbors, rotate_data, find_neighbors, find_rotation_interpol_coefs)
+from surfify.utils.io import compute_and_store
 
 
 class SphericalRandomRotation(object):
@@ -43,7 +45,7 @@ class SphericalRandomRotation(object):
     >>> plt.show()
     """
     def __init__(self, vertices, triangles, angles=(5, 0, 0), fixed_angle=True,
-                 interpolation="barycentric"):
+                 interpolation="barycentric", cachedir=None):
         """ Init class.
 
         Parameters
@@ -59,9 +61,11 @@ class SphericalRandomRotation(object):
             if True changes the angle of the rotation at each call. This option
             slows down the training as the rotation needs to be initialiazed at
             each call
-        interpolation: string, default 'barycentric'
+        interpolation: str, default 'barycentric'
             type of interpolation to use by the rotate_data function, see
-            rotate_data
+            `rotate_data`.
+        cachedir: str, default None
+            set this folder to use smart caching speedup.
         """
         self.vertices = vertices
         self.triangles = triangles
@@ -71,6 +75,8 @@ class SphericalRandomRotation(object):
             self.angles = [
                 np.random.uniform(val[0], val[1]) for val in self.angles]
         self.interpolation = interpolation
+        self.rotate_data_cached = compute_and_store(
+            find_rotation_interpol_coefs, cachedir)(rotate_data)
 
     def __call__(self, data):
         """ Rotates the provided vertices and projects the input data
@@ -91,8 +97,9 @@ class SphericalRandomRotation(object):
         angles = self.angles
         if not self.fixed_angle:
             angles = [np.random.uniform(val[0], val[1]) for val in self.angles]
-        return rotate_data(data[np.newaxis, :], self.vertices, self.triangles,
-                           angles).squeeze()
+        return self.rotate_data_cached(
+            data[np.newaxis, :], self.vertices, self.triangles,
+            angles).squeeze()
 
 
 class SphericalRandomCut(object):

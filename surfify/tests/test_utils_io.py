@@ -8,11 +8,10 @@
 ##########################################################################
 
 # Imports
-from logging import warning
 import os
 import sys
-import warnings
 import unittest
+import tempfile
 import numpy as np
 from time import time
 from io import StringIO
@@ -63,23 +62,26 @@ class TestUtilsSampling(unittest.TestCase):
         """ Test compute and store decorator
         """
         def multiplication(a, b):
-            for i in range(b):
+            for idx in range(b):
                 a += a
             return {"ab": a}
 
-        @compute_and_store(multiplication, os.environ["HOME"])
         def fast_function(a, b, c, ab=None):
             if ab is None:
                 ab = a * b
             return ab * c
 
-        a = np.random.randint(1000, 5000)
-        t = time()
-        res_1 = fast_function(a, 1000, 5)
-        first_time = time() - t
-        t = time()
-        res_2 = fast_function(a, 1000, 5)
-        second_time = time() - t
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            cached_fast_function = compute_and_store(
+                multiplication, tmpdirname)(fast_function)
+            a = np.random.randint(1000, 5000)
+            start = time()
+            res_1 = cached_fast_function(a, 1000, 5)
+            first_time = time() - start
+            start = time()
+            res_2 = cached_fast_function(a, 1000, 5)
+            second_time = time() - start
+
         self.assertTrue(second_time < first_time)
         self.assertTrue(res_1 == res_2)
 

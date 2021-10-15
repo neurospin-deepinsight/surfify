@@ -160,9 +160,15 @@ class HidePrints(object):
             sys.stderr = self._original_stderr
 
 
-def compute_and_store(func, path):
+def compute_and_store(func, cachedir=None):
     """ Decorator allowing to compute and store a function's output to
-    access it faster on next same calls of the wrapped function
+    access them faster on the next calls of the wrapped function.
+
+    Notes
+    -----
+    The decorator input function and the decorated function must have
+    overlaping arguments. The decorator input function must also returns
+    a dictionnary containing the items to be stored.
 
     Parameters
     ----------
@@ -170,15 +176,17 @@ def compute_and_store(func, path):
         function to cache. It will receive arguments of the wrapped
         function that have the same name as its arguments when
         executed.
-    path: string
-        path to store the function's output.
+    cachedir: str, default None
+        the path of the base directory to use as a data store or None.
+        If None is given, no caching is done and the Memory object is
+        completely transparent.
 
     Returns
     -------
     decorator: callable
-        the decorator that can use the cached function.
+        the decorated function that can use the cached function outputs.
     """
-    memory = Memory(path, verbose=0)
+    memory = Memory(cachedir, verbose=0)
     cached_func = memory.cache(func)
     params = inspect.signature(func).parameters
     logger.debug("compute_and_store decorator's params : {}".format(params))
@@ -196,18 +204,26 @@ def compute_and_store(func, path):
             cached_func_args = dict(
                 (name, kwargs[name]) for name in common_args
                 if name in kwargs.keys())
-            # to_remove = []
             for name in common_args:
                 if name not in cached_func_args.keys():
                     # if the param's index is lower than the len of args and is
                     # not entered as kwargs, then it uses the default value
                     if common_args[name] < len(args):
                         cached_func_args[name] = args[common_args[name]]
-                        # to_remove.append(common_args[name])
                     else:
                         cached_func_args[name] = wrapped_params[name].default
 
+            logger.debug("cached function kwargs : {}".format(
+                cached_func_args))
+            if len(params) != len(cached_func_args):
+                raise ValueError(
+                    "The decorator input function and the decorated function "
+                    "must have overlaping arguments.")
             new_kwargs = cached_func(**cached_func_args)
+            if not isinstance(new_kwargs, dict):
+                raise ValueError(
+                    "The decorator input function must also returns a "
+                    "dictionnary containing the items to be stored.")
             kwargs.update(new_kwargs)
 
             logger.debug("wrapped function args : {}".format(args))
@@ -215,4 +231,5 @@ def compute_and_store(func, path):
             response = func(*args, **kwargs)
             return response
         return wrapped
+
     return decorate
