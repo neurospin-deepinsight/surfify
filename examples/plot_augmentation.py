@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Spherical augmentations
-===================
+=======================
 
 Credit: C Ambroise
 

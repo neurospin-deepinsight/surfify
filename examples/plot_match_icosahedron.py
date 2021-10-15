@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Icosahedron matching
-===================
+====================
 
 Credit: C Ambroise
 

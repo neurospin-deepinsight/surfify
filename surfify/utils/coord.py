@@ -300,9 +300,9 @@ def find_corresponding_order(array, ref_array, atol=1e-4, axis=0):
 
     Parameters
     ----------
-    array: array (N, *)
+    array: array (N, \*)
         the array to find the corresponding order for.
-    ref_array: array (N, *)
+    ref_array: array (N, \*)
         the reference array on which the order is base.
     atol: float, default 1e-4
         tolerance when matching the values.
