@@ -109,7 +109,7 @@ def text2grid(vertices, texture, resx=192, resy=192):
 
     Parameters
     ----------
-    vertices array (N, 3)
+    vertices: array (N, 3)
         x, y, z coordinates of an icosahedron.
     texture: array (N, )
         the input icosahedron texture.
@@ -153,7 +153,7 @@ def grid2text(vertices, proj):
 
     Parameters
     ----------
-    vertices array (N, 3)
+    vertices: array (N, 3)
         x, y, z coordinates of an icosahedron.
     proj: array (resx, resy)
         the grided-texture.
