@@ -25,7 +25,7 @@ class SphericalRandomRotation(object):
 
     See Also
     --------
-    rotate_data
+    surfify.utils.rotate_data
 
     Examples
     --------
@@ -108,7 +108,7 @@ class SphericalRandomCut(object):
 
     See Also
     --------
-    neighbors
+    surfify.utils.neighbors
 
     Examples
     --------
