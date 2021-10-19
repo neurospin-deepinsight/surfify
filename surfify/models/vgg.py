@@ -37,8 +37,8 @@ class SphericalVGG(SphericalBase):
     """
     def __init__(self, input_channels, cfg, n_classes, input_order=5,
                  conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
-                 hidden_dim=4096, batch_norm=False, init_weights=True,
-                 standard_ico=False, cachedir=None):
+                 dynamic_repa_zoom=False, hidden_dim=4096, batch_norm=False,
+                 init_weights=True, standard_ico=False, cachedir=None):
         """ Init class.
 
         Parameters
@@ -60,8 +60,11 @@ class SphericalVGG(SphericalBase):
         repa_size: int, default 5
             the size of the rectangular grid in the tangent space.
         repa_zoom: int, default 5
-            a multiplicative factor applied to the rectangular grid in the
-            tangent space.
+            control the rectangular grid spacing in the tangent space by
+            applying a multiplicative factor of `1 / repa_zoom`.
+        dynamic_repa_zoom: bool, default False
+            dynamically adapt the RePa zoom by applying a multiplicative factor
+            of `log(order + 1) + 1`.
         hidden_dim: int, default 4096
             the 2-layer classification MLP number of hidden dims.
         batch_norm: bool, default False
@@ -79,8 +82,8 @@ class SphericalVGG(SphericalBase):
         super(SphericalVGG, self).__init__(
             input_order=input_order, n_layers=cfg.count("M"),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
-            repa_zoom=repa_zoom, standard_ico=standard_ico,
-            cachedir=cachedir)
+            repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
+            standard_ico=standard_ico, cachedir=cachedir)
         self.input_channels = input_channels
         self.cfg = cfg
         self.n_classes = n_classes
@@ -383,8 +386,8 @@ def class_factory(klass_name, klass_params, destination_module_globals):
 
         def __init__(self, input_channels, n_classes, input_order=5,
                      conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
-                     hidden_dim=4096, init_weights=True, standard_ico=False,
-                     cachedir=None):
+                     dynamic_repa_zoom=False, hidden_dim=4096,
+                     init_weights=True, standard_ico=False, cachedir=None):
             if self.cfg is None:
                 raise ValueError("Please specify a configuration first.")
             SphericalVGG.__init__(
@@ -398,6 +401,7 @@ def class_factory(klass_name, klass_params, destination_module_globals):
                 dine_size=dine_size,
                 repa_size=repa_size,
                 repa_zoom=repa_zoom,
+                dynamic_repa_zoom=dynamic_repa_zoom,
                 hidden_dim=hidden_dim,
                 init_weights=init_weights,
                 standard_ico=standard_ico,

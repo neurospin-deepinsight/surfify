@@ -43,8 +43,8 @@ class SphericalBase(nn.Module):
                              "conv_neighbor_indices"])
 
     def __init__(self, input_order, n_layers, conv_mode="DiNe",
-                 dine_size=1, repa_size=5, repa_zoom=5, standard_ico=False,
-                 cachedir=None):
+                 dine_size=1, repa_size=5, repa_zoom=5,
+                 dynamic_repa_zoom=False, standard_ico=False, cachedir=None):
         """ Init class.
 
         Parameters
@@ -62,8 +62,11 @@ class SphericalBase(nn.Module):
         repa_size: int, default 5
             the size of the rectangular grid in the tangent space.
         repa_zoom: int, default 5
-            a multiplicative factor applied to the rectangular grid in the
-            tangent space.
+            control the rectangular grid spacing in the tangent space by
+            applying a multiplicative factor of `1 / repa_zoom`.
+        dynamic_repa_zoom: bool, default False
+            dynamically adapt the RePa zoom by applying a multiplicative factor
+            of `log(order + 1) + 1`.
         standard_ico: bool, default False
             optionally uses a standard icosahedron tessalation. FreeSurfer
             tesselation is used by default.
@@ -77,6 +80,7 @@ class SphericalBase(nn.Module):
         self.dine_size = dine_size
         self.repa_size = repa_size
         self.repa_zoom = repa_zoom
+        self.dynamic_repa_zoom = dynamic_repa_zoom
         self.standard_ico = standard_ico
         self.cachedir = cachedir
         if conv_mode == "RePa":
@@ -85,12 +89,13 @@ class SphericalBase(nn.Module):
             self.sconv = IcoDiNeConv
         self.ico = self.build_ico_info(
             input_order, n_layers, conv_mode, dine_size, repa_size, repa_zoom,
-            standard_ico, cachedir)
+            dynamic_repa_zoom, standard_ico, cachedir)
 
     @classmethod
     def build_ico_info(cls, input_order, n_layers, conv_mode="DiNe",
                        dine_size=1, repa_size=5, repa_zoom=5,
-                       standard_ico=False, cachedir=None):
+                       dynamic_repa_zoom=False, standard_ico=False,
+                       cachedir=None):
         """ Build an dictionnary containing icosehedron informations at
         each order of interest with the related upsampling and downsampling
         informations. This methods is useful to speed up processings
@@ -111,8 +116,11 @@ class SphericalBase(nn.Module):
         repa_size: int, default 5
             the size of the rectangular grid in the tangent space.
         repa_zoom: int, default 5
-            a multiplicative factor applied to the rectangular grid in the
-            tangent space.
+            control the rectangular grid spacing in the tangent space by
+            applying a multiplicative factor of `1 / repa_zoom`.
+        dynamic_repa_zoom: bool, default False
+            dynamically adapt the RePa zoom by applying a multiplicative factor
+            of `log(order + 1) + 1`.
         standard_ico: bool, default False
             optionally uses a standard icosahedron tessalation. FreeSurfer
             tesselation is used by default.
@@ -150,11 +158,16 @@ class SphericalBase(nn.Module):
                 logger.debug("- conv neighbors {0}: {1}".format(
                     order, conv_neighs.shape))
             elif conv_mode == "RePa":
+                if dynamic_repa_zoom:
+                    current_zoom = repa_zoom * (np.log(order + 1) + 1)
+                else:
+                    current_zoom = repa_zoom
                 conv_neighs, conv_weights, _ = neighbors_rec_cached(
                     vertices, triangles, size=repa_size,
-                    zoom=repa_zoom)
-                logger.debug("- conv neighbors {0}: {1} - {2}".format(
-                    order, conv_neighs.shape, conv_weights.shape))
+                    zoom=current_zoom)
+                logger.debug("- conv neighbors {0} - {1}: {2} - {3}".format(
+                    order, current_zoom, conv_neighs.shape,
+                    conv_weights.shape))
                 conv_neighs = (conv_neighs, conv_weights)
             else:
                 raise ValueError("Unexptected convolution mode.")

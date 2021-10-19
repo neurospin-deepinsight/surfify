@@ -73,8 +73,8 @@ class SphericalUNet(SphericalBase):
     """
     def __init__(self, in_order, in_channels, out_channels, depth=5,
                  start_filts=32, conv_mode="DiNe", dine_size=1, repa_size=5,
-                 repa_zoom=5, up_mode="interp", standard_ico=False,
-                 cachedir=None):
+                 repa_zoom=5, dynamic_repa_zoom=False, up_mode="interp",
+                 standard_ico=False, cachedir=None):
         """ Init SphericalUNet.
 
         Parameters
@@ -98,8 +98,11 @@ class SphericalUNet(SphericalBase):
         repa_size: int, default 5
             the size of the rectangular grid in the tangent space.
         repa_zoom: int, default 5
-            a multiplicative factor applied to the rectangular grid in the
-            tangent space.
+            control the rectangular grid spacing in the tangent space by
+            applying a multiplicative factor of `1 / repa_zoom`.
+        dynamic_repa_zoom: bool, default False
+            dynamically adapt the RePa zoom by applying a multiplicative factor
+            of `log(order + 1) + 1`.
         up_mode: str, default 'interp'
             type of upsampling: 'transpose' for transpose
             convolution (1 ring), 'interp' for nearest neighbor linear
@@ -114,8 +117,8 @@ class SphericalUNet(SphericalBase):
         super(SphericalUNet, self).__init__(
             input_order=in_order, n_layers=depth,
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
-            repa_zoom=repa_zoom, standard_ico=standard_ico,
-            cachedir=cachedir)
+            repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
+            standard_ico=standard_ico, cachedir=cachedir)
         self.memory = Memory(cachedir, verbose=0)
         self.in_order = in_order
         self.depth = depth

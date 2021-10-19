@@ -49,8 +49,8 @@ class SphericalVAE(SphericalBase):
     """
     def __init__(self, input_channels=1, input_order=5, latent_dim=64,
                  conv_flts=[32, 32, 64, 64], conv_mode="DiNe", dine_size=1,
-                 repa_size=5, repa_zoom=5, standard_ico=False,
-                 cachedir=None):
+                 repa_size=5, repa_zoom=5, dynamic_repa_zoom=False,
+                 standard_ico=False, cachedir=None):
         """ Init class.
 
         Parameters
@@ -72,8 +72,11 @@ class SphericalVAE(SphericalBase):
         repa_size: int, default 5
             the size of the rectangular grid in the tangent space.
         repa_zoom: int, default 5
-            a multiplicative factor applied to the rectangular grid in the
-            tangent space.
+            control the rectangular grid spacing in the tangent space by
+            applying a multiplicative factor of `1 / repa_zoom`.
+        dynamic_repa_zoom: bool, default False
+            dynamically adapt the RePa zoom by applying a multiplicative factor
+            of `log(order + 1) + 1`.
         standard_ico: bool, default False
             optionaly use surfify tesselation.
         cachedir: str, default None
@@ -83,8 +86,8 @@ class SphericalVAE(SphericalBase):
         super(SphericalVAE, self).__init__(
             input_order=input_order, n_layers=len(conv_flts),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
-            repa_zoom=repa_zoom, standard_ico=standard_ico,
-            cachedir=cachedir)
+            repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
+            standard_ico=standard_ico, cachedir=cachedir)
         self.input_channels = input_channels
         self.latent_dim = latent_dim
         self.conv_flts = conv_flts
