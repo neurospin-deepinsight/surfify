@@ -1,5 +1,33 @@
 .. -*- mode: rst -*-
 
+Version 0.2.0
+=============
+
+:Date: work in progress
+
+Added
+-----
+
+* dynamic adaptation of the RePa zoom in `SphericalBase` to control the size
+  of the generated grid on the spherical surface.
+
+Changed
+-------
+
+Deprecated
+----------
+
+Fixed
+-----
+
+* normalize weights in RePa.
+
+Contributors
+------------
+
+The following people contributed to this release (from ``git shortlog -ns v0.2.0``)::
+
+
 Version 0.1.0
 =============
 
