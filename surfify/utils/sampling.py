@@ -20,8 +20,6 @@ from time import time
 import networkx as nx
 from scipy.spatial import transform
 from sklearn.neighbors import BallTree
-from nilearn.surface import load_surf_mesh
-from nilearn.datasets import fetch_surf_fsaverage
 from .io import HidePrints
 
 
@@ -290,7 +288,6 @@ def triangles_to_edges(triangles, return_index=False):
     return edges, triangles_index
 
 
-# TODO: normalize weights (see rotate_data).
 def neighbors_rec(vertices, triangles, size=5, zoom=5):
     """ Build rectangular grid neighbors and weights.
 
@@ -351,6 +348,7 @@ def neighbors_rec(vertices, triangles, size=5, zoom=5):
             ordered_neighs = np.argsort(dist)
             neighs[idx1, idx2] = ordered_neighs[:3]
             weights[idx1, idx2] = dist[neighs[idx1, idx2]]
+            weights[idx1, idx2] /= np.sum(dist[neighs[idx1, idx2]])
     return neighs, weights, grid_in_sphere
 
 
@@ -477,6 +475,9 @@ def build_freesurfer_ico(ico_file):
     ico_file: str
         path to the generated FreeSurfer reference icosahedron topologies.
     """
+    from nilearn.surface import load_surf_mesh
+    from nilearn.datasets import fetch_surf_fsaverage
+
     data = {}
     for order in range(7, 2, -1):
         surf_name = "fsaverage{0}".format(order)
