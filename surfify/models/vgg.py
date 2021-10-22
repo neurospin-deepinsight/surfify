@@ -34,11 +34,27 @@ class SphericalVGG(SphericalBase):
     See Also
     --------
     SphericalGVGG
+
+    Examples
+    --------
+    >>> import torch
+    >>> from surfify.utils import icosahedron
+    >>> from surfify.models import SphericalVGG11
+    >>> verts, tris = icosahedron(order=6)
+    >>> x = torch.zeros((1, 2, len(verts)))
+    >>> model = SphericalVGG11(
+    >>>     input_channels=2, n_classes=10, input_order=6,
+    >>>     conv_mode="DiNe", dine_size=1, hidden_dim=512,
+    >>>     fusion_level=2, init_weights=True, standard_ico=False)
+    >>> print(model)
+    >>> out = model(x, x)
+    >>> print(out.shape)
     """
     def __init__(self, input_channels, cfg, n_classes, input_order=5,
                  conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
                  dynamic_repa_zoom=False, hidden_dim=4096, batch_norm=False,
-                 init_weights=True, standard_ico=False, cachedir=None):
+                 fusion_level=1, init_weights=True, standard_ico=False,
+                 cachedir=None):
         """ Init class.
 
         Parameters
@@ -70,6 +86,9 @@ class SphericalVGG(SphericalBase):
         batch_norm: bool, default False
             wether or not to use batch normalization after a convolution
             layer.
+        fusion_level: int, default 1
+            at which max pooling level left and right hemisphere data
+            are concatenated.
         init_weights: bool, default True
             initialize network weights.
         standard_ico: bool, default False
@@ -78,7 +97,7 @@ class SphericalVGG(SphericalBase):
             set this folder to use smart caching speedup.
         """
         logger.debug("SphericalVGG init...")
-        cfg = cfg[:-1]
+        cfg = cfg
         super(SphericalVGG, self).__init__(
             input_order=input_order, n_layers=cfg.count("M"),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
@@ -89,7 +108,11 @@ class SphericalVGG(SphericalBase):
         self.n_classes = n_classes
         self.batch_norm = batch_norm
         self.n_modules = len(cfg)
-        self.final_flt = int(cfg[-1])
+        if fusion_level > self.n_layers or fusion_level <= 0:
+            raise ValueError("Impossible to use input fusion level with "
+                             "'{0}' layers.".format(self.n_layers))
+        self.fusion_level = fusion_level
+        self.final_flt = int(cfg[-2])
         self.top_flatten_dim = len(
             self.ico[self.input_order - self.n_layers + 1].vertices)
         self.top_final = self.final_flt * 7
@@ -120,18 +143,16 @@ class SphericalVGG(SphericalBase):
         Returns
         -------
         out: torch.Tensor
+            the prediction.
         """
         logger.debug("SphericalVGG forward pass")
         logger.debug(debug_msg("left cortical", left_x))
         logger.debug(debug_msg("right cortical", right_x))
-        x = torch.cat(
-            (self.enc_left_conv(left_x), self.enc_right_conv(right_x)), dim=1)
+        left_x = self._safe_forward(self.enc_left_conv, left_x)
+        right_x = self._safe_forward(self.enc_right_conv, right_x)
+        x = torch.cat((left_x, right_x), dim=1)
         logger.debug(debug_msg("lh/rh path", x))
-        for mod in self.enc_w_conv.children():
-            if isinstance(mod, IcoPool):
-                x = mod(x)[0]
-            else:
-                x = mod(x)
+        x = self._safe_forward(self.enc_w_conv, x)
         logger.debug(debug_msg("features", x))
         x = self.avgpool(x)
         logger.debug(debug_msg("avg pooling", x))
@@ -165,37 +186,46 @@ class SphericalVGG(SphericalBase):
         self.enc_left_conv = nn.Sequential()
         self.enc_right_conv = nn.Sequential()
         self.enc_w_conv = nn.Sequential()
-        first_layer = True
+        multi_path = True
+        layer_idx = 0
         for idx in range(self.n_modules):
             if self.cfg[idx] == "M":
                 order -= 1
-                if first_layer:
-                    first_layer = False
+                layer_idx += 1
+                if layer_idx == self.fusion_level:
+                    multi_path = False
                     input_channels *= 2
                 pooling = IcoPool(
                     down_neigh_indices=self.ico[order + 1].neighbor_indices,
                     down_indices=self.ico[order + 1].down_indices,
                     pooling_type="max")
-                self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
-            elif first_layer:
+                if multi_path:
+                    self.enc_left_conv.add_module(
+                        "pooling_{0}".format(idx), pooling)
+                    self.enc_right_conv.add_module(
+                        "pooling_{0}".format(idx), pooling)
+                else:
+                    self.enc_w_conv.add_module(
+                        "pooling_{0}".format(idx), pooling)
+            elif multi_path:
                 lconv = self.sconv(
                     input_channels, (self.cfg[idx] // 2),
                     self.ico[order].conv_neighbor_indices)
-                self.enc_left_conv.add_module("lconv_{0}".format(idx), lconv)
+                self.enc_left_conv.add_module("l_conv_{0}".format(idx), lconv)
                 if self.batch_norm:
                     lbn = nn.BatchNorm1d(self.cfg[idx] // 2)
-                    self.enc_left_conv.add_module("lbn_{0}".format(idx), lbn)
+                    self.enc_left_conv.add_module("l_bn_{0}".format(idx), lbn)
                 lrelu = nn.ReLU(inplace=True)
-                self.enc_left_conv.add_module("lrelu_{0}".format(idx), lrelu)
+                self.enc_left_conv.add_module("l_relu_{0}".format(idx), lrelu)
                 rconv = self.sconv(
                     input_channels, (self.cfg[idx] // 2),
                     self.ico[order].conv_neighbor_indices)
-                self.enc_right_conv.add_module("rconv_{0}".format(idx), rconv)
+                self.enc_right_conv.add_module("r_conv_{0}".format(idx), rconv)
                 if self.batch_norm:
                     rbn = nn.BatchNorm1d(self.cfg[idx] // 2)
-                    self.enc_right_conv.add_module("rbn_{0}".format(idx), rbn)
+                    self.enc_right_conv.add_module("r_bn_{0}".format(idx), rbn)
                 rrelu = nn.ReLU(inplace=True)
-                self.enc_right_conv.add_module("rrelu_{0}".format(idx), rrelu)
+                self.enc_right_conv.add_module("r_relu_{0}".format(idx), rrelu)
                 input_channels = self.cfg[idx] // 2
             else:
                 conv = self.sconv(
@@ -221,9 +251,22 @@ class SphericalGVGG(nn.Module):
     See Also
     --------
     SphericalVGG
+
+    Examples
+    --------
+    >>> import torch
+    >>> from surfify.models import SphericalGVGG11
+    >>> x = torch.zeros((1, 2, 192, 192))
+    >>> model = SphericalGVGG11(
+    >>>     input_channels=2, n_classes=10, input_dim=194, hidden_dim=512,
+    >>>     fusion_level=2, init_weights=True)
+    >>> print(model)
+    >>> out = model(x, x)
+    >>> print(out.shape)
     """
     def __init__(self, input_channels, cfg, n_classes, input_dim=194,
-                 hidden_dim=4096, batch_norm=False, init_weights=True):
+                 hidden_dim=4096, batch_norm=False, fusion_level=1,
+                 init_weights=True):
         """ Init class.
 
         Parameters
@@ -241,6 +284,9 @@ class SphericalGVGG(nn.Module):
         batch_norm: bool, default False
             wether or not to use batch normalization after a convolution
             layer.
+        fusion_level: int, default 1
+            at which max pooling level left and right hemisphere data
+            are concatenated.
         init_weights: bool, default True
             initialize network weights.
         """
@@ -253,6 +299,10 @@ class SphericalGVGG(nn.Module):
         self.batch_norm = batch_norm
         self.n_modules = len(cfg)
         self.n_layers = cfg.count("M")
+        if fusion_level > self.n_layers or fusion_level <= 0:
+            raise ValueError("Impossible to use input fusion level with "
+                             "'{0}' layers.".format(self.n_layers))
+        self.fusion_level = fusion_level
         self.final_flt = int(cfg[-2])
         self.top_flatten_dim = int(self.input_dim / (2 ** self.n_layers))
         self.top_final = self.final_flt * 7 ** 2
@@ -283,6 +333,7 @@ class SphericalGVGG(nn.Module):
         Returns
         -------
         out: torch.Tensor
+            the prediction.
         """
         logger.debug("SphericalGVGG forward pass")
         logger.debug(debug_msg("left cortical", left_x))
@@ -323,35 +374,44 @@ class SphericalGVGG(nn.Module):
         self.enc_left_conv = nn.Sequential()
         self.enc_right_conv = nn.Sequential()
         self.enc_w_conv = nn.Sequential()
-        first_layer = True
+        multi_path = True
+        layer_idx = 0
         for idx in range(self.n_modules):
             if self.cfg[idx] == "M":
-                if first_layer:
-                    first_layer = False
+                layer_idx += 1
+                if layer_idx == self.fusion_level:
+                    multi_path = False
                     input_channels *= 2
                 pooling = nn.MaxPool2d(kernel_size=2, stride=2)
-                self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
-            elif first_layer:
+                if multi_path:
+                    self.enc_left_conv.add_module(
+                        "pooling_{0}".format(idx), pooling)
+                    self.enc_right_conv.add_module(
+                        "pooling_{0}".format(idx), pooling)
+                else:
+                    self.enc_w_conv.add_module(
+                        "pooling_{0}".format(idx), pooling)
+            elif multi_path:
                 lconv = IcoSpMaConv(
                     in_feats=input_channels,
                     out_feats=(self.cfg[idx] // 2),
                     kernel_size=3, pad=1)
-                self.enc_left_conv.add_module("lconv_{0}".format(idx), lconv)
+                self.enc_left_conv.add_module("l_conv_{0}".format(idx), lconv)
                 if self.batch_norm:
                     lbn = nn.BatchNorm2d(self.cfg[idx] // 2)
-                    self.enc_left_conv.add_module("lbn_{0}".format(idx), lbn)
+                    self.enc_left_conv.add_module("l_bn_{0}".format(idx), lbn)
                 lrelu = nn.ReLU(inplace=True)
-                self.enc_left_conv.add_module("lrelu_{0}".format(idx), lrelu)
+                self.enc_left_conv.add_module("l_relu_{0}".format(idx), lrelu)
                 rconv = IcoSpMaConv(
                     in_feats=input_channels,
                     out_feats=(self.cfg[idx] // 2),
                     kernel_size=3, pad=1)
-                self.enc_right_conv.add_module("rconv_{0}".format(idx), rconv)
+                self.enc_right_conv.add_module("r_conv_{0}".format(idx), rconv)
                 if self.batch_norm:
                     rbn = nn.BatchNorm2d(self.cfg[idx] // 2)
-                    self.enc_right_conv.add_module("rbn_{0}".format(idx), rbn)
+                    self.enc_right_conv.add_module("r_bn_{0}".format(idx), rbn)
                 rrelu = nn.ReLU(inplace=True)
-                self.enc_right_conv.add_module("rrelu_{0}".format(idx), rrelu)
+                self.enc_right_conv.add_module("r_relu_{0}".format(idx), rrelu)
                 input_channels = self.cfg[idx] // 2
             else:
                 conv = IcoSpMaConv(
@@ -387,7 +447,8 @@ def class_factory(klass_name, klass_params, destination_module_globals):
         def __init__(self, input_channels, n_classes, input_order=5,
                      conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
                      dynamic_repa_zoom=False, hidden_dim=4096,
-                     init_weights=True, standard_ico=False, cachedir=None):
+                     fusion_level=1, init_weights=True, standard_ico=False,
+                     cachedir=None):
             if self.cfg is None:
                 raise ValueError("Please specify a configuration first.")
             SphericalVGG.__init__(
@@ -403,6 +464,7 @@ def class_factory(klass_name, klass_params, destination_module_globals):
                 repa_zoom=repa_zoom,
                 dynamic_repa_zoom=dynamic_repa_zoom,
                 hidden_dim=hidden_dim,
+                fusion_level=fusion_level,
                 init_weights=init_weights,
                 standard_ico=standard_ico,
                 cachedir=cachedir)
@@ -412,7 +474,7 @@ def class_factory(klass_name, klass_params, destination_module_globals):
         batch_norm = False
 
         def __init__(self, input_channels, n_classes, input_dim=194,
-                     hidden_dim=4096, init_weights=True):
+                     hidden_dim=4096, fusion_level=1, init_weights=True):
             if self.cfg is None:
                 raise ValueError("Please specify a configuration first.")
             SphericalGVGG.__init__(
@@ -423,6 +485,7 @@ def class_factory(klass_name, klass_params, destination_module_globals):
                 n_classes=n_classes,
                 input_dim=input_dim,
                 hidden_dim=hidden_dim,
+                fusion_level=fusion_level,
                 init_weights=init_weights)
 
     klass_params.update({

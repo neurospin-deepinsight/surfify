@@ -10,6 +10,8 @@ Added
 
 * dynamic adaptation of the RePa zoom in `SphericalBase` to control the size
   of the generated grid on the spherical surface.
+* add a `fusion_level` parameter on VGG and VAE models in order to control
+  the left and right hemispheres fusion level.
 
 Changed
 -------

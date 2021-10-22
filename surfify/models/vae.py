@@ -46,11 +46,26 @@ class SphericalVAE(SphericalBase):
     ----------
     Representation Learning of Resting State fMRI with Variational
     Autoencoder, NeuroImage 2021.
+
+    Examples
+    --------
+    >>> import torch
+    >>> from surfify.utils import icosahedron
+    >>> from surfify.models import SphericalVAE
+    >>> verts, tris = icosahedron(order=6)
+    >>> x = torch.zeros((1, 2, len(verts)))
+    >>> model = SphericalVAE(
+    >>>     input_channels=2, input_order=6, latent_dim=64,
+    >>>     conv_flts=[32, 32, 64, 64], conv_mode="DiNe", dine_size=1,
+    >>>     fusion_level=2, standard_ico=False")
+    >>> print(model)
+    >>> out = model(x, x)
+    >>> print(out[0].shape, out[1].shape)
     """
     def __init__(self, input_channels=1, input_order=5, latent_dim=64,
                  conv_flts=[32, 32, 64, 64], conv_mode="DiNe", dine_size=1,
                  repa_size=5, repa_zoom=5, dynamic_repa_zoom=False,
-                 standard_ico=False, cachedir=None):
+                 fusion_level=1, standard_ico=False, cachedir=None):
         """ Init class.
 
         Parameters
@@ -77,6 +92,9 @@ class SphericalVAE(SphericalBase):
         dynamic_repa_zoom: bool, default False
             dynamically adapt the RePa zoom by applying a multiplicative factor
             of `log(order + 1) + 1`.
+        fusion_level: int, default 1
+            at which max pooling level left and right hemisphere data
+            are concatenated.
         standard_ico: bool, default False
             optionaly use surfify tesselation.
         cachedir: str, default None
@@ -94,51 +112,92 @@ class SphericalVAE(SphericalBase):
         self.top_flatten_dim = len(
             self.ico[self.input_order - self.n_layers + 1].vertices)
         self.top_final = self.conv_flts[-1] * self.top_flatten_dim
+        if fusion_level > self.n_layers or fusion_level <= 0:
+            raise ValueError("Impossible to use input fusion level with "
+                             "'{0}' layers.".format(self.n_layers))
+        self.fusion_level = fusion_level
 
         # define the encoder
-        self.enc_left_conv = self.sconv(
-            input_channels, int(self.conv_flts[0] / 2),
-            self.ico[self.input_order].conv_neighbor_indices)
-        self.enc_right_conv = self.sconv(
-            input_channels, int(self.conv_flts[0] / 2),
-            self.ico[self.input_order].conv_neighbor_indices)
+        self.enc_left_conv = nn.Sequential()
+        self.enc_right_conv = nn.Sequential()
         self.enc_w_conv = nn.Sequential()
-        for idx in range(1, self.n_layers):
+        multi_path = True
+        input_channels = self.input_channels
+        for idx in range(self.n_layers):
             order = self.input_order - idx
-            pooling = IcoPool(
-                down_neigh_indices=self.ico[order + 1].neighbor_indices,
-                down_indices=self.ico[order + 1].down_indices,
-                pooling_type="mean")
-            self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
-            conv = self.sconv(
-                self.conv_flts[idx - 1], self.conv_flts[idx],
-                self.ico[order].conv_neighbor_indices)
-            self.enc_w_conv.add_module("down_{0}".format(idx), conv)
+            if idx == self.fusion_level:
+                multi_path = False
+                input_channels *= 2
+            if idx != 0:
+                pooling = IcoPool(
+                    down_neigh_indices=self.ico[order + 1].neighbor_indices,
+                    down_indices=self.ico[order + 1].down_indices,
+                    pooling_type="mean")
+            if idx != 0 and multi_path:
+                self.enc_left_conv.add_module("pooling_{0}".format(idx),
+                                              pooling)
+                self.enc_right_conv.add_module("pooling_{0}".format(idx),
+                                               pooling)
+            elif idx != 0:
+                self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
+            if multi_path:
+                output_channels = int(self.conv_flts[idx] / 2)
+                lconv = self.sconv(
+                    input_channels, output_channels,
+                    self.ico[order].conv_neighbor_indices)
+                self.enc_left_conv.add_module("l_enc_{0}".format(idx), lconv)
+                rconv = self.sconv(
+                    input_channels, output_channels,
+                    self.ico[order].conv_neighbor_indices)
+                self.enc_right_conv.add_module("r_enc_{0}".format(idx), rconv)
+                input_channels = output_channels
+            else:
+                conv = self.sconv(
+                    input_channels, self.conv_flts[idx],
+                    self.ico[order].conv_neighbor_indices)
+                self.enc_w_conv.add_module("enc_{0}".format(idx), conv)
+                input_channels = self.conv_flts[idx]
         self.enc_w_dense = nn.Linear(self.top_final, self.latent_dim * 2)
 
         # define the decoder
         self.dec_w_dense = nn.Linear(self.latent_dim, self.top_final)
         self.dec_w_conv = nn.Sequential()
-        cnt = 1
-        for idx in range(self.n_layers - 1, 0, -1):
-            tconv = IcoUpConv(
-                in_feats=self.conv_flts[idx],
-                out_feats=self.conv_flts[idx - 1],
-                up_neigh_indices=self.ico[order + 1].neighbor_indices,
-                down_indices=self.ico[order + 1].down_indices)
-            self.dec_w_conv.add_module("up_{0}".format(cnt), tconv)
+        self.dec_left_conv = nn.Sequential()
+        self.dec_right_conv = nn.Sequential()
+        input_channels = self.conv_flts[self.n_layers - 1]
+        if self.fusion_level == self.n_layers:
+            multi_path = True
+            input_channels = int(input_channels / 2)
+        else:
+            multi_path = False
+        for idx in range(self.n_layers - 1, -1, -1):
+            if multi_path:
+                if idx == 0:
+                    output_channels = self.input_channels
+                else:
+                    output_channels = int(self.conv_flts[idx - 1] / 2)
+                lconv = IcoUpConv(
+                    in_feats=input_channels, out_feats=output_channels,
+                    up_neigh_indices=self.ico[order].neighbor_indices,
+                    down_indices=self.ico[order].down_indices)
+                self.dec_left_conv.add_module("l_dec_{0}".format(idx), lconv)
+                rconv = IcoUpConv(
+                    in_feats=input_channels, out_feats=output_channels,
+                    up_neigh_indices=self.ico[order].neighbor_indices,
+                    down_indices=self.ico[order].down_indices)
+                self.dec_right_conv.add_module("r_dec_{0}".format(idx), rconv)
+                input_channels = output_channels
+            else:
+                conv = IcoUpConv(
+                    in_feats=input_channels, out_feats=self.conv_flts[idx - 1],
+                    up_neigh_indices=self.ico[order + 1].neighbor_indices,
+                    down_indices=self.ico[order + 1].down_indices)
+                self.dec_w_conv.add_module("dec_{0}".format(idx), conv)
+                input_channels = self.conv_flts[idx - 1]
+            if idx == self.fusion_level:
+                multi_path = True
+                input_channels = int(input_channels / 2)
             order += 1
-            cnt += 1
-        self.dec_left_conv = IcoUpConv(
-            in_feats=int(self.conv_flts[0] / 2),
-            out_feats=self.input_channels,
-            up_neigh_indices=self.ico[order].neighbor_indices,
-            down_indices=self.ico[order].down_indices)
-        self.dec_right_conv = IcoUpConv(
-            in_feats=int(self.conv_flts[0] / 2),
-            out_feats=self.input_channels,
-            up_neigh_indices=self.ico[order].neighbor_indices,
-            down_indices=self.ico[order].down_indices)
 
         self.relu = nn.ReLU(inplace=True)
 
@@ -157,14 +216,13 @@ class SphericalVAE(SphericalBase):
         q(z | x): Normal (batch_size, <latent_dim>)
             a Normal distribution.
         """
-        x = torch.cat(
-            (self.enc_left_conv(left_x), self.enc_right_conv(right_x)), dim=1)
+        left_x = self._safe_forward(self.enc_left_conv, left_x,
+                                    act=self.relu, skip_last_act=True)
+        right_x = self._safe_forward(self.enc_right_conv, right_x,
+                                     act=self.relu, skip_last_act=True)
+        x = torch.cat((left_x, right_x), dim=1)
         x = self.relu(x)
-        for layer_idx in range((self.n_layers - 1) * 2):
-            if isinstance(self.enc_w_conv[layer_idx], IcoPool):
-                x = self.enc_w_conv[layer_idx](x)[0]
-            else:
-                x = self.relu(self.enc_w_conv[layer_idx](x))
+        x = self._safe_forward(self.enc_w_conv, x, act=self.relu)
         x = x.reshape(-1, self.top_final)
         x = self.enc_w_dense(x)
         z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
@@ -187,11 +245,12 @@ class SphericalVAE(SphericalBase):
         """
         x = self.relu(self.dec_w_dense(z))
         x = x.view(-1, self.conv_flts[-1], self.top_flatten_dim)
-        for layer_idx in range(self.n_layers - 1):
-            x = self.relu(self.dec_w_conv[layer_idx](x))
+        x = self._safe_forward(self.dec_w_conv, x, act=self.relu)
         left_recon_x, right_recon_x = torch.chunk(x, chunks=2, dim=1)
-        left_recon_x = self.dec_left_conv(left_recon_x)
-        right_recon_x = self.dec_right_conv(right_recon_x)
+        left_recon_x = self._safe_forward(self.dec_left_conv, left_recon_x,
+                                          act=self.relu, skip_last_act=True)
+        right_recon_x = self._safe_forward(self.dec_right_conv, right_recon_x,
+                                           act=self.relu, skip_last_act=True)
         return left_recon_x, right_recon_x
 
     def reparameterize(self, q):
@@ -252,9 +311,21 @@ class SphericalGVAE(nn.Module):
     ----------
     Representation Learning of Resting State fMRI with Variational
     Autoencoder, NeuroImage 2021.
+
+    Examples
+    --------
+    >>> import torch
+    >>> from surfify.models import SphericalGVAE
+    >>> x = torch.zeros((1, 2, 192, 192))
+    >>> model = SphericalGVAE(
+    >>>     input_channels=2, input_dim=192, latent_dim=64,
+    >>>     conv_flts=[64, 128, 128, 256, 256], fusion_level=2)
+    >>> print(model)
+    >>> out = model(x, x)
+    >>> print(out[0].shape, out[1].shape)
     """
     def __init__(self, input_channels=1, input_dim=192, latent_dim=64,
-                 conv_flts=[64, 128, 128, 256, 256]):
+                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1):
         """ Init class.
 
         Parameters
@@ -267,6 +338,9 @@ class SphericalGVAE(nn.Module):
             the size of the stochastic latent state of the SVAE.
         conv_flts: list of int
             the size of convolutional filters.
+        fusion_level: int, default 1
+            at which max pooling level left and right hemisphere data
+            are concatenated.
         """
         logger.debug("SphericalGVAE init...")
         super(SphericalGVAE, self).__init__()
@@ -277,39 +351,89 @@ class SphericalGVAE(nn.Module):
         self.n_layers = len(self.conv_flts)
         self.top_flatten_dim = int(self.input_dim / (2 ** self.n_layers))
         self.top_final = self.conv_flts[-1] * self.top_flatten_dim ** 2
+        if fusion_level > self.n_layers or fusion_level <= 0:
+            raise ValueError("Impossible to use input fusion level with "
+                             "'{0}' layers.".format(self.n_layers))
+        self.fusion_level = fusion_level
 
         # define the encoder
-        self.enc_left_conv = IcoSpMaConv(
-            in_feats=self.input_channels,
-            out_feats=int(self.conv_flts[0] / 2),
-            kernel_size=8, stride=2, pad=3)
-        self.enc_right_conv = IcoSpMaConv(
-            in_feats=self.input_channels,
-            out_feats=int(self.conv_flts[0] / 2),
-            kernel_size=8, stride=2, pad=3)
-        self.enc_w_conv = nn.ModuleList([
-            IcoSpMaConv(self.conv_flts[i - 1], self.conv_flts[i],
-                        kernel_size=4, stride=2, pad=1)
-            for i in range(1, self.n_layers)])
+        self.enc_left_conv = nn.Sequential()
+        self.enc_right_conv = nn.Sequential()
+        self.enc_w_conv = nn.Sequential()
+        multi_path = True
+        input_channels = self.input_channels
+        for idx in range(self.n_layers):
+            if idx == self.fusion_level:
+                multi_path = False
+                input_channels *= 2
+            if multi_path:
+                output_channels = int(self.conv_flts[idx] / 2)
+                if idx == 0:
+                    kernel_size = 8
+                    pad = 3
+                else:
+                    kernel_size = 4
+                    pad = 1
+                lconv = IcoSpMaConv(
+                    in_feats=input_channels, out_feats=output_channels,
+                    kernel_size=kernel_size, stride=2, pad=pad)
+                self.enc_left_conv.add_module("l_enc_{0}".format(idx), lconv)
+                rconv = IcoSpMaConv(
+                    in_feats=input_channels, out_feats=output_channels,
+                    kernel_size=kernel_size, stride=2, pad=pad)
+                self.enc_right_conv.add_module("r_enc_{0}".format(idx), rconv)
+                input_channels = output_channels
+            else:
+                conv = IcoSpMaConv(
+                    input_channels, self.conv_flts[idx], kernel_size=4,
+                    stride=2, pad=1)
+                self.enc_w_conv.add_module("enc_{0}".format(idx), conv)
+                input_channels = self.conv_flts[idx]
         self.enc_w_dense = nn.Linear(self.top_final, self.latent_dim * 2)
 
         # define the decoder
         self.dec_w_dense = nn.Linear(self.latent_dim, self.top_final)
-        self.dec_w_conv = nn.ModuleList([
-            IcoSpMaConvTranspose(
-                in_feats=self.conv_flts[i],
-                out_feats=self.conv_flts[i - 1],
-                kernel_size=4, stride=2, pad=1, zero_pad=3)
-            for i in range(self.n_layers - 1, 0, -1)])
-        self.dec_left_conv = IcoSpMaConvTranspose(
-            in_feats=int(self.conv_flts[0] / 2),
-            out_feats=self.input_channels,
-            kernel_size=8, stride=2, pad=3, zero_pad=9)
-        self.dec_right_conv = IcoSpMaConvTranspose(
-            in_feats=int(self.conv_flts[0] / 2),
-            out_feats=self.input_channels,
-            kernel_size=8, stride=2, pad=3, zero_pad=9)
-
+        self.dec_w_conv = nn.Sequential()
+        self.dec_left_conv = nn.Sequential()
+        self.dec_right_conv = nn.Sequential()
+        input_channels = self.conv_flts[self.n_layers - 1]
+        if self.fusion_level == self.n_layers:
+            multi_path = True
+            input_channels = int(input_channels / 2)
+        else:
+            multi_path = False
+        for idx in range(self.n_layers - 1, -1, -1):
+            if multi_path:
+                if idx == 0:
+                    kernel_size = 8
+                    pad = 3
+                    zero_pad = 9
+                    output_channels = self.input_channels
+                else:
+                    kernel_size = 4
+                    pad = 1
+                    zero_pad = 3
+                    output_channels = int(self.conv_flts[idx - 1] / 2)
+                lconv = IcoSpMaConvTranspose(
+                    in_feats=input_channels, out_feats=output_channels,
+                    kernel_size=kernel_size, stride=2, pad=pad,
+                    zero_pad=zero_pad)
+                self.dec_left_conv.add_module("l_dec_{0}".format(idx), lconv)
+                rconv = IcoSpMaConvTranspose(
+                    in_feats=input_channels, out_feats=output_channels,
+                    kernel_size=kernel_size, stride=2, pad=pad,
+                    zero_pad=zero_pad)
+                self.dec_right_conv.add_module("r_dec_{0}".format(idx), rconv)
+                input_channels = output_channels
+            else:
+                conv = IcoSpMaConvTranspose(
+                    in_feats=input_channels, out_feats=self.conv_flts[idx - 1],
+                    kernel_size=4, stride=2, pad=1, zero_pad=3)
+                self.dec_w_conv.add_module("dec_{0}".format(idx), conv)
+                input_channels = self.conv_flts[idx - 1]
+            if idx == self.fusion_level:
+                multi_path = True
+                input_channels = int(input_channels / 2)
         self.relu = nn.ReLU(inplace=True)
 
     def encode(self, left_x, right_x):
@@ -327,11 +451,12 @@ class SphericalGVAE(nn.Module):
         q(z | x): Normal (batch_size, <latent_dim>)
             a Normal distribution.
         """
-        x = torch.cat(
-            (self.enc_left_conv(left_x), self.enc_right_conv(right_x)), dim=1)
+        left_x = self.enc_left_conv(left_x)
+        right_x = self.enc_right_conv(right_x)
+        x = torch.cat((left_x, right_x), dim=1)
         x = self.relu(x)
-        for layer_idx in range(self.n_layers - 1):
-            x = self.relu(self.enc_w_conv[layer_idx](x))
+        for mod in self.enc_w_conv.children():
+            x = self.relu(mod(x))
         x = x.view(-1, self.top_final)
         x = self.enc_w_dense(x)
         z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
@@ -355,8 +480,8 @@ class SphericalGVAE(nn.Module):
         x = self.relu(self.dec_w_dense(z))
         x = x.view(-1, self.conv_flts[-1], self.top_flatten_dim,
                    self.top_flatten_dim)
-        for layer_idx in range(self.n_layers - 1):
-            x = self.relu(self.dec_w_conv[layer_idx](x))
+        for mod in self.dec_w_conv.children():
+            x = self.relu(mod(x))
         left_recon_x, right_recon_x = torch.chunk(x, chunks=2, dim=1)
         left_recon_x = self.dec_left_conv(left_recon_x)
         right_recon_x = self.dec_right_conv(right_recon_x)

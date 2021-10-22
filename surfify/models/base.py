@@ -20,7 +20,7 @@ import torch.nn as nn
 from ..utils import (
     icosahedron, neighbors, number_of_ico_vertices, downsample, interpolate,
     neighbors_rec, get_logger)
-from ..nn import IcoDiNeConv, IcoRePaConv
+from ..nn import IcoDiNeConv, IcoRePaConv, IcoPool
 
 # Global parameters
 logger = get_logger()
@@ -90,6 +90,21 @@ class SphericalBase(nn.Module):
         self.ico = self.build_ico_info(
             input_order, n_layers, conv_mode, dine_size, repa_size, repa_zoom,
             dynamic_repa_zoom, standard_ico, cachedir)
+
+    def _safe_forward(self, block, x, act=None, skip_last_act=False):
+        """ Perform a safe forward pass on a specific input block.
+        """
+        n_mods = len(list(block.children()))
+        for cnt, mod in enumerate(block.children()):
+            if isinstance(mod, IcoPool):
+                x = mod(x)[0]
+            else:
+                x = mod(x)
+                if skip_last_act and cnt == (n_mods - 1):
+                    continue
+                if act is not None:
+                    x = act(x)
+        return x
 
     @classmethod
     def build_ico_info(cls, input_order, n_layers, conv_mode="DiNe",
