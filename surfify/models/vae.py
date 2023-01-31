@@ -460,7 +460,7 @@ class SphericalGVAE(nn.Module):
         x = x.view(-1, self.top_final)
         x = self.enc_w_dense(x)
         z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
-        return Normal(loc=z_mu, scale=z_logvar.exp().pow(0.5))
+        return Normal(loc=z_mu, scale=torch.exp(0.5 * z_logvar))
 
     def decode(self, z):
         """ The decoder.
