@@ -158,18 +158,10 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
                 _sum = np.sum(range(depth + 2 - ring))
                 for _node in _node_missing_neighs:
                     _missing_neighs.extend([_node] * _sum)
-                # n_neighs = 6 * ring
-                # n_ring_missing = 0
-                # for idx in range (1, ring + 1):
-                #     if len(ring_neighs) == n_neighs - idx:
-                #         n_ring_missing = idx
-                #         _missing_neighs.extend([node] * idx)
-                # if len(ring_neighs) + n_ring_missing != n_neighs:
-                #     raise ValueError("Mesh is not an icosahedron.")
                 _node_neighs.extend(ring_neighs)
-            _node_neighs = _missing_neighs + _node_neighs
             _node_neighs.insert(0, node)
-            # print(node, _node_neighs, len(_node_neighs), n_neighs + 1)
+            for _node in _missing_neighs:
+                _node_neighs.insert(_node_neighs.index(_node), _node)
             if len(_node_neighs) != n_neighs + 1:
                 raise ValueError("Mesh is not an icosahedron.")
             node_neighs = _node_neighs
