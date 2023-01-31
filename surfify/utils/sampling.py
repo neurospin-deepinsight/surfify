@@ -127,6 +127,7 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
         neighbors vertices row indexes organized by rings as values.
     """
     graph = vertex_adjacency_graph(vertices, triangles)
+    degrees = dict((node, val) for node, val in graph.degree())
     neighs = collections.OrderedDict()
     for node in sorted(graph.nodes):
         node_neighs = {}
@@ -137,40 +138,42 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
                 continue
             node_neighs.setdefault(ring, []).append(neigh)
         if direct_neighbor:
-            _node_neighs = []
-            if depth == 1:
-                delta = np.pi / 4
-            elif depth == 2:
-                delta = np.pi / 8
-            else:
-                raise ValueError("Direct neighbors implemented only for "
-                                 "depth <= 2.")
+            _node_neighs, _missing_neighs = [], []
+            n_neighs = 0
             for ring, ring_neighs in node_neighs.items():
                 angles = np.asarray([
                     get_angle_with_xaxis(vertices[node], vertices[node], vec)
                     for vec in vertices[ring_neighs]])
-                angles += delta
-                angles = np.degrees(np.mod(angles, 2 * np.pi))
+                angles = np.degrees(angles)
                 ring_neighs = [x for _, x in sorted(
                     zip(angles, ring_neighs), key=lambda pair: pair[0])]
-                if depth == 1 and ring == 1:
-                    if len(ring_neighs) == 5:
-                        ring_neighs.append(node)
-                    elif len(ring_neighs) != 6:
-                        raise ValueError("Mesh is not an icosahedron.")
-                if depth == 2 and ring == 2:
-                    ring_neighs = ring_neighs[1::2]
-                    if len(_node_neighs) + len(ring_neighs) == 10:
-                        ring_neighs.extend([node] * 2)
-                    elif len(_node_neighs) + len(ring_neighs) == 11:
-                        ring_neighs.append(node)
-                    elif len(_node_neighs) + len(ring_neighs) != 12:
-                        raise ValueError("Mesh is not an icosahedron.")
+                node_neighs[ring] = ring_neighs
+                n_neighs += 6 * ring
+                if ring > 1:
+                    _center_neighs = node_neighs[ring - 1]
+                else:
+                    _center_neighs = [node]
+                _node_missing_neighs = [
+                    _node for _node in _center_neighs if degrees[_node] == 5]
+                _sum = np.sum(range(depth + 2 - ring))
+                for _node in _node_missing_neighs:
+                    _missing_neighs.extend([_node] * _sum)
+                # n_neighs = 6 * ring
+                # n_ring_missing = 0
+                # for idx in range (1, ring + 1):
+                #     if len(ring_neighs) == n_neighs - idx:
+                #         n_ring_missing = idx
+                #         _missing_neighs.extend([node] * idx)
+                # if len(ring_neighs) + n_ring_missing != n_neighs:
+                #     raise ValueError("Mesh is not an icosahedron.")
                 _node_neighs.extend(ring_neighs)
-            _node_neighs.append(node)
+            _node_neighs = _missing_neighs + _node_neighs
+            _node_neighs.insert(0, node)
+            # print(node, _node_neighs, len(_node_neighs), n_neighs + 1)
+            if len(_node_neighs) != n_neighs + 1:
+                raise ValueError("Mesh is not an icosahedron.")
             node_neighs = _node_neighs
         neighs[node] = node_neighs
-
     return neighs
 
 
@@ -558,7 +561,7 @@ def icosahedron(order=3, standard_ico=False):
             triangles = icos[surf_name + ".triangles"]
         except Exception as err:
             print("-- available topologies:", icos.files)
-            raise(err)
+            raise err
 
     return vertices, triangles
 
