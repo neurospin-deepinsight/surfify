@@ -138,8 +138,8 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
                 continue
             node_neighs.setdefault(ring, []).append(neigh)
         if direct_neighbor:
-            _node_neighs, _missing_neighs = [], []
-            n_neighs = 0
+            _node_neighs, _missing_neighs = [], {}
+            n_neighs, center_missing_neighs = 0, False
             for ring, ring_neighs in node_neighs.items():
                 angles = np.asarray([
                     get_angle_with_xaxis(vertices[node], vertices[node], vec)
@@ -155,13 +155,19 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
                     _center_neighs = [node]
                 _node_missing_neighs = [
                     _node for _node in _center_neighs if degrees[_node] == 5]
-                _sum = np.sum(range(depth + 2 - ring))
+                for _node, _counts in _missing_neighs.items():
+                    ring_neighs = [_node] * _counts[0] + ring_neighs
+                    _missing_neighs[_node] = _counts[1:]
                 for _node in _node_missing_neighs:
-                    _missing_neighs.extend([_node] * _sum)
+                    _missing_neighs[_node] = list(range(2, depth + 2 - ring))
+                    if _node == node:
+                        center_missing_neighs = True
+                        continue
+                    _node_neighs.insert(_node_neighs.index(_node), _node)
                 _node_neighs.extend(ring_neighs)
             _node_neighs.insert(0, node)
-            for _node in _missing_neighs:
-                _node_neighs.insert(_node_neighs.index(_node), _node)
+            if center_missing_neighs:
+                _node_neighs.insert(0, node)
             if len(_node_neighs) != n_neighs + 1:
                 raise ValueError("Mesh is not an icosahedron.")
             node_neighs = _node_neighs
