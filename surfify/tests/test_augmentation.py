@@ -33,9 +33,9 @@ class TestAugmentation(unittest.TestCase):
         """
         vertices, triangles = utils.icosahedron(order=3)
         n_vertices = len(vertices)
-        data = np.ones((n_vertices, 3), dtype=int)
-        processor = augment.SphericalRandomRotation(
-            vertices, triangles, angles=(10, 0, 0))
+        data = np.ones((n_vertices, ), dtype=int)
+        processor = augment.SurfRotation(
+            vertices, triangles,phi=10, theta=0, psi=0)
         data_rot = processor(data)
         self.assertEqual(len(data), len(data_rot))
 
@@ -44,8 +44,8 @@ class TestAugmentation(unittest.TestCase):
         """
         vertices, triangles = utils.icosahedron(order=3)
         n_vertices = len(vertices)
-        data = np.ones((n_vertices, 3), dtype=int)
-        processor = augment.SphericalRandomCut(
+        data = np.ones((n_vertices, ), dtype=int)
+        processor = augment.SurfCutOut(
             vertices, triangles, neighs=None, patch_size=3,
             n_patches=1, replacement_value=5)
         data_cut = processor(data)
