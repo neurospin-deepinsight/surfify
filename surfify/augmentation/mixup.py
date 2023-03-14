@@ -135,7 +135,8 @@ class GroupMixUp(MixUpAugmentation):
         return np.squeeze(_b_data)
 
     @classmethod
-    def groupby(cls, data, by=("texture", ), n_neighbors=30, meta=None):
+    def groupby(cls, data, by=("texture", ), n_neighbors=27, n_components=30,
+                meta=None, weights=None):
         """ Regroup subjects based on a combination of metrics.
 
         Parameters
@@ -144,10 +145,15 @@ class GroupMixUp(MixUpAugmentation):
             input data/textures.
         by: list of str, default ('texture', )
             used to determine the metrics.
-        n_neighbors: int, default 30
+        n_neighbors: int, default 27
             the number of neighbors.
+        n_components: int, default 30
+            the number of PCA components, used to reduce the input data size.
         meta: pandas.DataFrame, default None
             the external data.
+        weights: array, default None
+            the weight applied to each distance matrix formed from the metric
+            defined in the by parameter.
 
         Returns
         -------
@@ -155,17 +161,20 @@ class GroupMixUp(MixUpAugmentation):
             indices of the nearest subjects in the population.
         """
         dists = []
+        weights = weights or [1, ] * len(by)
+        assert len(weights) == len(by)
         for dtype in by:
             if dtype == "texture":
-                pca = PCA(n_components=30)
+                pca = PCA(n_components=n_components)
                 reduced_data = pca.fit_transform(data)
                 dists.append(squareform(pdist(reduced_data, "euclidean")))
             else:
                 dtypes = listify(dtype)
                 meta_data = meta[dtypes].values
                 dists.append(squareform(pdist(meta_data, "euclidean")))
-        dist = np.mean(dists, axis=0)
+        dist = np.sum(np.array(dists).transpose(1, 2, 0) * np.array(weights),
+                      axis=-1)
         nbrs = NearestNeighbors(
-            n_neighbors=n_neighbors, metric="precomputed").fit(dist)
+            n_neighbors=n_neighbors + 1, metric="precomputed").fit(dist)
         _, neigh_ind = nbrs.kneighbors(dist)
         return neigh_ind[1:]

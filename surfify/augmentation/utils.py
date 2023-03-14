@@ -141,6 +141,7 @@ class Transformer(object):
         """
         ndim = data.ndim
         assert ndim in (1, 2)
+        _data = data.copy()
         for trf in self.transforms:
             if np.random.rand() < trf.probability:
                 if ndim == 1:

@@ -35,7 +35,7 @@ class TestAugmentation(unittest.TestCase):
         n_vertices = len(vertices)
         data = np.ones((n_vertices, ), dtype=int)
         processor = augment.SurfRotation(
-            vertices, triangles,phi=10, theta=0, psi=0)
+            vertices, triangles, phi=10, theta=0, psi=0)
         data_rot = processor(data)
         self.assertEqual(len(data), len(data_rot))
 

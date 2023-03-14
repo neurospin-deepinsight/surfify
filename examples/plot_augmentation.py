@@ -106,7 +106,7 @@ fig, axs = plt.subplots(
     2, 2, subplot_kw={"projection": "3d", "aspect": "auto"}, figsize=(10, 10))
 axs = axs.flatten()
 for idx in range(len(axs)):
-    _texture = aug(texture, group_textures)
+    _texture = aug(texture, group_textures, n_samples=1)
     plot_trisurf(vertices, triangles, _texture, ax=axs[idx], fig=fig,
                  alpha=1, colorbar=False, edgecolors="white")
 
@@ -117,7 +117,7 @@ for idx in range(len(axs)):
 #
 
 textures = np.random.uniform(0, 3, (100, len(vertices)))
-neigh_ind = GroupMixUp.groupby(textures, n_neighbors=4)
+neigh_ind = GroupMixUp.groupby(textures, n_neighbors=4, n_components=30)
 print(neigh_ind)
 
 
