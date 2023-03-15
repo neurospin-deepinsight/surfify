@@ -2,8 +2,8 @@
 
 |PythonVersion|_ |Coveralls|_ |Testing|_ |Pep8|_ |PyPi|_ |Doc|_
 
-.. |PythonVersion| image:: https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue
-.. _PythonVersion: https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue
+.. |PythonVersion| image:: https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue
+.. _PythonVersion: https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue
 
 .. |Coveralls| image:: https://coveralls.io/repos/neurospin-deepinsight/surfify/badge.svg?branch=master&service=github
 .. _Coveralls: https://coveralls.io/github/neurospin-deepinsight/surfify
@@ -74,7 +74,7 @@ Important links
 ===============
 
 - `Official source code repo <https://github.com/neurospin-deepinsight/surfify>`_
-- `HTML stable documentation: <https://surfify.readthedocs.io/en/v0.1.0>`_
+- `HTML stable documentation <https://surfify.readthedocs.io/en/v0.1.0>`_
 - `HTML documentation <https://surfify.readthedocs.io/en/latest>`_
 - `Release notes <https://github.com/neurospin-deepinsight/surfify/blob/master/CHANGELOG.rst>`_
 
