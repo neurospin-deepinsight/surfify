@@ -18,12 +18,11 @@ import numpy as np
 from collections import namedtuple
 
 
-Interval = namedtuple("Interval", ["low", "high", "dtype"])
-
-
 class RandomAugmentation(object):
     """ Aplly an augmentation with random parameters defined in intervals.
     """
+    Interval = namedtuple("Interval", ["low", "high", "dtype"])
+
     def __init__(self):
         """ Init class.
         """
@@ -50,7 +49,7 @@ class RandomAugmentation(object):
     def __setattr__(self, name, value):
         """ Store intervals.
         """
-        if isinstance(value, Interval):
+        if isinstance(value, RandomAugmentation.Interval):
             self.intervals[name] = value
             value = self._rand(value)
         super().__setattr__(name, value)
@@ -100,7 +99,7 @@ def interval(bound, dtype=float):
     min_val, max_val = bound
     if min_val > max_val:
         raise ValueError("Wrong interval boundaries.")
-    return Interval(min_val, max_val, dtype)
+    return RandomAugmentation.Interval(min_val, max_val, dtype)
 
 
 class Transformer(object):
