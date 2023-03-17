@@ -127,6 +127,7 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
         neighbors vertices row indexes organized by rings as values.
     """
     graph = vertex_adjacency_graph(vertices, triangles)
+    degrees = dict((node, val) for node, val in graph.degree())
     neighs = collections.OrderedDict()
     for node in sorted(graph.nodes):
         node_neighs = {}
@@ -137,40 +138,40 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
                 continue
             node_neighs.setdefault(ring, []).append(neigh)
         if direct_neighbor:
-            _node_neighs = []
-            if depth == 1:
-                delta = np.pi / 4
-            elif depth == 2:
-                delta = np.pi / 8
-            else:
-                raise ValueError("Direct neighbors implemented only for "
-                                 "depth <= 2.")
+            _node_neighs, _missing_neighs = [], {}
+            n_neighs, center_missing_neighs = 0, False
             for ring, ring_neighs in node_neighs.items():
                 angles = np.asarray([
                     get_angle_with_xaxis(vertices[node], vertices[node], vec)
                     for vec in vertices[ring_neighs]])
-                angles += delta
-                angles = np.degrees(np.mod(angles, 2 * np.pi))
+                angles = np.degrees(angles)
                 ring_neighs = [x for _, x in sorted(
                     zip(angles, ring_neighs), key=lambda pair: pair[0])]
-                if depth == 1 and ring == 1:
-                    if len(ring_neighs) == 5:
-                        ring_neighs.append(node)
-                    elif len(ring_neighs) != 6:
-                        raise ValueError("Mesh is not an icosahedron.")
-                if depth == 2 and ring == 2:
-                    ring_neighs = ring_neighs[1::2]
-                    if len(_node_neighs) + len(ring_neighs) == 10:
-                        ring_neighs.extend([node] * 2)
-                    elif len(_node_neighs) + len(ring_neighs) == 11:
-                        ring_neighs.append(node)
-                    elif len(_node_neighs) + len(ring_neighs) != 12:
-                        raise ValueError("Mesh is not an icosahedron.")
+                node_neighs[ring] = ring_neighs
+                n_neighs += 6 * ring
+                if ring > 1:
+                    _center_neighs = node_neighs[ring - 1]
+                else:
+                    _center_neighs = [node]
+                _node_missing_neighs = [
+                    _node for _node in _center_neighs if degrees[_node] == 5]
+                for _node, _counts in _missing_neighs.items():
+                    ring_neighs = [_node] * _counts[0] + ring_neighs
+                    _missing_neighs[_node] = _counts[1:]
+                for _node in _node_missing_neighs:
+                    _missing_neighs[_node] = list(range(2, depth + 2 - ring))
+                    if _node == node:
+                        center_missing_neighs = True
+                        continue
+                    _node_neighs.insert(_node_neighs.index(_node), _node)
                 _node_neighs.extend(ring_neighs)
-            _node_neighs.append(node)
+            _node_neighs.insert(0, node)
+            if center_missing_neighs:
+                _node_neighs.insert(0, node)
+            if len(_node_neighs) != n_neighs + 1:
+                raise ValueError("Mesh is not an icosahedron.")
             node_neighs = _node_neighs
         neighs[node] = node_neighs
-
     return neighs
 
 
@@ -643,6 +644,69 @@ def order_of_ico_from_vertices(n_vertices):
             "This number of vertices does not correspond to those of a "
             "regular icosahedron.")
     return int(order)
+
+
+def number_of_neighbors(depth):
+    """ Get the number of neighbors up to a certain depth
+
+    See Also
+    --------
+    min_order_to_get_n_neighbors
+
+    Examples
+    --------
+    >>> from surfify.utils import number_of_neighbors
+    >>> for depth in range(4):
+    >>>     n_neighs = number_of_neighbors(depth)
+    >>>     print(n_neighs)
+
+    Parameters
+    ----------
+    n_vertices: int
+        the number of vertices of an icosahedron.
+
+    Returns
+    -------
+    order: int
+        the order of the icosahedron
+    """
+    n_neighs = 1
+    for order in range(1, depth + 1):
+        n_neighs += 6 * order
+    return n_neighs
+
+
+def min_depth_to_get_n_neighbors(n_neighs):
+    """ Get the minimal depth of neighborhood to get a desired number of
+    neighbors
+
+    See Also
+    --------
+    number_of_neighbors
+
+    Examples
+    --------
+    >>> from surfify.utils import min_depth_to_get_n_neighbors, icosahedron
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> depth = min_depth_to_get_n_neighbors(len(ico3_verts) / 2)
+    >>> print(depth)
+
+    Parameters
+    ----------
+    n_vertices: int
+        the number of vertices of an icosahedron.
+
+    Returns
+    -------
+    order: int
+        the order of the icosahedron
+    """
+    cum_n_neighs = 1
+    depth = 1
+    while (cum_n_neighs < n_neighs):
+        cum_n_neighs += 6 * depth
+        depth += 1
+    return depth
 
 
 def interpolate(vertices, target_vertices, target_triangles):

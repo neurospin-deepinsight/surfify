@@ -17,9 +17,9 @@ from torch.nn import functional as func
 from torch.distributions import Normal, kl_divergence
 
 
-def img_log_likelihood(recon, xs):
-    """ Computes the log likelihood of the input image given the reconstructed
-    image for each subject
+def log_likelihood(recon, xs):
+    """ Computes the log likelihood of the input sample given the reconstructed
+    sample
 
     Parameters
     ----------
@@ -31,10 +31,10 @@ def img_log_likelihood(recon, xs):
     Returns
     -------
     log_likelihoods: Tensor (N)
-        log likelihood for each image
+        log likelihood for each sample
     """
     return -Normal(recon, torch.ones_like(recon)).log_prob(xs).sum(
-        dim=(1, 2, 3))
+        dim=tuple(range(1, recon.ndim)))
 
 
 class SphericalVAELoss(object):
@@ -86,10 +86,10 @@ class SphericalVAELoss(object):
                 right_recon_x * self.right_mask.detach(),
                 right_x * self.right_mask.detach(), reduction="mean")
         else:
-            left_recon_loss = img_log_likelihood(
+            left_recon_loss = log_likelihood(
                 left_recon_x * self.left_mask.detach(),
                 left_x * self.left_mask.detach()).mean()
-            right_recon_loss = img_log_likelihood(
+            right_recon_loss = log_likelihood(
                 right_recon_x * self.right_mask.detach(),
                 right_x * self.right_mask.detach()).mean()
 

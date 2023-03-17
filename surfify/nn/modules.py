@@ -259,7 +259,7 @@ class IcoDiNeConv(nn.Module):
     >>> ico2_x = module(ico2_x)
     >>> ico2_x.shape
     """
-    def __init__(self, in_feats, out_feats, neigh_indices):
+    def __init__(self, in_feats, out_feats, neigh_indices, bias=True):
         """ Init IcoDiNeConv.
 
         Parameters
@@ -277,27 +277,20 @@ class IcoDiNeConv(nn.Module):
         self.out_feats = out_feats
         self.neigh_indices = neigh_indices
         self.n_vertices, self.neigh_size = neigh_indices.shape
-        self.weight = nn.Linear(self.neigh_size * in_feats, out_feats)
+        self.weight = nn.Linear(self.neigh_size * in_feats, out_feats, bias=bias)
 
     def forward(self, x):
         """ Forward method.
         """
-        logger.debug("IcoDiNeConv...")
-        logger.debug(debug_msg("input", x))
-        logger.debug("  weight: {0}".format(self.weight))
-        logger.debug("  neighbors indices: {0}".format(
-            self.neigh_indices.shape))
         mat = x[:, :, self.neigh_indices.reshape(-1)].view(
             len(x), self.in_feats, self.n_vertices, self.neigh_size)
         mat = mat.permute(0, 2, 1, 3)
         mat = mat.reshape(len(x) * self.n_vertices,
                           self.in_feats * self.neigh_size)
-        logger.debug(debug_msg("neighors", mat))
         out_features = self.weight(mat)
         out_features = out_features.view(len(x), self.n_vertices,
                                          self.out_feats)
         out_features = out_features.permute(0, 2, 1)
-        logger.debug(debug_msg("output", out_features))
         return out_features
 
 

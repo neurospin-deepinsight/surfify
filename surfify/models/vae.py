@@ -63,9 +63,11 @@ class SphericalVAE(SphericalBase):
     >>> print(out[0].shape, out[1].shape)
     """
     def __init__(self, input_channels=1, input_order=5, latent_dim=64,
-                 conv_flts=[32, 32, 64, 64], conv_mode="DiNe", dine_size=1,
-                 repa_size=5, repa_zoom=5, dynamic_repa_zoom=False,
-                 fusion_level=1, standard_ico=False, cachedir=None):
+                 conv_flts=[32, 32, 64, 64], fusion_level=1,
+                 activation="LeakyReLU", batch_norm=False, conv_mode="DiNe",
+                 dine_size=1, repa_size=5, repa_zoom=5,
+                 dynamic_repa_zoom=False, standard_ico=False, cachedir=None,
+                 encoder=None, decoder=None):
         """ Init class.
 
         Parameters
@@ -106,100 +108,14 @@ class SphericalVAE(SphericalBase):
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
             standard_ico=standard_ico, cachedir=cachedir)
-        self.input_channels = input_channels
-        self.latent_dim = latent_dim
-        self.conv_flts = conv_flts
-        self.top_flatten_dim = len(
-            self.ico[self.input_order - self.n_layers + 1].vertices)
-        self.top_final = self.conv_flts[-1] * self.top_flatten_dim
-        if fusion_level > self.n_layers or fusion_level <= 0:
-            raise ValueError("Impossible to use input fusion level with "
-                             "'{0}' layers.".format(self.n_layers))
-        self.fusion_level = fusion_level
-
-        # define the encoder
-        self.enc_left_conv = nn.Sequential()
-        self.enc_right_conv = nn.Sequential()
-        self.enc_w_conv = nn.Sequential()
-        multi_path = True
-        input_channels = self.input_channels
-        for idx in range(self.n_layers):
-            order = self.input_order - idx
-            if idx == self.fusion_level:
-                multi_path = False
-                input_channels *= 2
-            if idx != 0:
-                pooling = IcoPool(
-                    down_neigh_indices=self.ico[order + 1].neighbor_indices,
-                    down_indices=self.ico[order + 1].down_indices,
-                    pooling_type="mean")
-            if idx != 0 and multi_path:
-                self.enc_left_conv.add_module("pooling_{0}".format(idx),
-                                              pooling)
-                self.enc_right_conv.add_module("pooling_{0}".format(idx),
-                                               pooling)
-            elif idx != 0:
-                self.enc_w_conv.add_module("pooling_{0}".format(idx), pooling)
-            if multi_path:
-                output_channels = int(self.conv_flts[idx] / 2)
-                lconv = self.sconv(
-                    input_channels, output_channels,
-                    self.ico[order].conv_neighbor_indices)
-                self.enc_left_conv.add_module("l_enc_{0}".format(idx), lconv)
-                rconv = self.sconv(
-                    input_channels, output_channels,
-                    self.ico[order].conv_neighbor_indices)
-                self.enc_right_conv.add_module("r_enc_{0}".format(idx), rconv)
-                input_channels = output_channels
-            else:
-                conv = self.sconv(
-                    input_channels, self.conv_flts[idx],
-                    self.ico[order].conv_neighbor_indices)
-                self.enc_w_conv.add_module("enc_{0}".format(idx), conv)
-                input_channels = self.conv_flts[idx]
-        self.enc_w_dense = nn.Linear(self.top_final, self.latent_dim * 2)
-
-        # define the decoder
-        self.dec_w_dense = nn.Linear(self.latent_dim, self.top_final)
-        self.dec_w_conv = nn.Sequential()
-        self.dec_left_conv = nn.Sequential()
-        self.dec_right_conv = nn.Sequential()
-        input_channels = self.conv_flts[self.n_layers - 1]
-        if self.fusion_level == self.n_layers:
-            multi_path = True
-            input_channels = int(input_channels / 2)
-        else:
-            multi_path = False
-        for idx in range(self.n_layers - 1, -1, -1):
-            if multi_path:
-                if idx == 0:
-                    output_channels = self.input_channels
-                else:
-                    output_channels = int(self.conv_flts[idx - 1] / 2)
-                lconv = IcoUpConv(
-                    in_feats=input_channels, out_feats=output_channels,
-                    up_neigh_indices=self.ico[order].neighbor_indices,
-                    down_indices=self.ico[order].down_indices)
-                self.dec_left_conv.add_module("l_dec_{0}".format(idx), lconv)
-                rconv = IcoUpConv(
-                    in_feats=input_channels, out_feats=output_channels,
-                    up_neigh_indices=self.ico[order].neighbor_indices,
-                    down_indices=self.ico[order].down_indices)
-                self.dec_right_conv.add_module("r_dec_{0}".format(idx), rconv)
-                input_channels = output_channels
-            else:
-                conv = IcoUpConv(
-                    in_feats=input_channels, out_feats=self.conv_flts[idx - 1],
-                    up_neigh_indices=self.ico[order + 1].neighbor_indices,
-                    down_indices=self.ico[order + 1].down_indices)
-                self.dec_w_conv.add_module("dec_{0}".format(idx), conv)
-                input_channels = self.conv_flts[idx - 1]
-            if idx == self.fusion_level:
-                multi_path = True
-                input_channels = int(input_channels / 2)
-            order += 1
-
-        self.relu = nn.ReLU(inplace=True)
+        self.encoder = encoder or SphericalHemiFusionEncoder(input_channels,
+            input_order, latent_dim * 2, conv_flts, fusion_level, activation,
+            batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
+            dynamic_repa_zoom, standard_ico, cachedir)
+        self.decoder = decoder or SphericalHemiFusionDecoder(input_channels,
+            input_order, latent_dim * 2, conv_flts, fusion_level, activation,
+            batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
+            dynamic_repa_zoom, standard_ico, cachedir)
 
     def encode(self, left_x, right_x):
         """ The encoder.
@@ -216,15 +132,7 @@ class SphericalVAE(SphericalBase):
         q(z | x): Normal (batch_size, <latent_dim>)
             a Normal distribution.
         """
-        left_x = self._safe_forward(self.enc_left_conv, left_x,
-                                    act=self.relu, skip_last_act=True)
-        right_x = self._safe_forward(self.enc_right_conv, right_x,
-                                     act=self.relu, skip_last_act=True)
-        x = torch.cat((left_x, right_x), dim=1)
-        x = self.relu(x)
-        x = self._safe_forward(self.enc_w_conv, x, act=self.relu)
-        x = x.reshape(-1, self.top_final)
-        x = self.enc_w_dense(x)
+        x = self.encoder((left_x, right_x))
         z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
         return Normal(loc=z_mu, scale=z_logvar.exp().pow(0.5))
 
@@ -238,19 +146,12 @@ class SphericalVAE(SphericalBase):
 
         Returns
         -------
-        left_recon_x: Tensor (samples, <input_channels>, azimuth, elevation)
+        left_recon_x: Tensor (samples, <input_channels>, n_vertices)
             reconstructed left cortical texture.
-        right_recon_x: Tensor (samples, <input_channels>, azimuth, elevation)
+        right_recon_x: Tensor (samples, <input_channels>, n_vertices)
             reconstructed right cortical texture.
         """
-        x = self.relu(self.dec_w_dense(z))
-        x = x.view(-1, self.conv_flts[-1], self.top_flatten_dim)
-        x = self._safe_forward(self.dec_w_conv, x, act=self.relu)
-        left_recon_x, right_recon_x = torch.chunk(x, chunks=2, dim=1)
-        left_recon_x = self._safe_forward(self.dec_left_conv, left_recon_x,
-                                          act=self.relu, skip_last_act=True)
-        right_recon_x = self._safe_forward(self.dec_right_conv, right_recon_x,
-                                           act=self.relu, skip_last_act=True)
+        left_recon_x, right_recon_x = self.decoder(z)
         return left_recon_x, right_recon_x
 
     def reparameterize(self, q):
@@ -291,6 +192,268 @@ class SphericalVAE(SphericalBase):
         logger.debug(debug_msg("left recon cortical", left_recon_x))
         logger.debug(debug_msg("right recon cortical", right_recon_x))
         return left_recon_x, right_recon_x, {"q": q, "z": z}
+
+
+class SphericalHemiFusionEncoder(SphericalBase):
+    def __init__(self, input_channels, input_order, latent_dim,
+                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
+                 activation="LeakyReLU", batch_norm=False,
+                 conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
+                 dynamic_repa_zoom=False, standard_ico=False, cachedir=None):
+        """ Init class.
+
+        Parameters
+        ----------
+        input_channels: int, default 1
+            the number of input channels.
+        input_dim: int, default 192
+            the size of the converted 3-D surface to the 2-D grid.
+        latent_dim: int, default 64
+            the size of the latent space it encodes to.
+        conv_flts: list of int
+            the size of convolutional filters.
+        fusion_level: int, default 1
+            at which max pooling level left and right hemisphere data
+            are concatenated.
+        activation: str, default 'LeakyReLU'
+            activation function's class name in pytorch's nn module to use
+            after each convolution
+        batch_norm: bool, default False
+            optionally uses batch normalization after each convolution
+        """
+        logger.debug("SphericalHemiFusionEncoder init...")
+        super(SphericalHemiFusionEncoder, self).__init__(
+            input_order=input_order, n_layers=len(conv_flts),
+            conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
+            repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
+            standard_ico=standard_ico, cachedir=cachedir)
+        self.input_channels = input_channels
+        self.conv_flts = conv_flts
+        self.activation = getattr(nn, activation)(inplace=True)
+        self.n_vertices_down = len(
+            self.ico[self.input_order - self.n_layers].vertices)
+        logger.debug("  number of vertices small ico : {}".format(
+            self.n_vertices_down))
+        self.flatten_dim = conv_flts[-1] * self.n_vertices_down
+        logger.debug("  dimension for linear {}".format(self.flatten_dim))
+        if fusion_level > self.n_layers or fusion_level <= 0:
+            raise ValueError("Impossible to use input fusion level with "
+                             "'{0}' layers.".format(self.n_layers))
+        self.fusion_level = fusion_level
+        self.latent_dim = latent_dim
+        self.left_conv = nn.Sequential()
+        self.right_conv = nn.Sequential()
+        self.w_conv = nn.Sequential()
+        input_channels = self.input_channels
+        for idx in range(self.n_layers):
+            order = self.input_order - idx
+            output_channels = self.conv_flts[idx]
+            pooling = IcoPool(
+                down_neigh_indices=self.ico[order].neighbor_indices,
+                down_indices=self.ico[order].down_indices,
+                pooling_type="mean")
+            if idx < fusion_level:
+                output_channels = int(output_channels / 2)
+                lconv = self.sconv(
+                    input_channels, output_channels,
+                    self.ico[order].conv_neighbor_indices)
+                self.left_conv.add_module("l_conv_{0}".format(idx), lconv)
+                if batch_norm:
+                    self.left_conv.add_module(
+                        "l_bn_{0}".format(idx),
+                        nn.BatchNorm1d(output_channels))
+                self.left_conv.add_module("pooling_{0}".format(idx), pooling)
+                rconv = self.sconv(
+                    input_channels, output_channels,
+                    self.ico[order].conv_neighbor_indices)
+                self.right_conv.add_module("r_conv_{0}".format(idx), rconv)
+                if batch_norm:
+                    self.right_conv.add_module(
+                        "r_bn_{0}".format(idx),
+                        nn.BatchNorm1d(output_channels))
+                self.right_conv.add_module("pooling_{0}".format(idx), pooling)
+                input_channels = output_channels
+            else:
+                input_channels = self.conv_flts[idx - 1]
+                conv = self.sconv(
+                    input_channels, output_channels,
+                    self.ico[order].conv_neighbor_indices)
+                self.w_conv.add_module("conv_{0}".format(idx), conv)
+                if batch_norm:
+                    self.w_conv.add_module(
+                        "bn_{0}".format(idx),
+                        nn.BatchNorm1d(self.conv_flts[idx]))
+                self.w_conv.add_module("pooling_{0}".format(idx), pooling)
+        self.w_dense = nn.Linear(self.flatten_dim, self.latent_dim)
+
+
+    def forward(self, x):
+        """ The encoding.
+
+        Parameters
+        ----------
+        left_x: Tensor (batch_size, <input_channels>, n_vertices)
+            input left cortical textures.
+        right_x: Tensor (batch_size, <input_channels>, n_vertices)
+            input right cortical textures.
+
+        Returns
+        -------
+        x: Tensor (batch_size, <latent_dim>)
+            the latent representations.
+        """
+        left_x, right_x = x
+        logger.debug("SphericalGVAE forward pass")
+        logger.debug(debug_msg("  left cortical", left_x))
+        logger.debug(debug_msg("  right cortical", right_x))
+        left_x = self._safe_forward(
+            self.left_conv, left_x, act=self.activation, skip_last_act=True)
+        right_x = self._safe_forward(
+            self.right_conv, right_x, act=self.activation, skip_last_act=True)
+        logger.debug(debug_msg("  left enc", left_x))
+        logger.debug(debug_msg("  right enc", right_x))
+        x = torch.cat((left_x, right_x), dim=1)
+        x = self.activation(x)
+        logger.debug(debug_msg("  merged enc", x))
+        x = self._safe_forward(self.w_conv, x, act=self.activation)
+        logger.debug(debug_msg("  final conv enc", x))
+        x = x.view(-1, self.flatten_dim)
+        logger.debug(debug_msg("  flattened", x))
+        x = self.w_dense(x)
+        return x
+
+
+class SphericalHemiFusionDecoder(SphericalBase):
+    def __init__(self, input_channels, input_order, latent_dim,
+                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
+                 activation="LeakyReLU", batch_norm=False,
+                 conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
+                 dynamic_repa_zoom=False, standard_ico=False, cachedir=None):
+        """ Init class.
+
+        Parameters
+        ----------
+        input_channels: int, default 1
+            the number of input channels.
+        input_dim: int, default 192
+            the size of the converted 3-D surface to the 2-D grid.
+        latent_dim: int, default 64
+            the size of the latent space it encodes to.
+        conv_flts: list of int
+            the size of convolutional filters.
+        fusion_level: int, default 1
+            at which max pooling level left and right hemisphere data
+            are concatenated.
+        activation: str, default 'LeakyReLU'
+            activation function's class name in pytorch's nn module to use
+            after each convolution
+        batch_norm: bool, default False
+            optionally uses batch normalization after each convolution
+        """
+        logger.debug("SphericalVAE init...")
+        super(SphericalVAE, self).__init__(
+            input_order=input_order, n_layers=len(conv_flts),
+            conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
+            repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
+            standard_ico=standard_ico, cachedir=cachedir)
+        self.input_channels = input_channels
+        self.latent_dim = latent_dim
+        self.conv_flts = conv_flts
+       
+        self.activation = getattr(nn, activation)(inplace=True)
+        self.n_vertices_down = len(
+            self.ico[self.input_order - self.n_layers].vertices)
+        logger.debug("  number of vertices small ico : {}".format(
+            self.n_vertices_down))
+        self.flatten_dim = conv_flts[-1] * self.n_vertices_down
+        logger.debug("  dimension for linear {}".format(self.flatten_dim))
+        if fusion_level > self.n_layers or fusion_level <= 0:
+            raise ValueError("Impossible to use input fusion level with "
+                             "'{0}' layers.".format(self.n_layers))
+        self.fusion_level = fusion_level
+        self.latent_dim = latent_dim
+
+        self.w_dense = nn.Linear(self.latent_dim, self.flatten_dim)
+        self.w_conv = nn.Sequential()
+        self.left_conv = nn.Sequential()
+        self.right_conv = nn.Sequential()
+        input_channels = self.conv_flts[self.n_layers - 1]
+        for idx in range(self.n_layers - 1, -1, -1):
+            order = self.input_order - idx
+            output_channels = self.input_channels
+            if idx != 0:
+                output_channels = self.conv_flts[idx - 1]
+            if idx < fusion_level:
+                output_channels = int(output_channels / 2)
+                l_pooling = IcoUpConv(
+                    in_feats=input_channels, out_feats=output_channels,
+                    up_neigh_indices=self.ico[order].up_indices,
+                    down_indices=self.ico[order + 1].down_indices)
+                lconv = self.sconv(
+                    output_channels, output_channels,
+                    self.ico[order + 1].conv_neighbor_indices)
+                self.left_conv.add_module("l_pooling_{0}".format(idx), l_pooling)
+                self.left_conv.add_module("l_conv_{0}".format(idx), lconv)
+                if batch_norm:
+                    self.left_conv.add_module(
+                        "l_bn_{0}".format(idx),
+                        nn.BatchNorm1d(output_channels))
+                r_pooling = IcoUpConv(
+                    in_feats=input_channels, out_feats=output_channels,
+                    up_neigh_indices=self.ico[order].up_indices,
+                    down_indices=self.ico[order + 1].down_indices)
+                rconv = self.sconv(
+                    output_channels, output_channels,
+                    self.ico[order + 1].conv_neighbor_indices)
+                self.right_conv.add_module("r_pooling_{0}".format(idx), r_pooling)
+                self.right_conv.add_module("r_conv_{0}".format(idx), rconv)
+                if batch_norm:
+                    self.right_conv.add_module(
+                        "r_bn_{0}".format(idx),
+                        nn.BatchNorm1d(output_channels))
+                input_channels = output_channels
+            else:
+                input_channels = self.conv_flts[idx]
+                pooling = IcoUpConv(
+                    in_feats=input_channels, out_feats=output_channels,
+                    up_neigh_indices=self.ico[order].up_indices,
+                    down_indices=self.ico[order + 1].down_indices)
+                conv = self.sconv(
+                    output_channels, output_channels,
+                    self.ico[order + 1].conv_neighbor_indices)
+                self.w_conv.add_module("pooling_{0}".format(idx), pooling)
+                self.w_conv.add_module("conv_{0}".format(idx), conv)
+                if batch_norm:
+                    self.w_conv.add_module(
+                        "bn_{0}".format(idx),
+                        nn.BatchNorm1d(self.conv_flts[idx]))
+
+
+    def forward(self, x):
+        """ The decoding.
+
+        Parameters
+        ----------
+        left_x: Tensor (batch_size, <input_channels>, n_vertices)
+            input left cortical textures.
+        right_x: Tensor (batch_size, <input_channels>, n_vertices)
+            input right cortical textures.
+
+        Returns
+        -------
+        x: Tensor (batch_size, <latent_dim>)
+            the latent representations.
+        """
+        x = self.activation(self.w_dense(x))
+        x = x.view(-1, self.conv_flts[-1], self.n_vertices_down)
+        x = self._safe_forward(self.w_conv, x, act=self.activation)
+        left_x, right_x = torch.chunk(x, chunks=2, dim=1)
+        left_x = self._safe_forward(self.left_conv, left_x,
+                                    act=self.activation, skip_last_act=True)
+        right_x = self._safe_forward(self.right_conv, right_x,
+                                     act=self.activation, skip_last_act=True)
+        return left_x, right_x
+
 
 
 class SphericalGVAE(nn.Module):
@@ -479,7 +642,7 @@ def compute_output_dim(input_dim, convnet):
 class HemiFusionEncoder(nn.Module):
     def __init__(self, input_channels, input_dim, latent_dim,
                  conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
-                 activation="LeakyReLU", batch_norm=False):
+                 activation="LeakyReLU", batch_norm=False, return_dist=True):
         """ Init class.
 
         Parameters
@@ -512,7 +675,7 @@ class HemiFusionEncoder(nn.Module):
             raise ValueError("Impossible to use input fusion level with "
                              "'{0}' layers.".format(self.n_layers))
         self.fusion_level = fusion_level
-
+        self.return_dist = return_dist
         self.left_conv = nn.Sequential()
         self.right_conv = nn.Sequential()
         self.w_conv = nn.Sequential()
@@ -591,7 +754,9 @@ class HemiFusionEncoder(nn.Module):
         x = x.view(-1, self.flatten_dim)
         x = self.w_dense(x)
         z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
-        return Normal(loc=z_mu, scale=(z_logvar * 0.5).exp())
+        if self.return_dist:
+            return Normal(loc=z_mu, scale=torch.clamp((z_logvar * 0.5).exp(), min=1e-4))#torch.clamp(nn.functional.softplus(z_logvar), min=1e-3))
+        return z_mu, torch.clamp((z_logvar * 0.5).exp(), min=1e-4)# torch.clamp(nn.functional.softplus(z_logvar), min=1e-3)
 
 
 class HemiFusionDecoder(nn.Module):

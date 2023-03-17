@@ -22,7 +22,8 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 def plot_trisurf(vertices, triangles, texture=None, vmin=None,
                  vmax=None, colorbar=True, fig=None, ax=None,
-                 is_label=False, alpha=1, edgecolors="black"):
+                 is_label=False, alpha=1, edgecolors="black",
+                 linewidths=1, color_map=cm.coolwarm):
     """ Display a triangular surface.
 
     Parameters
@@ -72,13 +73,15 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
     x, y, z = vertices[:, 0], vertices[:, 1], vertices[:, 2]
     triangle_vertices = np.array([vertices[tri] for tri in triangles])
     if texture is not None:
-        norm = colors.Normalize(vmin=0, vmax=vmax, clip=False)
-        facecolors = cm.coolwarm(norm(texture))
+        norm = colors.Normalize(vmin=vmin, vmax=vmax, clip=False)
+        facecolors = color_map(norm(texture))
         polygon = Poly3DCollection(triangle_vertices, facecolors=facecolors,
-                                   edgecolors=edgecolors, alpha=alpha)
+                                   edgecolors=edgecolors, alpha=alpha,
+                                   linewidths=linewidths)
     else:
         polygon = Poly3DCollection(triangle_vertices, facecolors="white",
-                                   edgecolors=edgecolors, alpha=0.1)
+                                   edgecolors=edgecolors, alpha=0.1,
+                                   linewidths=linewidths)
     ax.add_collection3d(polygon)
     ax.set_xlim(-1, 1)
     ax.set_ylim(-1, 1)
@@ -86,7 +89,7 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
 
     # Add colorbar
     if texture is not None:
-        m = cm.ScalarMappable(cmap=cm.coolwarm, norm=norm)
+        m = cm.ScalarMappable(cmap=color_map, norm=norm)
         m.set_array(texture)
         if colorbar:
             fig.colorbar(m, ax=ax, fraction=0.046, pad=0.04)

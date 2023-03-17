@@ -12,4 +12,5 @@ Surface augmentations.
 """
 
 # Imports
-from .augmentation import SphericalRandomCut, SphericalRandomRotation
+from .augmentation import (SphericalRandomCut, SphericalRandomRotation,
+                           SphericalBlur, SphericalNoise)
