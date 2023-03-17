@@ -113,7 +113,7 @@ class SphericalVAE(SphericalBase):
             batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
             dynamic_repa_zoom, standard_ico, cachedir)
         self.decoder = decoder or SphericalHemiFusionDecoder(input_channels,
-            input_order, latent_dim * 2, conv_flts, fusion_level, activation,
+            input_order, latent_dim, conv_flts, fusion_level, activation,
             batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
             dynamic_repa_zoom, standard_ico, cachedir)
 
@@ -134,7 +134,7 @@ class SphericalVAE(SphericalBase):
         """
         x = self.encoder((left_x, right_x))
         z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
-        return Normal(loc=z_mu, scale=z_logvar.exp().pow(0.5))
+        return Normal(loc=z_mu, scale=(z_logvar * 0.5).exp())
 
     def decode(self, z):
         """ The decoder.
@@ -428,7 +428,6 @@ class SphericalHemiFusionDecoder(SphericalBase):
                         "bn_{0}".format(idx),
                         nn.BatchNorm1d(self.conv_flts[idx]))
 
-
     def forward(self, x):
         """ The decoding.
 
@@ -453,7 +452,6 @@ class SphericalHemiFusionDecoder(SphericalBase):
         right_x = self._safe_forward(self.right_conv, right_x,
                                      act=self.activation, skip_last_act=True)
         return left_x, right_x
-
 
 
 class SphericalGVAE(nn.Module):
@@ -530,7 +528,7 @@ class SphericalGVAE(nn.Module):
                              "'{0}' layers.".format(self.n_layers))
         self.fusion_level = fusion_level
         self.encoder = encoder or HemiFusionEncoder(
-            input_channels, input_dim, latent_dim, conv_flts,
+            input_channels, input_dim, latent_dim * 2, conv_flts,
             fusion_level, activation, batch_norm)
         self.decoder = decoder or HemiFusionDecoder(
             input_channels, self.encoder.output_dim, latent_dim, conv_flts,
@@ -551,7 +549,9 @@ class SphericalGVAE(nn.Module):
         q(z | x): Normal (batch_size, <latent_dim>)
             a Normal distribution.
         """
-        return self.encoder((left_x, right_x))
+        x = self.encoder((left_x, right_x))
+        z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
+        return Normal(loc=z_mu, scale=(z_logvar * 0.5).exp())
 
     def decode(self, z):
         """ The decoder.
@@ -642,7 +642,7 @@ def compute_output_dim(input_dim, convnet):
 class HemiFusionEncoder(nn.Module):
     def __init__(self, input_channels, input_dim, latent_dim,
                  conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
-                 activation="LeakyReLU", batch_norm=False, return_dist=True):
+                 activation="LeakyReLU", batch_norm=False):
         """ Init class.
 
         Parameters
@@ -675,7 +675,6 @@ class HemiFusionEncoder(nn.Module):
             raise ValueError("Impossible to use input fusion level with "
                              "'{0}' layers.".format(self.n_layers))
         self.fusion_level = fusion_level
-        self.return_dist = return_dist
         self.left_conv = nn.Sequential()
         self.right_conv = nn.Sequential()
         self.w_conv = nn.Sequential()
@@ -729,7 +728,7 @@ class HemiFusionEncoder(nn.Module):
         self.output_dim = compute_output_dim(input_dim,
                                              [*self.left_conv, *self.w_conv])
         self.flatten_dim = self.output_dim ** 2 * self.conv_flts[-1]
-        self.w_dense = nn.Linear(self.flatten_dim, self.latent_dim * 2)
+        self.w_dense = nn.Linear(self.flatten_dim, self.latent_dim)
 
     def forward(self, x):
         """ The encoder.
@@ -752,11 +751,8 @@ class HemiFusionEncoder(nn.Module):
         x = torch.cat((left_x, right_x), dim=1)
         x = self.w_conv(x)
         x = x.view(-1, self.flatten_dim)
-        x = self.w_dense(x)
-        z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
-        if self.return_dist:
-            return Normal(loc=z_mu, scale=torch.clamp((z_logvar * 0.5).exp(), min=1e-4))#torch.clamp(nn.functional.softplus(z_logvar), min=1e-3))
-        return z_mu, torch.clamp((z_logvar * 0.5).exp(), min=1e-4)# torch.clamp(nn.functional.softplus(z_logvar), min=1e-3)
+        z = self.w_dense(x)
+        return z
 
 
 class HemiFusionDecoder(nn.Module):
