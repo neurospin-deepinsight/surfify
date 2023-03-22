@@ -154,16 +154,14 @@ class SphericalVAE(SphericalBase):
         left_recon_x, right_recon_x = self.decoder(z)
         return left_recon_x, right_recon_x
 
-    def reparameterize(self, q):
+    def reparameterize(self, q, sample=True):
         """ Implement the reparametrization trick.
         """
-        if self.training:
-            z = q.rsample()
-        else:
-            z = q.loc
-        return z
+        if sample:
+            return q.rsample()
+        return q.loc
 
-    def forward(self, left_x, right_x):
+    def forward(self, left_x, right_x, sample=True):
         """ The forward method.
 
         Parameters
@@ -186,7 +184,7 @@ class SphericalVAE(SphericalBase):
         q = self.encode(left_x, right_x)
         logger.debug(debug_msg("posterior loc", q.loc))
         logger.debug(debug_msg("posterior scale", q.scale))
-        z = self.reparameterize(q)
+        z = self.reparameterize(q, sample)
         logger.debug(debug_msg("z", z))
         left_recon_x, right_recon_x = self.decode(z)
         logger.debug(debug_msg("left recon cortical", left_recon_x))
@@ -570,16 +568,14 @@ class SphericalGVAE(nn.Module):
         """
         return self.decoder(z)
 
-    def reparameterize(self, q):
+    def reparameterize(self, q, sample=True):
         """ Implement the reparametrization trick.
         """
-        if self.training:
-            z = q.rsample()
-        else:
-            z = q.loc
-        return z
+        if sample:
+            return q.rsample()
+        return q.loc
 
-    def forward(self, left_x, right_x):
+    def forward(self, left_x, right_x, sample=True):
         """ The forward method.
 
         Parameters
@@ -602,7 +598,7 @@ class SphericalGVAE(nn.Module):
         q = self.encode(left_x, right_x)
         logger.debug(debug_msg("posterior loc", q.loc))
         logger.debug(debug_msg("posterior scale", q.scale))
-        z = self.reparameterize(q)
+        z = self.reparameterize(q, sample)
         logger.debug(debug_msg("z", z))
         left_recon_x, right_recon_x = self.decode(z)
         logger.debug(debug_msg("left recon cortical", left_recon_x))
