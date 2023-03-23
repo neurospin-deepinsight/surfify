@@ -277,7 +277,8 @@ class IcoDiNeConv(nn.Module):
         self.out_feats = out_feats
         self.neigh_indices = neigh_indices
         self.n_vertices, self.neigh_size = neigh_indices.shape
-        self.weight = nn.Linear(self.neigh_size * in_feats, out_feats, bias=bias)
+        self.weight = nn.Linear(
+            self.neigh_size * in_feats, out_feats, bias=bias)
 
     def forward(self, x):
         """ Forward method.

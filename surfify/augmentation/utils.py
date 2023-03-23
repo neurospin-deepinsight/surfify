@@ -180,14 +180,14 @@ def listify(data):
 
 def copy_with_channel_dim(data, to_tensor=False):
     """ Create a copy of a 1 or 2 dimensional array with a channel dimension.
-    
+
     Parameters
     ----------
     data: array or torch.Tensor
         the input data
     to_tensor: bool, default False
         optionnaly casts input data to a tensor if its not
-    
+
     Returns
     -------
     _data: array or torch.Tensor

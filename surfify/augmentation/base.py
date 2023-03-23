@@ -110,7 +110,6 @@ class SurfCutOut(RandomAugmentation):
                     patch_indices = [random_node]
                     for ring in range(1, self.patch_size + 1):
                         patch_indices += self.neighs[random_node][ring]
-                
                 patch_indices = tuple([channel_dim, patch_indices])
                 _data[patch_indices] = self.replacement_value
         return _data.squeeze()
@@ -208,9 +207,7 @@ class SurfBlur(RandomAugmentation):
         self.positions = np.array([0] + list(itertools.chain(*[
             [ring] * (6 * ring) for ring in range(1, depth+1)])))
         self.conv = IcoDiNeConv(1, 1, self.neighs, bias=False)
-        
         assert len(self.positions) == len(neighs[0])
-        
 
     def run(self, data):
         """ Applies the augmentation to the data.

@@ -108,13 +108,13 @@ class SphericalVAE(SphericalBase):
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
             standard_ico=standard_ico, cachedir=cachedir)
-        self.encoder = encoder or SphericalHemiFusionEncoder(input_channels,
-            input_order, latent_dim * 2, conv_flts, fusion_level, activation,
-            batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
-            dynamic_repa_zoom, standard_ico, cachedir)
-        self.decoder = decoder or SphericalHemiFusionDecoder(input_channels,
-            input_order, latent_dim, conv_flts, fusion_level, activation,
-            batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
+        self.encoder = encoder or SphericalHemiFusionEncoder(
+            input_channels, input_order, latent_dim * 2, conv_flts,
+            fusion_level, activation, batch_norm, conv_mode, dine_size,
+            repa_size, repa_zoom, dynamic_repa_zoom, standard_ico, cachedir)
+        self.decoder = decoder or SphericalHemiFusionDecoder(
+            input_channels, input_order, latent_dim, conv_flts, fusion_level,
+            activation, batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
             dynamic_repa_zoom, standard_ico, cachedir)
 
     def encode(self, left_x, right_x):
@@ -284,7 +284,6 @@ class SphericalHemiFusionEncoder(SphericalBase):
                 self.w_conv.add_module("pooling_{0}".format(idx), pooling)
         self.w_dense = nn.Linear(self.flatten_dim, self.latent_dim)
 
-
     def forward(self, x):
         """ The encoding.
 
@@ -357,7 +356,7 @@ class SphericalHemiFusionDecoder(SphericalBase):
         self.input_channels = input_channels
         self.latent_dim = latent_dim
         self.conv_flts = conv_flts
-       
+
         self.activation = getattr(nn, activation)(inplace=True)
         self.n_vertices_down = len(
             self.ico[self.input_order - self.n_layers].vertices)
@@ -390,7 +389,8 @@ class SphericalHemiFusionDecoder(SphericalBase):
                 lconv = self.sconv(
                     output_channels, output_channels,
                     self.ico[order + 1].conv_neighbor_indices)
-                self.left_conv.add_module("l_pooling_{0}".format(idx), l_pooling)
+                self.left_conv.add_module(
+                    "l_pooling_{0}".format(idx), l_pooling)
                 self.left_conv.add_module("l_conv_{0}".format(idx), lconv)
                 if batch_norm:
                     self.left_conv.add_module(
@@ -403,7 +403,8 @@ class SphericalHemiFusionDecoder(SphericalBase):
                 rconv = self.sconv(
                     output_channels, output_channels,
                     self.ico[order + 1].conv_neighbor_indices)
-                self.right_conv.add_module("r_pooling_{0}".format(idx), r_pooling)
+                self.right_conv.add_module(
+                    "r_pooling_{0}".format(idx), r_pooling)
                 self.right_conv.add_module("r_conv_{0}".format(idx), rconv)
                 if batch_norm:
                     self.right_conv.add_module(
