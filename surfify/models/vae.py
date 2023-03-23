@@ -103,7 +103,7 @@ class SphericalVAE(SphericalBase):
             set this folder to use smart caching speedup.
         """
         logger.debug("SphericalVAE init...")
-        super(SphericalVAE, self).__init__(
+        super().__init__(
             input_order=input_order, n_layers=len(conv_flts),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
@@ -220,7 +220,7 @@ class SphericalHemiFusionEncoder(SphericalBase):
             optionally uses batch normalization after each convolution
         """
         logger.debug("SphericalHemiFusionEncoder init...")
-        super(SphericalHemiFusionEncoder, self).__init__(
+        super().__init__(
             input_order=input_order, n_layers=len(conv_flts),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
@@ -348,7 +348,7 @@ class SphericalHemiFusionDecoder(SphericalBase):
             optionally uses batch normalization after each convolution
         """
         logger.debug("SphericalVAE init...")
-        super(SphericalVAE, self).__init__(
+        super().__init__(
             input_order=input_order, n_layers=len(conv_flts),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
@@ -516,7 +516,7 @@ class SphericalGVAE(nn.Module):
             with the provided parameters.
         """
         logger.debug("SphericalGVAE init...")
-        super(SphericalGVAE, self).__init__()
+        super().__init__()
         self.input_channels = input_channels
         self.input_dim = input_dim
         self.latent_dim = latent_dim

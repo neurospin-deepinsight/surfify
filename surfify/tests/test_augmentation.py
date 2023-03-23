@@ -29,7 +29,7 @@ class TestAugmentation(unittest.TestCase):
         pass
 
     def test_surf_rotation(self):
-        """ Test SphericalRandomRotation.
+        """ Test SurfRotation.
         """
         vertices, triangles = utils.icosahedron(order=3)
         n_vertices = len(vertices)
@@ -42,7 +42,7 @@ class TestAugmentation(unittest.TestCase):
         self.assertTrue((data == data_rot).sum() < n_vertices)
 
     def test_surf_cutout(self):
-        """ Test SphericalRandomCut.
+        """ Test SurfCutOut.
         """
         vertices, triangles = utils.icosahedron(order=3)
         n_vertices = len(vertices)
@@ -55,22 +55,22 @@ class TestAugmentation(unittest.TestCase):
         self.assertTrue((data == data_cut).sum() < n_vertices)
 
     def test_surf_noise(self):
-        """ Test SphericalRandomRotation.
+        """ Test SurfNoise.
         """
         vertices, _ = utils.icosahedron(order=3)
         n_vertices = len(vertices)
-        data = np.ones((n_vertices, ), dtype=int)
+        data = np.random.uniform(0, 1, n_vertices)
         processor = augment.SurfNoise(sigma=3)
         data_noise = processor(data)
         self.assertEqual(len(data), len(data_noise))
         self.assertTrue((data == data_noise).sum() < n_vertices)
 
     def test_surf_blur(self):
-        """ Test SphericalRandomCut.
+        """ Test SurfBlur.
         """
         vertices, triangles = utils.icosahedron(order=3)
         n_vertices = len(vertices)
-        data = np.ones((n_vertices, ), dtype=int)
+        data = np.random.uniform(0, 1, n_vertices)
         processor = augment.SurfBlur(
             vertices, triangles, sigma=2)
         data_blur = processor(data)
