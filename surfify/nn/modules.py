@@ -253,7 +253,7 @@ class IcoDiNeConv(nn.Module):
     >>> neighbor_indices = neighbors(
             ico2_vertices, ico2_triangles, depth=1, direct_neighbor=True)
     >>> neighbor_indices = np.asarray(list(neighbor_indices.values()))
-    >>> module = IcoUpConv(
+    >>> module = IcoDiNeConv(
             in_feats=8, out_feats=8, neigh_indices=neighbor_indices)
     >>> ico2_x = torch.zeros((10, 8, len(ico2_vertices)))
     >>> ico2_x = module(ico2_x)
@@ -317,7 +317,7 @@ class IcoPool(nn.Module):
     >>> module = IcoPool(
             down_neigh_indices=down_neigh_indices, down_indices=down_indices)
     >>> ico3_x = torch.zeros((10, 4, len(ico3_vertices)))
-    >>> ico2_x = module(ico3_x)
+    >>> ico2_x, _ = module(ico3_x)
     >>> ico2_x.shape, ico3_x.shape
     """
     def __init__(self, down_neigh_indices, down_indices, pooling_type="mean"):
@@ -421,8 +421,8 @@ class IcoUpConv(nn.Module):
         self.argsort_neigh_indices = np.argsort(self.flat_neigh_indices)
         self.sorted_neigh_indices = self.flat_neigh_indices[
             self.argsort_neigh_indices]
-        assert(np.unique(self.sorted_neigh_indices).tolist() ==
-               list(range(self.n_vertices)))
+        assert (np.unique(self.sorted_neigh_indices).tolist() ==
+                list(range(self.n_vertices)))
 
         self.sorted_2occ_12neigh_indices = self.sorted_neigh_indices[:24]
         self._check_occurence(self.sorted_2occ_12neigh_indices, occ=2)
@@ -536,8 +536,8 @@ class IcoGenericUpConv(nn.Module):
         self.argsort_neigh_indices = np.argsort(self.flat_neigh_indices)
         self.sorted_neigh_indices = self.flat_neigh_indices[
             self.argsort_neigh_indices]
-        assert(np.unique(self.sorted_neigh_indices).tolist() ==
-               list(range(self.n_vertices)))
+        assert (np.unique(self.sorted_neigh_indices).tolist() ==
+                list(range(self.n_vertices)))
         count = collections.Counter(self.sorted_neigh_indices)
         self.count = sorted(count.items(), key=lambda item: item[0])
 
@@ -570,7 +570,7 @@ class IcoGenericUpConv(nn.Module):
         start = 0
         for idx in range(self.n_vertices):
             _idx, _count = self.count[idx]
-            assert(_idx == idx)
+            assert _idx == idx
             stop = start + _count
             _x = x[:, self.argsort_neigh_indices[start: stop]]
             out[..., idx] = torch.mean(_x, dim=1)
@@ -603,9 +603,8 @@ class IcoUpSample(nn.Module):
     >>> up_indices = interpolate(
             ico2_vertices, ico3_vertices, ico3_triangles)
     >>> up_indices = np.asarray(list(up_indices.values()))
-    >>> module = IcoGenericUpConv(
-            in_feats=8, out_feats=4, up_neigh_indices=up_indices,
-            down_indices=down_indices)
+    >>> module = IcoUpSample(
+            in_feats=8, out_feats=4, up_neigh_indices=up_indices)
     >>> ico2_x = torch.zeros((10, 8, len(ico2_vertices)))
     >>> ico3_x = module(ico2_x)
     >>> ico2_x.shape, ico3_x.shape
@@ -678,9 +677,8 @@ class IcoFixIndexUpSample(nn.Module):
     >>> up_indices = interpolate(
             ico2_vertices, ico3_vertices, ico3_triangles)
     >>> up_indices = np.asarray(list(up_indices.values()))
-    >>> module = IcoGenericUpConv(
-            in_feats=8, out_feats=4, up_neigh_indices=up_indices,
-            down_indices=down_indices)
+    >>> module = IcoFixIndexUpSample(
+            in_feats=8, out_feats=4, up_neigh_indices=up_indices)
     >>> ico2_x = torch.zeros((10, 8, len(ico2_vertices)))
     >>> ico3_x = module(ico2_x)
     >>> ico2_x.shape, ico3_x.shape

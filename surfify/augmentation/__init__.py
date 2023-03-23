@@ -12,5 +12,6 @@ Surface augmentations.
 """
 
 # Imports
-from .augmentation import (SphericalRandomCut, SphericalRandomRotation,
-                           SphericalBlur, SphericalNoise)
+from .base import SurfCutOut, SurfNoise, SurfRotation, SurfBlur
+from .mixup import HemiMixUp, GroupMixUp
+from .utils import interval, Transformer

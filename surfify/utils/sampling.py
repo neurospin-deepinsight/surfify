@@ -559,7 +559,7 @@ def icosahedron(order=3, standard_ico=False):
             triangles = icos[surf_name + ".triangles"]
         except Exception as err:
             print("-- available topologies:", icos.files)
-            raise(err)
+            raise err
 
     return vertices, triangles
 

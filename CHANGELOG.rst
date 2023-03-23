@@ -12,9 +12,17 @@ Added
   of the generated grid on the spherical surface.
 * add a `fusion_level` parameter on VGG and VAE models in order to control
   the left and right hemispheres fusion level.
+* RandomAugmentation: aplly an augmentation with random parameters defined in
+  intervals.
+* SurfNoise, HemiMixUp, GroupMixUp: new spherical augmentations.
+* Transformer: register augmentation tranformations and apply them with custom
+  probabilities.
 
 Changed
 -------
+
+* SphericalRandomCut -> SurfCutOut
+* SphericalRandomRotation -> SurfRotation
 
 Deprecated
 ----------
@@ -23,6 +31,7 @@ Fixed
 -----
 
 * normalize weights in RePa.
+* DiNe: change how missing nodes are handle during the neighborhood generation.
 
 Contributors
 ------------
