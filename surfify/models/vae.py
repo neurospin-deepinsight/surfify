@@ -414,7 +414,6 @@ class SphericalHemiFusionDecoder(SphericalBase):
                     self.right_conv.add_module(
                         "r_bn_{0}".format(idx),
                         nn.BatchNorm1d(output_channels))
-                input_channels = output_channels
             else:
                 logger.debug("input channels : {}".format(input_channels))
                 logger.debug("output channels : {}".format(output_channels))
