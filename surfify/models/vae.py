@@ -347,7 +347,7 @@ class SphericalHemiFusionDecoder(SphericalBase):
         batch_norm: bool, default False
             optionally uses batch normalization after each convolution
         """
-        logger.debug("SphericalVAE init...")
+        logger.debug("SphericalHemiFusionDecoder init...")
         super().__init__(
             input_order=input_order, n_layers=len(conv_flts),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
@@ -376,15 +376,19 @@ class SphericalHemiFusionDecoder(SphericalBase):
         self.right_conv = nn.Sequential()
         input_channels = self.conv_flts[self.n_layers - 1]
         for idx in range(self.n_layers - 1, -1, -1):
-            order = self.input_order - idx
-            output_channels = self.input_channels
+            order = self.input_order - idx - 1
+            input_channels = self.conv_flts[idx]
+            output_channels = self.input_channels * 2
             if idx != 0:
                 output_channels = self.conv_flts[idx - 1]
             if idx < fusion_level:
                 output_channels = int(output_channels / 2)
+                input_channels = int(input_channels / 2)
+                logger.debug("input channels : {}".format(input_channels))
+                logger.debug("output channels : {}".format(output_channels))
                 l_pooling = IcoUpConv(
                     in_feats=input_channels, out_feats=output_channels,
-                    up_neigh_indices=self.ico[order].up_indices,
+                    up_neigh_indices=self.ico[order + 1].neighbor_indices,
                     down_indices=self.ico[order + 1].down_indices)
                 lconv = self.sconv(
                     output_channels, output_channels,
@@ -398,7 +402,7 @@ class SphericalHemiFusionDecoder(SphericalBase):
                         nn.BatchNorm1d(output_channels))
                 r_pooling = IcoUpConv(
                     in_feats=input_channels, out_feats=output_channels,
-                    up_neigh_indices=self.ico[order].up_indices,
+                    up_neigh_indices=self.ico[order + 1].neighbor_indices,
                     down_indices=self.ico[order + 1].down_indices)
                 rconv = self.sconv(
                     output_channels, output_channels,
@@ -412,10 +416,12 @@ class SphericalHemiFusionDecoder(SphericalBase):
                         nn.BatchNorm1d(output_channels))
                 input_channels = output_channels
             else:
-                input_channels = self.conv_flts[idx]
+                logger.debug("input channels : {}".format(input_channels))
+                logger.debug("output channels : {}".format(output_channels))
+                logger.debug("order : {}".format(order))
                 pooling = IcoUpConv(
                     in_feats=input_channels, out_feats=output_channels,
-                    up_neigh_indices=self.ico[order].up_indices,
+                    up_neigh_indices=self.ico[order + 1].neighbor_indices,
                     down_indices=self.ico[order + 1].down_indices)
                 conv = self.sconv(
                     output_channels, output_channels,
@@ -442,10 +448,16 @@ class SphericalHemiFusionDecoder(SphericalBase):
         x: Tensor (batch_size, <latent_dim>)
             the latent representations.
         """
+        logger.debug("SphericalHemiFusionDecoder forward pass")
+        logger.debug(debug_msg("latent", x))
         x = self.activation(self.w_dense(x))
         x = x.view(-1, self.conv_flts[-1], self.n_vertices_down)
+        logger.debug(debug_msg("input to conv", x))
         x = self._safe_forward(self.w_conv, x, act=self.activation)
+        logger.debug(debug_msg("before hemi sep", x))
         left_x, right_x = torch.chunk(x, chunks=2, dim=1)
+        logger.debug(debug_msg("after hemi sep right", right_x))
+        logger.debug(debug_msg("after hemi sep left", left_x))
         left_x = self._safe_forward(self.left_conv, left_x,
                                     act=self.activation, skip_last_act=True)
         right_x = self._safe_forward(self.right_conv, right_x,
