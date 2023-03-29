@@ -87,8 +87,8 @@ class TestModelsGVAE(unittest.TestCase):
         """ Test SphericalVAE forward.
         """
         model = models.SphericalVAE(
-            input_channels=self.n_classes, input_dim=self.input_dim, latent_dim=32,
-            conv_flts=[64, 128, 128], conv_mode="SpMa")
+            input_channels=self.n_classes, input_dim=self.input_dim,
+            latent_dim=32, conv_flts=[64, 128, 128], conv_mode="SpMa")
         out = model(self.X, self.X)
 
 

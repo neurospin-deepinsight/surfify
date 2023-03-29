@@ -126,7 +126,7 @@ class GroupMixUp(MixUpAugmentation):
         for idx in range(n_samples):
             self._randomize()
             _selector = np.random.choice(group_size, replace=True,
-                                            size=self.n_vertices)
+                                         size=self.n_vertices)
             _b_sample = group_data[_selector, range(self.n_vertices)]
             data[self.mask == 1] = _b_sample[self.mask == 1]
             _b_data.append(data)

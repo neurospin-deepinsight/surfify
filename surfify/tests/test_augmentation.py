@@ -76,7 +76,7 @@ class TestAugmentation(unittest.TestCase):
         data_blur = processor(data)
         self.assertEqual(len(data), len(data_blur))
         self.assertTrue((data == data_blur).sum() < n_vertices)
-    
+
     def test_hemi_mixup(self):
         """ Test SurfBlur.
         """
