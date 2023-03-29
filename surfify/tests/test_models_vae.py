@@ -42,7 +42,7 @@ class TestModelsVAE(unittest.TestCase):
         """
         model = models.SphericalVAE(
             input_channels=self.n_classes, input_order=self.order,
-            latent_dim=32,  conv_mode="DiNe", dine_size=1,
+            latent_dim=32, conv_mode="DiNe", dine_size=1,
             conv_flts=[32, 64], standard_ico=True)
         out = model(self.X, self.X)
         model = models.SphericalVAE(
@@ -53,7 +53,7 @@ class TestModelsVAE(unittest.TestCase):
 
 
 class TestModelsGVAE(unittest.TestCase):
-    """ Test the SphericalGVAE.
+    """ Test the SphericalVAE.
     """
     def setUp(self):
         """ Setup test.
@@ -67,10 +67,13 @@ class TestModelsGVAE(unittest.TestCase):
             ico_vertices, n_samples=40, n_classes=self.n_classes, scale=1,
             seed=42)
         self.X = []
+        self.input_dim = 192
         for sample_idx in range(X.shape[0]):
             _X = []
             for ch_idx in range(X.shape[1]):
-                _X.append(utils.text2grid(ico_vertices, X[sample_idx, ch_idx]))
+                _X.append(utils.text2grid(
+                    ico_vertices, X[sample_idx, ch_idx], resx=self.input_dim,
+                    resy=self.input_dim))
             self.X.append(_X)
         self.X = np.asarray(self.X)
         self.X = torch.from_numpy(self.X)
@@ -81,11 +84,11 @@ class TestModelsGVAE(unittest.TestCase):
         pass
 
     def test_forward(self):
-        """ Test SphericalGVAE forward.
+        """ Test SphericalVAE forward.
         """
-        model = models.SphericalGVAE(
-            input_channels=self.n_classes, input_dim=194, latent_dim=32,
-            conv_flts=[64, 128, 128])
+        model = models.SphericalVAE(
+            input_channels=self.n_classes, input_dim=self.input_dim, latent_dim=32,
+            conv_flts=[64, 128, 128], conv_mode="SpMa")
         out = model(self.X, self.X)
 
 

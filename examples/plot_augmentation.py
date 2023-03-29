@@ -171,9 +171,11 @@ texture = np.random.uniform(0, 3, len(vertices))
 aug1 = SurfCutOut(vertices, triangles, patch_size=interval((1, max_depth), int),
                   n_patches=interval((1, 3), int))
 aug2 = SurfNoise(sigma=interval((1, 3), float))
+aug3 = SurfBlur(vertices, triangles, sigma=interval((0.1, 1), float))
 trans = Transformer()
-trans.register(aug1, probability=.5)
-trans.register(aug2, probability=.5)
+trans.register(aug1, probability=.75)
+trans.register(aug2, probability=.75)
+trans.register(aug3, probability=.5)
 fig, axs = plt.subplots(
     2, 2, subplot_kw={"projection": "3d", "aspect": "auto"}, figsize=(10, 10))
 axs = axs.flatten()

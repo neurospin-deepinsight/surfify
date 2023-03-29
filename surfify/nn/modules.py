@@ -126,8 +126,8 @@ class IcoSpMaConvTranspose(nn.Module):
             controls the stride for the cross-correlation.
         pad: int or tuple (pad_azimuth, pad_elevation), default 0
             the size of the padding.
-        zero_pad: int or tuple, deffault 0
-            add a zero padding in bith axis befor the transpose convolution.
+        zero_pad: int or tuple, default 0
+            add a zero padding in both axes befor the transpose convolution.
         """
         super(IcoSpMaConvTranspose, self).__init__()
         self.in_feats = in_feats

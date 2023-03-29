@@ -27,7 +27,7 @@ from .base import SphericalBase
 logger = get_logger()
 
 
-class SphericalVAE(SphericalBase):
+class SphericalVAE(nn.Module):
     """ Spherical VAE architecture.
 
     Use either RePa - Rectangular Patch convolution method or DiNe - Direct
@@ -62,12 +62,10 @@ class SphericalVAE(SphericalBase):
     >>> out = model(x, x)
     >>> print(out[0].shape, out[1].shape)
     """
-    def __init__(self, input_channels=1, input_order=5, latent_dim=64,
-                 conv_flts=[32, 32, 64, 64], fusion_level=1,
+    def __init__(self, input_channels=1, input_order=5, input_dim=192,
+                 latent_dim=64, conv_flts=[32, 32, 64, 64], fusion_level=1,
                  activation="LeakyReLU", batch_norm=False, conv_mode="DiNe",
-                 dine_size=1, repa_size=5, repa_zoom=5,
-                 dynamic_repa_zoom=False, standard_ico=False, cachedir=None,
-                 encoder=None, decoder=None):
+                 cachedir=None, encoder=None, decoder=None, *args, **kwargs):
         """ Init class.
 
         Parameters
@@ -103,19 +101,29 @@ class SphericalVAE(SphericalBase):
             set this folder to use smart caching speedup.
         """
         logger.debug("SphericalVAE init...")
-        super().__init__(
-            input_order=input_order, n_layers=len(conv_flts),
-            conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
-            repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
-            standard_ico=standard_ico, cachedir=cachedir)
-        self.encoder = encoder or SphericalHemiFusionEncoder(
-            input_channels, input_order, latent_dim * 2, conv_flts,
-            fusion_level, activation, batch_norm, conv_mode, dine_size,
-            repa_size, repa_zoom, dynamic_repa_zoom, standard_ico, cachedir)
-        self.decoder = decoder or SphericalHemiFusionDecoder(
-            input_channels, input_order, latent_dim, conv_flts, fusion_level,
-            activation, batch_norm, conv_mode, dine_size, repa_size, repa_zoom,
-            dynamic_repa_zoom, standard_ico, cachedir)
+        super().__init__()
+        assert conv_mode in ["DiNe", "RePa", "SpMa"]
+        use_grid = conv_mode == "SpMa"
+        if use_grid and encoder is None:
+            encoder = HemiFusionEncoder(
+                input_channels, input_dim, latent_dim * 2, conv_flts,
+                fusion_level, activation, batch_norm, *args, **kwargs)
+        elif encoder is None:
+            encoder = SphericalHemiFusionEncoder(
+                input_channels, input_order, latent_dim * 2, conv_flts,
+                fusion_level, activation, batch_norm, conv_mode,
+                cachedir=cachedir, *args, **kwargs)
+        if use_grid and decoder is None:
+            decoder = HemiFusionDecoder(
+                input_channels, encoder.output_dim, latent_dim, conv_flts,
+                fusion_level, activation, batch_norm, *args, **kwargs)
+        elif decoder is None:
+            decoder = SphericalHemiFusionDecoder(
+                input_channels, input_order, latent_dim, conv_flts,
+                fusion_level, activation, batch_norm, conv_mode,
+                cachedir=cachedir, *args, **kwargs)
+        self.encoder = encoder
+        self.decoder = decoder
 
     def encode(self, left_x, right_x):
         """ The encoder.
@@ -300,7 +308,7 @@ class SphericalHemiFusionEncoder(SphericalBase):
             the latent representations.
         """
         left_x, right_x = x
-        logger.debug("SphericalGVAE forward pass")
+        logger.debug("SphericalHemiFusionEncoder forward pass")
         logger.debug(debug_msg("  left cortical", left_x))
         logger.debug(debug_msg("  right cortical", right_x))
         left_x = self._safe_forward(
@@ -462,160 +470,6 @@ class SphericalHemiFusionDecoder(SphericalBase):
         right_x = self._safe_forward(self.right_conv, right_x,
                                      act=self.activation, skip_last_act=True)
         return left_x, right_x
-
-
-class SphericalGVAE(nn.Module):
-    """ Spherical Grided VAE architecture.
-
-    Use SpMa - Spherical Mapping convolution method.
-
-    Notes
-    -----
-    Debuging messages can be displayed by changing the log level using
-    ``setup_logging(level='debug')``.
-
-    See Also
-    --------
-    SphericalVAE
-
-    References
-    ----------
-    Representation Learning of Resting State fMRI with Variational
-    Autoencoder, NeuroImage 2021.
-
-    Examples
-    --------
-    >>> import torch
-    >>> from surfify.models import SphericalGVAE
-    >>> x = torch.zeros((1, 2, 192, 192))
-    >>> model = SphericalGVAE(
-    >>>     input_channels=2, input_dim=192, latent_dim=64,
-    >>>     conv_flts=[64, 128, 128, 256, 256], fusion_level=2)
-    >>> print(model)
-    >>> out = model(x, x)
-    >>> print(out[0].shape, out[1].shape)
-    """
-    def __init__(self, input_channels=1, input_dim=192, latent_dim=64,
-                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
-                 activation="LeakyReLU", batch_norm=False,
-                 encoder=None, decoder=None):
-        """ Init class.
-
-        Parameters
-        ----------
-        input_channels: int, default 1
-            the number of input channels.
-        input_dim: int, default 192
-            the size of the converted 3-D surface to the 2-D grid.
-        latent_dim: int, default 64
-            the size of the stochastic latent state of the SVAE.
-        conv_flts: list of int
-            the size of convolutional filters.
-        fusion_level: int, default 1
-            at which max pooling level left and right hemisphere data
-            are concatenated.
-        activation: str, default 'LeakyReLU'
-            activation function's class name in pytorch's nn module to use
-            after each convolution
-        batch_norm: bool, default False
-            optionally uses batch normalization after each convolution
-        encoder: nn.Module or None, default None
-            encoder model to use. If None instantiate a HemiFusionEncoder
-            with the provided parameters.
-        decoder: nn.Module or None, default None
-            decoder model to use. If None instantiate a HemiFusionDecoder
-            with the provided parameters.
-        """
-        logger.debug("SphericalGVAE init...")
-        super().__init__()
-        self.input_channels = input_channels
-        self.input_dim = input_dim
-        self.latent_dim = latent_dim
-        self.conv_flts = conv_flts
-        self.n_layers = len(self.conv_flts)
-        if fusion_level > self.n_layers or fusion_level <= 0:
-            raise ValueError("Impossible to use input fusion level with "
-                             "'{0}' layers.".format(self.n_layers))
-        self.fusion_level = fusion_level
-        self.encoder = encoder or HemiFusionEncoder(
-            input_channels, input_dim, latent_dim * 2, conv_flts,
-            fusion_level, activation, batch_norm)
-        self.decoder = decoder or HemiFusionDecoder(
-            input_channels, self.encoder.output_dim, latent_dim, conv_flts,
-            fusion_level, activation, batch_norm)
-
-    def encode(self, left_x, right_x):
-        """ The encoder.
-
-        Parameters
-        ----------
-        left_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            input left cortical texture.
-        right_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            input right cortical texture.
-
-        Returns
-        -------
-        q(z | x): Normal (batch_size, <latent_dim>)
-            a Normal distribution.
-        """
-        x = self.encoder((left_x, right_x))
-        z_mu, z_logvar = torch.chunk(x, chunks=2, dim=1)
-        return Normal(loc=z_mu, scale=(z_logvar * 0.5).exp())
-
-    def decode(self, z):
-        """ The decoder.
-
-        Parameters
-        ----------
-        z: Tensor (samples, <latent_dim>)
-            the stochastic latent state z.
-
-        Returns
-        -------
-        left_recon_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            reconstructed left cortical texture.
-        right_recon_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            reconstructed right cortical texture.
-        """
-        return self.decoder(z)
-
-    def reparameterize(self, q, sample=True):
-        """ Implement the reparametrization trick.
-        """
-        if sample:
-            return q.rsample()
-        return q.loc
-
-    def forward(self, left_x, right_x, sample=True):
-        """ The forward method.
-
-        Parameters
-        ----------
-        left_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            input left cortical texture.
-        right_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            input right cortical texture.
-
-        Returns
-        -------
-        left_recon_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            reconstructed left cortical texture.
-        right_recon_x: Tensor (samples, <input_channels>, azimuth, elevation)
-            reconstructed right cortical texture.
-        """
-        logger.debug("SphericalGVAE forward pass")
-        logger.debug(debug_msg("left cortical", left_x))
-        logger.debug(debug_msg("right cortical", right_x))
-        q = self.encode(left_x, right_x)
-        logger.debug(debug_msg("posterior loc", q.loc))
-        logger.debug(debug_msg("posterior scale", q.scale))
-        z = self.reparameterize(q, sample)
-        logger.debug(debug_msg("z", z))
-        left_recon_x, right_recon_x = self.decode(z)
-        logger.debug(debug_msg("left recon cortical", left_recon_x))
-        logger.debug(debug_msg("right recon cortical", right_recon_x))
-        return left_recon_x, right_recon_x, {"q": q, "z": z}
 
 
 def compute_output_dim(input_dim, convnet):
@@ -869,7 +723,6 @@ class HemiFusionDecoder(nn.Module):
         x = self.w_dense(z)
         x = x.view(-1, self.conv_flts[-1], self.input_dim,
                    self.input_dim)
-        # if self.fusion_level < self.n_layers:
         x = self.w_conv(x)
         left_recon_x, right_recon_x = torch.chunk(x, chunks=2, dim=1)
         left_recon_x = self.left_conv(left_recon_x)
