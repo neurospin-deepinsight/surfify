@@ -22,7 +22,7 @@ from .utils import RandomAugmentation, listify, copy_with_channel_dim
 class MixUpAugmentation(RandomAugmentation):
     """ Aplly an augmentation with random parameters defined in intervals.
     """
-    def __init__(self, prob, n_vertices):
+    def __init__(self, prob, n_vertices, *args, **kwargs):
         """ Init class.
 
         Parameters
@@ -32,7 +32,7 @@ class MixUpAugmentation(RandomAugmentation):
         n_vertices: int (N, )
             the size of the cortical measures.
         """
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.prob = prob
         self.n_vertices = n_vertices
         self.rand_mask()
@@ -82,13 +82,9 @@ class HemiMixUp(MixUpAugmentation):
         _data: arr (N, )
             permuted input data.
         """
-        _data, _ = copy_with_channel_dim(data)
         _controlateral_data, _ = copy_with_channel_dim(controlateral_data)
-        for channel_dim in range(_data.shape[0]):
-            self._randomize()
-            _data[channel_dim, self.mask == 1] = _controlateral_data[
-                channel_dim, self.mask == 1]
-        return _data.squeeze()
+        data[self.mask == 1] = _controlateral_data[0, self.mask == 1]
+        return data
 
 
 class GroupMixUp(MixUpAugmentation):
@@ -128,17 +124,14 @@ class GroupMixUp(MixUpAugmentation):
         _b_data = []
         group_size = len(group_data)
         for idx in range(n_samples):
-            _data, _ = copy_with_channel_dim(data)
-            for channel_dim in range(_data.shape[0]):
-                self._randomize()
-                _selector = np.random.choice(group_size, replace=True,
-                                             size=self.n_vertices)
-                _b_sample = group_data[_selector, channel_dim,
-                                       range(self.n_vertices)]
-                _data[channel_dim, self.mask == 1] = _b_sample[self.mask == 1]
-            _b_data.append(_data)
+            self._randomize()
+            _selector = np.random.choice(group_size, replace=True,
+                                            size=self.n_vertices)
+            _b_sample = group_data[_selector, range(self.n_vertices)]
+            data[self.mask == 1] = _b_sample[self.mask == 1]
+            _b_data.append(data)
         _b_data = np.array(_b_data)
-        return _b_data.squeeze()
+        return _b_data
 
     @classmethod
     def groupby(cls, data, by=("texture", ), n_neighbors=30, n_components=20,

@@ -91,28 +91,25 @@ class SurfCutOut(RandomAugmentation):
 
         Returns
         -------
-        _data: arr (N, )
+        data: arr (N, )
             ablated input data.
         """
-        _data, _ = copy_with_channel_dim(data)
         for _ in range(self.n_patches):
-            for channel_dim in range(_data.shape[0]):
-                self._randomize("patch_size")
-                random_node = np.random.randint(len(self.vertices))
-                if self.random_size:
-                    patch_indices = []
-                    for neigh in self.neighs[random_node][1]:
-                        _size = np.random.randint(self.patch_size)
-                        for ring in range(1, _size + 1):
-                            patch_indices += self.neighs[neigh][ring]
-                    patch_indices = list(set(patch_indices))
-                else:
-                    patch_indices = [random_node]
-                    for ring in range(1, self.patch_size + 1):
-                        patch_indices += self.neighs[random_node][ring]
-                patch_indices = tuple([channel_dim, patch_indices])
-                _data[patch_indices] = self.replacement_value
-        return _data.squeeze()
+            self._randomize("patch_size")
+            random_node = np.random.randint(len(self.vertices))
+            if self.random_size:
+                patch_indices = []
+                for neigh in self.neighs[random_node][1]:
+                    _size = np.random.randint(self.patch_size)
+                    for ring in range(1, _size + 1):
+                        patch_indices += self.neighs[neigh][ring]
+                patch_indices = list(set(patch_indices))
+            else:
+                patch_indices = [random_node]
+                for ring in range(1, self.patch_size + 1):
+                    patch_indices += self.neighs[random_node][ring]
+            data[patch_indices] = self.replacement_value
+        return data
 
 
 class SurfNoise(RandomAugmentation):
@@ -141,15 +138,12 @@ class SurfNoise(RandomAugmentation):
 
         Returns
         -------
-        _data: arr (N, )
+        data: arr (N, )
             noised input data.
         """
-        _data, _ = copy_with_channel_dim(data)
-        for channel_dim in range(_data.shape[0]):
-            self._randomize()
-            _data[channel_dim] += np.random.normal(
-                0, self.sigma, len(_data[channel_dim]))
-        return _data.squeeze()
+        data += np.random.normal(
+            0, self.sigma, len(data))
+        return data
 
 
 class SurfBlur(RandomAugmentation):
@@ -187,7 +181,7 @@ class SurfBlur(RandomAugmentation):
             path to the storage directory, where to store heavy computation
             outputs
         """
-        super().__init__()
+        super().__init__(requires_tensor=True)
         memory = Memory(cachedir, verbose=0)
         neighbors_cached = memory.cache(neighbors)
         self.vertices = vertices
@@ -219,22 +213,17 @@ class SurfBlur(RandomAugmentation):
 
         Returns
         -------
-        data_blur: array (N, )
+        data: array (N, )
             blurred output data.
         """
-        _data, back_to_numpy = copy_with_channel_dim(data, to_tensor=True)
-        for channel_dim in range(_data.shape[0]):
-            self._randomize()
-            gaussian_kernel = np.exp(-0.5 * (self.positions / self.sigma) ** 2)
-            gaussian_kernel = gaussian_kernel / gaussian_kernel.sum()
-            with torch.no_grad():
-                self.conv.weight.weight = torch.nn.Parameter(
-                    torch.Tensor(gaussian_kernel), False)
-            _data[channel_dim] = self.conv(
-                _data[channel_dim][None, None])
-        if back_to_numpy:
-            _data = _data.detach().cpu().numpy()
-        return _data.squeeze()
+        gaussian_kernel = np.exp(-0.5 * (self.positions / self.sigma) ** 2)
+        gaussian_kernel = gaussian_kernel / gaussian_kernel.sum()
+        with torch.no_grad():
+            self.conv.weight.weight = torch.nn.Parameter(
+                torch.Tensor(gaussian_kernel), False)
+        data = self.conv(
+            data[None, None])
+        return data
 
 
 class SurfRotation(RandomAugmentation):

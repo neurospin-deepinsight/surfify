@@ -138,7 +138,7 @@ fig.tight_layout()
 #
 
 texture = np.random.uniform(0, 3, len(vertices))
-group_textures = np.random.uniform(0, 3, (10, 1, len(vertices)))
+group_textures = np.random.uniform(0, 3, (10, len(vertices)))
 aug = GroupMixUp(prob=interval((0.2, 0.5), float), n_vertices=len(vertices))
 fig, axs = plt.subplots(
     2, 2, subplot_kw={"projection": "3d", "aspect": "auto"}, figsize=(10, 10))
