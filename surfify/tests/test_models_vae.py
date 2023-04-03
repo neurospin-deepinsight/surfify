@@ -97,6 +97,7 @@ class TestModelsGVAE(unittest.TestCase):
         self.assertTrue(len(out) == 3)
         self.assertTrue(out[0].shape == self.X.shape)
 
+
 if __name__ == "__main__":
 
     utils.setup_logging(level="debug")
