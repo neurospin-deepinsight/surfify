@@ -18,6 +18,7 @@ Autoencoder: https://github.com/libilab/rsfMRI-VAE
 import torch
 import torch.nn as nn
 from torch.distributions import Normal
+from numpy import sqrt
 from ..utils import get_logger, debug_msg
 from ..nn import IcoUpConv, IcoPool, IcoSpMaConv, IcoSpMaConvTranspose
 from .base import SphericalBase
@@ -115,8 +116,9 @@ class SphericalVAE(nn.Module):
                 cachedir=cachedir, *args, **kwargs)
         if use_grid and decoder is None:
             decoder = HemiFusionDecoder(
-                input_channels, encoder.output_dim, latent_dim, conv_flts,
-                fusion_level, activation, batch_norm, *args, **kwargs)
+                [input_channels, input_dim, input_dim], encoder.flatten_dim,
+                latent_dim, conv_flts, fusion_level, activation, batch_norm,
+                *args, **kwargs)
         elif decoder is None:
             decoder = SphericalHemiFusionDecoder(
                 input_channels, input_order, latent_dim, conv_flts,
@@ -618,9 +620,9 @@ class HemiFusionEncoder(nn.Module):
 
 
 class HemiFusionDecoder(nn.Module):
-    def __init__(self, output_channels, input_dim, latent_dim,
-                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
-                 activation="LeakyReLU", batch_norm=False):
+    def __init__(self, output_shape, before_latent_dim,
+                 latent_dim, conv_flts=[64, 128, 128, 256, 256],
+                 fusion_level=1, activation="LeakyReLU", batch_norm=False):
         """ Init class.
 
         Parameters
@@ -647,25 +649,28 @@ class HemiFusionDecoder(nn.Module):
         logger.debug("HemiFusionDecoder init...")
         super().__init__()
 
-        self.input_dim = input_dim
+        self.before_latent_dim = before_latent_dim
         self.conv_flts = conv_flts.copy()
         self.n_layers = len(conv_flts)
-        self.conv_flts.insert(0, output_channels*2)
-        flatten_dim = input_dim ** 2 * conv_flts[-1]
-        self.w_dense = nn.Linear(latent_dim, flatten_dim)
+        self.conv_flts.insert(0, output_shape[0]*2)
+        self.output_shape = output_shape
+        # flatten_dim = input_dim ** 2 * conv_flts[-1]
+        self.w_dense = nn.Linear(latent_dim, before_latent_dim)
         self.w_conv = nn.Sequential()
         self.left_conv = nn.Sequential()
         self.right_conv = nn.Sequential()
         self.fusion_level = fusion_level
         for idx in range(self.n_layers, 0, -1):
+            kernel_size = 4
+            pad = 1
+            zero_pad = 3
+            output_shape = None
             if idx == 1:
                 kernel_size = 8
-                pad = 3
-                zero_pad = 9
-            else:
-                kernel_size = 4
                 pad = 1
-                zero_pad = 3
+                zero_pad = 5 - (self.output_shape[1] % 8 // 2)
+                output_shape = self.output_shape
+
             input_channels = self.conv_flts[idx]
             output_channels = self.conv_flts[idx - 1]
             if idx < fusion_level + 1:
@@ -674,7 +679,7 @@ class HemiFusionDecoder(nn.Module):
                 lconv = IcoSpMaConvTranspose(
                     in_feats=input_channels, out_feats=output_channels,
                     kernel_size=kernel_size, stride=2, pad=pad,
-                    zero_pad=zero_pad)
+                    zero_pad=zero_pad, output_shape=output_shape)
                 if batch_norm:
                     self.left_conv.add_module(
                         "l_bn_{0}".format(idx),
@@ -685,7 +690,7 @@ class HemiFusionDecoder(nn.Module):
                 rconv = IcoSpMaConvTranspose(
                     in_feats=input_channels, out_feats=output_channels,
                     kernel_size=kernel_size, stride=2, pad=pad,
-                    zero_pad=zero_pad)
+                    zero_pad=zero_pad, output_shape=output_shape)
                 if batch_norm:
                     self.right_conv.add_module(
                         "r_bn_{0}".format(idx),
@@ -721,8 +726,10 @@ class HemiFusionDecoder(nn.Module):
             reconstructed right cortical texture.
         """
         x = self.w_dense(z)
-        x = x.view(-1, self.conv_flts[-1], self.input_dim,
-                   self.input_dim)
+        remaining_shape = int(sqrt(
+            x.shape[1] / self.conv_flts[-1]))
+        x = x.view(len(x), self.conv_flts[-1], remaining_shape,
+                   remaining_shape)
         x = self.w_conv(x)
         left_recon_x, right_recon_x = torch.chunk(x, chunks=2, dim=1)
         left_recon_x = self.left_conv(left_recon_x)
