@@ -126,8 +126,8 @@ class IcoSpMaConvTranspose(nn.Module):
             controls the stride for the cross-correlation.
         pad: int or tuple (pad_azimuth, pad_elevation), default 0
             the size of the padding.
-        zero_pad: int or tuple, deffault 0
-            add a zero padding in bith axis befor the transpose convolution.
+        zero_pad: int or tuple, default 0
+            add a zero padding in both axis before the transpose convolution.
         """
         super(IcoSpMaConvTranspose, self).__init__()
         self.in_feats = in_feats
@@ -259,7 +259,7 @@ class IcoDiNeConv(nn.Module):
     >>> ico2_x = module(ico2_x)
     >>> ico2_x.shape
     """
-    def __init__(self, in_feats, out_feats, neigh_indices):
+    def __init__(self, in_feats, out_feats, neigh_indices, bias=True):
         """ Init IcoDiNeConv.
 
         Parameters
@@ -271,13 +271,16 @@ class IcoDiNeConv(nn.Module):
         neigh_indices: array (N, k)
             conv layer's filters' neighborhood indices, where N is the ico
             number of vertices and k the considered nodes neighbors.
+        bias: bool, default True
+            the layer will learn / not learn an additive bias.
         """
         super(IcoDiNeConv, self).__init__()
         self.in_feats = in_feats
         self.out_feats = out_feats
         self.neigh_indices = neigh_indices
         self.n_vertices, self.neigh_size = neigh_indices.shape
-        self.weight = nn.Linear(self.neigh_size * in_feats, out_feats)
+        self.weight = nn.Linear(self.neigh_size * in_feats, out_feats,
+                                bias=bias)
 
     def forward(self, x):
         """ Forward method.

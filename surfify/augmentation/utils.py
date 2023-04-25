@@ -19,7 +19,7 @@ from collections import namedtuple
 
 
 class RandomAugmentation(object):
-    """ Aplly an augmentation with random parameters defined in intervals.
+    """ Apply an augmentation with random parameters defined in intervals.
     """
     Interval = namedtuple("Interval", ["low", "high", "dtype"])
 
@@ -40,7 +40,7 @@ class RandomAugmentation(object):
         """ Generate a new random value.
         """
         if bound.dtype == int:
-            return np.random.randint(bound.low, bound.high)
+            return np.random.randint(bound.low, bound.high + 1)
         elif bound.dtype == float:
             return np.random.uniform(bound.low, bound.high)
         else:
@@ -61,13 +61,17 @@ class RandomAugmentation(object):
         ----------
         data: array (N, )
             input data/texture.
+        inplace: bool, default False
+            wether to copy or not the input data (pass as a kwargs).
 
         Returns
         -------
-        _data: arr (N, )
+        data: arr (N, )
             augmented input data.
         """
         self._randomize()
+        if kwargs.get("inplace", True):
+            data = data.copy()
         return self.run(data, *args, **kwargs)
 
     @abc.abstractmethod
@@ -160,7 +164,7 @@ def listify(data):
 
     Parameters
     ----------
-    arr: list or array
+    data: list or array
         the input data.
 
     Returns

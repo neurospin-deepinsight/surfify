@@ -47,8 +47,7 @@ class MixUpAugmentation(RandomAugmentation):
     def rand_mask(self):
         """ Generate a binary corruption mask.
         """
-        self.mask = np.random.choice([1, 0], size=self.n_vertices,
-                                     p=[self.prob, 1 - self.prob])
+        self.mask = np.random.binomial(n=1, p=self.prob, size=self.n_vertices)
 
 
 class HemiMixUp(MixUpAugmentation):
@@ -80,12 +79,11 @@ class HemiMixUp(MixUpAugmentation):
 
         Returns
         -------
-        _data: arr (N, )
+        data: arr (N, )
             permuted input data.
         """
-        _data = data.copy()
-        _data[self.mask == 1] = controlateral_data[self.mask == 1]
-        return _data
+        data[self.mask == 1] = controlateral_data[self.mask == 1]
+        return data
 
 
 class GroupMixUp(MixUpAugmentation):
@@ -119,7 +117,7 @@ class GroupMixUp(MixUpAugmentation):
 
         Returns
         -------
-        _data: arr (N, ) or (M, N)
+        data: arr (N, ) or (M, N)
             bootsraped input data.
         """
         _b_data = []
@@ -135,7 +133,7 @@ class GroupMixUp(MixUpAugmentation):
         return np.squeeze(_b_data)
 
     @classmethod
-    def groupby(cls, data, by=("texture", ), n_neighbors=27, n_components=30,
+    def groupby(cls, data, by=("texture", ), n_neighbors=30, n_components=20,
                 meta=None, weights=None):
         """ Regroup subjects based on a combination of metrics.
 
@@ -145,9 +143,9 @@ class GroupMixUp(MixUpAugmentation):
             input data/textures.
         by: list of str, default ('texture', )
             used to determine the metrics.
-        n_neighbors: int, default 27
+        n_neighbors: int, default 30
             the number of neighbors.
-        n_components: int, default 30
+        n_components: int, default 20
             the number of PCA components, used to reduce the input data size.
         meta: pandas.DataFrame, default None
             the external data.

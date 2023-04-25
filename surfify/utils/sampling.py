@@ -646,6 +646,69 @@ def order_of_ico_from_vertices(n_vertices):
     return int(order)
 
 
+def number_of_neighbors(depth):
+    """ Get the number of neighbors up to a certain depth.
+
+    See Also
+    --------
+    min_order_to_get_n_neighbors
+
+    Examples
+    --------
+    >>> from surfify.utils import number_of_neighbors
+    >>> for depth in range(4):
+    >>>     n_neighs = number_of_neighbors(depth)
+    >>>     print(n_neighs)
+
+    Parameters
+    ----------
+    n_vertices: int
+        the number of vertices of an icosahedron.
+
+    Returns
+    -------
+    order: int
+        the order of the icosahedron.
+    """
+    n_neighs = 1
+    for order in range(1, depth + 1):
+        n_neighs += 6 * order
+    return n_neighs
+
+
+def min_depth_to_get_n_neighbors(n_neighs):
+    """ Get the minimal depth of neighborhood to get a desired number of
+    neighbors.
+
+    See Also
+    --------
+    number_of_neighbors
+
+    Examples
+    --------
+    >>> from surfify.utils import min_depth_to_get_n_neighbors, icosahedron
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> depth = min_depth_to_get_n_neighbors(len(ico3_verts) / 2)
+    >>> print(depth)
+
+    Parameters
+    ----------
+    n_vertices: int
+        the number of vertices of an icosahedron.
+
+    Returns
+    -------
+    order: int
+        the order of the icosahedron.
+    """
+    cum_n_neighs = 1
+    depth = 1
+    while (cum_n_neighs < n_neighs):
+        cum_n_neighs += 6 * depth
+        depth += 1
+    return depth
+
+
 def interpolate(vertices, target_vertices, target_triangles):
     """ Interpolate icosahedron missing data by finding nearest neighbors.
 

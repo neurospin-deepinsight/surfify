@@ -12,6 +12,6 @@ Surface augmentations.
 """
 
 # Imports
-from .base import SurfCutOut, SurfNoise, SurfRotation
+from .base import SurfCutOut, SurfNoise, SurfRotation, SurfBlur
 from .mixup import HemiMixUp, GroupMixUp
 from .utils import interval, Transformer
