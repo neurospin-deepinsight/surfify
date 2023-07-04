@@ -9,7 +9,6 @@ A simple example on how to use augmentations in the spherical domain.
 """
 
 import os
-import time
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
