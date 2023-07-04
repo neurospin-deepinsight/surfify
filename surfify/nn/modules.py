@@ -127,7 +127,7 @@ class IcoSpMaConvTranspose(nn.Module):
         pad: int or tuple (pad_azimuth, pad_elevation), default 0
             the size of the padding.
         zero_pad: int or tuple, default 0
-            add a zero padding in both axes befor the transpose convolution.
+            add a zero padding in both axes before the transpose convolution.
         """
         super(IcoSpMaConvTranspose, self).__init__()
         self.in_feats = in_feats
