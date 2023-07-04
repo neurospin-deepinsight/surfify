@@ -76,6 +76,31 @@ class TestAugmentation(unittest.TestCase):
         data_blur = processor(data)
         self.assertEqual(len(data), len(data_blur))
         self.assertTrue((data == data_blur).sum() < n_vertices)
+    
+    def test_hemi_mixup(self):
+        """ Test SurfBlur.
+        """
+        vertices, _ = utils.icosahedron(order=3)
+        n_vertices = len(vertices)
+        data = np.random.uniform(0, 1, n_vertices)
+        controlateral_data = np.random.uniform(0, 1, n_vertices)
+        processor = augment.HemiMixUp(0.3, n_vertices)
+        _data = processor(data, controlateral_data)
+        self.assertEqual(len(data), len(_data))
+        self.assertTrue((data == _data).sum() < n_vertices)
+
+    def test_group_mixup(self):
+        """ Test SurfBlur.
+        """
+        vertices, _ = utils.icosahedron(order=3)
+        n_vertices = len(vertices)
+        # data = np.random.uniform(0, 1, n_vertices)
+        all_data = np.random.uniform(0, 1, (100, n_vertices))
+        neigh_idx = augment.GroupMixUp.groupby(all_data)
+        processor = augment.GroupMixUp(0.3, n_vertices)
+        _data = processor(all_data[0], all_data[neigh_idx[0]])
+        self.assertEqual(len(all_data[0]), len(_data))
+        self.assertTrue((all_data[0] == _data).sum() < n_vertices)
 
     def test_hemi_mixup(self):
         """ Test SurfBlur.
