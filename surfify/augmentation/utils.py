@@ -24,13 +24,11 @@ class RandomAugmentation(object):
     """
     Interval = namedtuple("Interval", ["low", "high", "dtype"])
 
-    def __init__(self, randomize_per_channel=True, requires_tensor=False):
+    def __init__(self):
         """ Init class.
         """
         self.intervals = {}
         self.writable = True
-        self.randomize_per_channel = randomize_per_channel
-        self.requires_tensor = requires_tensor
 
     def _randomize(self, name=None):
         """ Update the random parameters.
@@ -148,11 +146,21 @@ class Transformer(object):
         _data: array (N, ) or (n_channels, N)
             the transformed input data.
         """
-        _data, _ = copy_with_channel_dim(data)
+        ndim = data.ndim
+        assert ndim in (1, 2)
+        _data = data.copy()
         for trf in self.transforms:
             if np.random.rand() < trf.probability:
-                _data = trf.transform(_data, *args, **kwargs)
-        return _data.squeeze()
+                if ndim == 1:
+                    _data = trf.transform(data, *args, **kwargs)
+                else:
+                    _c_data = []
+                    for _data in data:
+                        _c_data.append(trf.transform(_data, *args, **kwargs))
+                        trf.transform.writable = False
+                    trf.transform.writable = True
+                    _data = np.array(_c_data)
+        return _data
 
 
 def listify(data):

@@ -12,11 +12,6 @@ Surface augmentations.
 """
 
 # Imports
-<<<<<<< HEAD
 from .base import SurfCutOut, SurfNoise, SurfRotation, SurfBlur
 from .mixup import HemiMixUp, GroupMixUp
 from .utils import interval, Transformer
-=======
-from .augmentation import (SphericalRandomCut, SphericalRandomRotation,
-                           SphericalBlur, SphericalNoise)
->>>>>>> b088a8b (lots of stuff : spherical and grided vae, new augmentations, plot new augmentations, new function to compute the right number of ring for surf cutout)
