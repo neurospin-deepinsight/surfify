@@ -506,7 +506,7 @@ def compute_output_dim(input_dim, convnet):
 class HemiFusionEncoder(nn.Module):
     def __init__(self, input_channels, input_dim, latent_dim,
                  conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
-                 activation="LeakyReLU", batch_norm=False):
+                 activation="LeakyReLU", batch_norm=False, return_dist=True):
         """ Init class.
 
         Parameters
