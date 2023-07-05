@@ -17,7 +17,7 @@ from surfify import datasets
 
 
 class TestModelsVAE(unittest.TestCase):
-    """ Test the SphericalVAE.
+    """ Test the SphericalVAE with DiNe and RePa.
     """
     def setUp(self):
         """ Setup test.
@@ -57,7 +57,7 @@ class TestModelsVAE(unittest.TestCase):
 
 
 class TestModelsGVAE(unittest.TestCase):
-    """ Test the SphericalVAE.
+    """ Test the SphericalVAE with SpMa on regrided data.
     """
     def setUp(self):
         """ Setup test.
