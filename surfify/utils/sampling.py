@@ -647,7 +647,7 @@ def order_of_ico_from_vertices(n_vertices):
 
 
 def number_of_neighbors(depth):
-    """ Get the number of neighbors up to a certain depth
+    """ Get the number of neighbors up to a certain depth.
 
     See Also
     --------
@@ -668,7 +668,7 @@ def number_of_neighbors(depth):
     Returns
     -------
     order: int
-        the order of the icosahedron
+        the order of the icosahedron.
     """
     n_neighs = 1
     for order in range(1, depth + 1):
@@ -678,7 +678,7 @@ def number_of_neighbors(depth):
 
 def min_depth_to_get_n_neighbors(n_neighs):
     """ Get the minimal depth of neighborhood to get a desired number of
-    neighbors
+    neighbors.
 
     See Also
     --------
@@ -699,7 +699,7 @@ def min_depth_to_get_n_neighbors(n_neighs):
     Returns
     -------
     order: int
-        the order of the icosahedron
+        the order of the icosahedron.
     """
     cum_n_neighs = 1
     depth = 1

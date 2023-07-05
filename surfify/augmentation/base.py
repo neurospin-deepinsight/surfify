@@ -13,12 +13,13 @@ train CNNs.
 """
 
 # Imports
+import numbers
 import itertools
-import torch
-from joblib import Memory
 import numpy as np
+import torch
 from surfify.utils import (
     neighbors, rotate_data, find_neighbors, find_rotation_interpol_coefs)
+from surfify.nn import IcoDiNeConv
 from surfify.utils.io import compute_and_store
 from surfify.nn import IcoDiNeConv
 from .utils import RandomAugmentation, copy_with_channel_dim
@@ -33,8 +34,7 @@ class SurfCutOut(RandomAugmentation):
     surfify.utils.neighbors
     """
     def __init__(self, vertices, triangles, neighs=None, patch_size=3,
-                 n_patches=1, replacement_value=0, random_size=True,
-                 cachedir=None):
+                 n_patches=1, sigma=0, replacement_value=0):
         """ Init class.
 
         Parameters
@@ -53,6 +53,9 @@ class SurfCutOut(RandomAugmentation):
             during the ablation.
         n_patches: int, default 1
             the number of patches to be considered.
+        sigma: int, default 0
+            use different patch size in [patch_size-sigma, patch_size+sigma]
+            for each cutout.
         replacement_value: float, default 0
             the replacement patch value.
         random_size: bool, default True
@@ -78,6 +81,7 @@ class SurfCutOut(RandomAugmentation):
 
         self.patch_size = patch_size
         self.n_patches = n_patches
+        self.sigma = sigma
         self.replacement_value = replacement_value
         self.random_size = random_size
 
@@ -94,20 +98,12 @@ class SurfCutOut(RandomAugmentation):
         data: arr (N, )
             ablated input data.
         """
-        for _ in range(self.n_patches):
-            self._randomize("patch_size")
-            random_node = np.random.randint(len(self.vertices))
-            if self.random_size:
-                patch_indices = []
-                for neigh in self.neighs[random_node][1]:
-                    _size = np.random.randint(self.patch_size)
-                    for ring in range(1, _size + 1):
-                        patch_indices += self.neighs[neigh][ring]
-                patch_indices = list(set(patch_indices))
-            else:
-                patch_indices = [random_node]
-                for ring in range(1, self.patch_size + 1):
-                    patch_indices += self.neighs[random_node][ring]
+        for idx in range(self.n_patches):
+            random_node = np.random.randint(0, len(self.vertices))
+            random_size = np.random.randint(self.patch_size - self.sigma,
+                                            self.patch_size + self.sigma + 1)
+            patch_indices = find_neighbors(
+                random_node, random_size, self.neighs)
             data[patch_indices] = self.replacement_value
         return data
 
@@ -141,67 +137,51 @@ class SurfNoise(RandomAugmentation):
         data: arr (N, )
             noised input data.
         """
-        data += np.random.normal(
-            0, self.sigma, len(data))
+        data += np.random.normal(0, self.sigma, len(data))
         return data
 
 
 class SurfBlur(RandomAugmentation):
-    """ Gaussian blur implementation for textures on an icosahedron.
-    It uses the DiNe convolution filters for its rapidity. The receptive
-    field of the filter is instantiated with respect to the maximum value
-    of sigma.
+    """ An icosahedron texture Gaussian blur implementation. It uses the DiNe
+    convolution filter for speed. The receptive field is controlled by sigma,
+    expressed in mm.
 
     See Also
     --------
     surfify.utils.neighbors
     surfify.nn.modules.IcoDiNeConv
-
     """
-    def __init__(self, vertices, triangles, sigma, neighs=None,
-                 cachedir=None):
+    def __init__(self, vertices, triangles, sigma, neighs=None):
         """ Init class.
-
         Parameters
         ----------
         vertices: array (N, 3)
             icosahedron's vertices.
         triangles: array (M, 3)
             icosahdron's triangles.
+        sigma: float
+            sigma parameter of the gaussian filter.
         neighs: dict, default None
-            optionnaly specify the DiNe neighboors of each vertex as built
+            optionnaly specify the DiNe neighboors of each vertex as build
             with `sufify.utils.neighbors`, ie. a dictionary with vertices row
-            index as keys and a list of properly ordered neighbors.
-        sigma: float or tuple of floats, default (0.1, 1)
-            sigma or range of the sigma parameter of the gaussian filter.
-        fixed_sigma: bool, default False
-            whether to randomly sample sigma in the range or use a constant
-            value.
-        cachedir: string or None, default None
-            path to the storage directory, where to store heavy computation
-            outputs
+            index as keys and a dictionary of neighbors vertices row indexes
+            organized by rings as values.
         """
-        super().__init__(requires_tensor=True)
-        memory = Memory(cachedir, verbose=0)
-        neighbors_cached = memory.cache(neighbors)
+        super().__init__()
         self.vertices = vertices
         self.triangles = triangles
-        max_sigma = sigma
-        if isinstance(sigma, RandomAugmentation.Interval):
-            max_sigma = sigma.high
         self.sigma = sigma
-        depth = max(1, int(2 * max_sigma + 0.5))
+        depth = max(1, int(2 * self.sigma + 0.5))
         if neighs is None:
-            neighs = neighbors_cached(
-                vertices, triangles, depth=depth, direct_neighbor=True)
-
-        if not type(neighs) is np.ndarray:
-            neighs = np.asarray(list(neighs.values()))
-        self.neighs = neighs
+            self.neighs = neighbors(vertices, triangles, depth=depth,
+                                    direct_neighbor=True)
+        else:
+            self.neighs = neighs
+        self.neighs = np.asarray(list(self.neighs.values()))
         self.positions = np.array([0] + list(itertools.chain(*[
-            [ring] * (6 * ring) for ring in range(1, depth+1)])))
+            [ring] * (6 * ring) for ring in range(1, depth + 1)])))
+        assert len(self.positions) == len(self.neighs[0])
         self.conv = IcoDiNeConv(1, 1, self.neighs, bias=False)
-        assert len(self.positions) == len(neighs[0])
 
     def run(self, data):
         """ Applies the augmentation to the data.
@@ -221,9 +201,8 @@ class SurfBlur(RandomAugmentation):
         with torch.no_grad():
             self.conv.weight.weight = torch.nn.Parameter(
                 torch.Tensor(gaussian_kernel), False)
-        data = self.conv(
-            data[None, None])
-        return data
+        data = self.conv(torch.from_numpy(data[None, None]).float())
+        return data.numpy().squeeze()
 
 
 class SurfRotation(RandomAugmentation):
@@ -276,7 +255,7 @@ class SurfRotation(RandomAugmentation):
 
         Returns
         -------
-        _data: arr (N, )
+        data: arr (N, )
             rotated input data.
         """
         return self.rotate_data_cached(

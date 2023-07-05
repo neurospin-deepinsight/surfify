@@ -67,22 +67,18 @@ class RandomAugmentation(object):
         ----------
         data: array (N, )
             input data/texture.
+        inplace: bool, default False
+            wether to copy or not the input data (pass as a kwargs).
 
         Returns
         -------
-        _data: arr (N, )
+        data: arr (N, )
             augmented input data.
         """
         self._randomize()
-        _data, back_to_numpy = copy_with_channel_dim(
-            data, to_tensor=self.requires_tensor)
-        for channel_dim in range(len(_data)):
-            if self.randomize_per_channel:
-                self._randomize()
-            _data[channel_dim] = self.run(_data[channel_dim], *args, **kwargs)
-        if back_to_numpy:
-            _data = _data.detach().cpu().numpy()
-        return _data.squeeze()
+        if kwargs.get("inplace", True):
+            data = data.copy()
+        return self.run(data, *args, **kwargs)
 
     @abc.abstractmethod
     def run(self, data):

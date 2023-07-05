@@ -52,6 +52,10 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
         when texture is None, where alpha is fixed at 0.1
     edgecolors: string, default 'black'
         name of the matplotlib color to use for the edges
+    linewidths: float, default 1
+        edge line width.
+    color_map: Mapping, default cm.coolwarm
+        container for colormaps.
     """
 
     # Parameters

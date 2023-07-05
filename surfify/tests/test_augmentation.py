@@ -85,9 +85,9 @@ class TestAugmentation(unittest.TestCase):
         data = np.random.uniform(0, 1, n_vertices)
         controlateral_data = np.random.uniform(0, 1, n_vertices)
         processor = augment.HemiMixUp(0.3, n_vertices)
-        _data = processor(data, controlateral_data)
-        self.assertEqual(len(data), len(_data))
-        self.assertTrue((data == _data).sum() < n_vertices)
+        data_mixup = processor(data, controlateral_data)
+        self.assertEqual(len(data), len(data_mixup))
+        self.assertTrue((data == data_mixup).sum() < n_vertices)
 
     def test_group_mixup(self):
         """ Test SurfBlur.
@@ -98,9 +98,9 @@ class TestAugmentation(unittest.TestCase):
         all_data = np.random.uniform(0, 1, (100, n_vertices))
         neigh_idx = augment.GroupMixUp.groupby(all_data)
         processor = augment.GroupMixUp(0.3, n_vertices)
-        _data = processor(all_data[0], all_data[neigh_idx[0]])
-        self.assertEqual(len(all_data[0]), len(_data))
-        self.assertTrue((all_data[0] == _data).sum() < n_vertices)
+        data_mixup = processor(all_data[0], all_data[neigh_idx[0]])
+        self.assertEqual(len(all_data[0]), len(data_mixup))
+        self.assertTrue((all_data[0] == data_mixup).sum() < n_vertices)
 
 
 if __name__ == "__main__":

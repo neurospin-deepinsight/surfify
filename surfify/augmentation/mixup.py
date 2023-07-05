@@ -79,11 +79,10 @@ class HemiMixUp(MixUpAugmentation):
 
         Returns
         -------
-        _data: arr (N, )
+        data: arr (N, )
             permuted input data.
         """
-        _controlateral_data, _ = copy_with_channel_dim(controlateral_data)
-        data[self.mask == 1] = _controlateral_data[0, self.mask == 1]
+        data[self.mask == 1] = controlateral_data[self.mask == 1]
         return data
 
 
@@ -118,7 +117,7 @@ class GroupMixUp(MixUpAugmentation):
 
         Returns
         -------
-        _data: arr (N, ) or (M, N)
+        data: arr (N, ) or (M, N)
             bootsraped input data.
         """
         _b_data = []
@@ -144,9 +143,9 @@ class GroupMixUp(MixUpAugmentation):
             input data/textures.
         by: list of str, default ('texture', )
             used to determine the metrics.
-        n_neighbors: int, default 27
+        n_neighbors: int, default 30
             the number of neighbors.
-        n_components: int, default 30
+        n_components: int, default 20
             the number of PCA components, used to reduce the input data size.
         meta: pandas.DataFrame, default None
             the external data.
