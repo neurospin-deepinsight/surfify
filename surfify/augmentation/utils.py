@@ -14,7 +14,6 @@ A module with common augmentation utility functions.
 # Import
 import abc
 import numbers
-import torch
 import numpy as np
 from collections import namedtuple
 
@@ -30,15 +29,12 @@ class RandomAugmentation(object):
         self.intervals = {}
         self.writable = True
 
-    def _randomize(self, name=None):
+    def _randomize(self):
         """ Update the random parameters.
         """
         if self.writable:
             for param, bound in self.intervals.items():
-                if name is not None and param == name:
-                    setattr(self, param, self._rand(bound))
-                elif name is None:
-                    setattr(self, param, self._rand(bound))
+                setattr(self, param, self._rand(bound))
 
     def _rand(self, bound):
         """ Generate a new random value.

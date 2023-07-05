@@ -21,7 +21,6 @@ from surfify.utils import (
     neighbors, rotate_data, find_neighbors, find_rotation_interpol_coefs)
 from surfify.nn import IcoDiNeConv
 from surfify.utils.io import compute_and_store
-from surfify.nn import IcoDiNeConv
 from .utils import RandomAugmentation
 
 
@@ -58,12 +57,6 @@ class SurfCutOut(RandomAugmentation):
             for each cutout.
         replacement_value: float, default 0
             the replacement patch value.
-        random_size: bool, default True
-            wether or not to choose different random patch size in each
-            1 ring neighbor direction.
-        cachedir: str or None, default None
-            path to the storage dir to save the neighbors computed at
-            initialization.
         """
         super().__init__()
         self.vertices = vertices
@@ -78,7 +71,7 @@ class SurfCutOut(RandomAugmentation):
         self.replacement_value = replacement_value
 
     def run(self, data):
-        """ Applies the cut out augmentation to the data.
+        """ Applies the cut out (ablation) augmentation to the data.
 
         Parameters
         ----------
@@ -117,7 +110,6 @@ class SurfNoise(RandomAugmentation):
 
     def run(self, data):
         """ Applies the noising augmentation to the data.
-        The parameter sigma is randomized for each channel.
 
         Parameters
         ----------
