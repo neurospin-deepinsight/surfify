@@ -13,7 +13,9 @@ Common architectures.
 
 from .base import SphericalBase
 from .unet import SphericalUNet, SphericalGUNet
-from .vae import SphericalVAE, SphericalGVAE
+from .vae import (
+    SphericalVAE, HemiFusionEncoder, HemiFusionDecoder,
+    SphericalHemiFusionEncoder, SphericalHemiFusionDecoder)
 from .vgg import (
     SphericalVGG, SphericalGVGG,
     SphericalVGG11, SphericalVGG13, SphericalVGG16, SphericalVGG19,
