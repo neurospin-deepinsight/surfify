@@ -619,7 +619,6 @@ class HemiFusionEncoder(nn.Module):
         return z
 
 
-
 class HemiFusionDecoder(nn.Module):
     def __init__(self, output_shape, before_latent_dim,
                  latent_dim, conv_flts=[64, 128, 128, 256, 256],

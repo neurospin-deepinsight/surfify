@@ -22,7 +22,7 @@ from surfify.utils import (
 from surfify.nn import IcoDiNeConv
 from surfify.utils.io import compute_and_store
 from surfify.nn import IcoDiNeConv
-from .utils import RandomAugmentation, copy_with_channel_dim
+from .utils import RandomAugmentation
 
 
 class SurfCutOut(RandomAugmentation):
@@ -66,24 +66,16 @@ class SurfCutOut(RandomAugmentation):
             initialization.
         """
         super().__init__()
-        memory = Memory(cachedir, verbose=0)
-        neighbors_cached = memory.cache(neighbors)
         self.vertices = vertices
         self.triangles = triangles
-        max_depth = patch_size
-        if isinstance(patch_size, RandomAugmentation.Interval):
-            max_depth = patch_size.high
-        if neighs is None or type(neighs[0]) is not dict:
-            self.neighs = neighbors_cached(
-                vertices, triangles, depth=max_depth)
+        if neighs is None:
+            self.neighs = neighbors(vertices, triangles, direct_neighbor=True)
         else:
             self.neighs = neighs
-
         self.patch_size = patch_size
         self.n_patches = n_patches
         self.sigma = sigma
         self.replacement_value = replacement_value
-        self.random_size = random_size
 
     def run(self, data):
         """ Applies the cut out augmentation to the data.

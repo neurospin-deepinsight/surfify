@@ -16,7 +16,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 from scipy.spatial.distance import pdist, squareform
-from .utils import RandomAugmentation, listify, copy_with_channel_dim
+from .utils import RandomAugmentation, listify
 
 
 class MixUpAugmentation(RandomAugmentation):
@@ -123,14 +123,14 @@ class GroupMixUp(MixUpAugmentation):
         _b_data = []
         group_size = len(group_data)
         for idx in range(n_samples):
-            self._randomize()
+            _data = data.copy()
             _selector = np.random.choice(group_size, replace=True,
                                          size=self.n_vertices)
             _b_sample = group_data[_selector, range(self.n_vertices)]
-            data[self.mask == 1] = _b_sample[self.mask == 1]
-            _b_data.append(data)
+            _data[self.mask == 1] = _b_sample[self.mask == 1]
+            _b_data.append(_data)
         _b_data = np.array(_b_data)
-        return _b_data
+        return np.squeeze(_b_data)
 
     @classmethod
     def groupby(cls, data, by=("texture", ), n_neighbors=30, n_components=20,
