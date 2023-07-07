@@ -111,7 +111,7 @@ class IcoSpMaConvTranspose(nn.Module):
     >>> proj_ico_x.shape
     """
     def __init__(self, in_feats, out_feats, kernel_size, stride=1, pad=0,
-                 zero_pad=0):
+                 zero_pad=0, output_shape=None):
         """ Init IcoSpMaConvTranspose.
 
         Parameters
@@ -127,7 +127,7 @@ class IcoSpMaConvTranspose(nn.Module):
         pad: int or tuple (pad_azimuth, pad_elevation), default 0
             the size of the padding.
         zero_pad: int or tuple, default 0
-            add a zero padding in both axis before the transpose convolution.
+            add a zero padding in both axes before the transpose convolution.
         """
         super(IcoSpMaConvTranspose, self).__init__()
         self.in_feats = in_feats
@@ -136,6 +136,7 @@ class IcoSpMaConvTranspose(nn.Module):
         self.stride = stride
         self.pad = pad
         self.zero_pad = zero_pad
+        self.output_shape = output_shape
         self.tconv = nn.ConvTranspose2d(
             in_channels=in_feats,
             out_channels=out_feats,
@@ -146,7 +147,9 @@ class IcoSpMaConvTranspose(nn.Module):
         logger.debug(debug_msg("input", x))
         x = circular_pad(x, pad=self.pad)
         logger.debug(debug_msg("pad", x))
-        x = self.tconv(x)
+        output_size = ([len(x)] + self.output_shape if self.output_shape
+                       else None)
+        x = self.tconv(x, output_size=output_size)
         logger.debug(debug_msg("transpose conv", x))
         return x
 
