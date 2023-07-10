@@ -13,12 +13,12 @@ train CNNs.
 """
 
 # Imports
-import numbers
+from joblib import Memory
 import itertools
 import numpy as np
 import torch
 from surfify.utils import (
-    neighbors, rotate_data, find_neighbors, find_rotation_interpol_coefs)
+    neighbors, rotate_data, find_rotation_interpol_coefs)
 from surfify.nn import IcoDiNeConv
 from surfify.utils.io import compute_and_store
 from .utils import RandomAugmentation
@@ -33,7 +33,7 @@ class SurfCutOut(RandomAugmentation):
     surfify.utils.neighbors
     """
     def __init__(self, vertices, triangles, neighs=None, patch_size=3,
-                 n_patches=1, sigma=0, replacement_value=0):
+                 n_patches=1, sigma=0, replacement_value=0, cachedir=None):
         """ Init class.
 
         Parameters
@@ -57,12 +57,20 @@ class SurfCutOut(RandomAugmentation):
             for each cutout.
         replacement_value: float, default 0
             the replacement patch value.
+        cachedir: str, default None
+            the optional path to cache the neighbors function output.
         """
         super().__init__()
+        memory = Memory(cachedir, verbose=0)
+        neighbors_cached = memory.cache(neighbors)
         self.vertices = vertices
         self.triangles = triangles
-        if neighs is None:
-            self.neighs = neighbors(vertices, triangles, direct_neighbor=True)
+        max_depth = patch_size
+        if isinstance(patch_size, RandomAugmentation.Interval):
+            max_depth = patch_size.high
+        if neighs is None or type(neighs[0]) is not dict:
+            self.neighs = neighbors_cached(
+                vertices, triangles, depth=max_depth)
         else:
             self.neighs = neighs
         self.patch_size = patch_size
@@ -83,12 +91,27 @@ class SurfCutOut(RandomAugmentation):
         data: arr (N, )
             ablated input data.
         """
-        for idx in range(self.n_patches):
-            random_node = np.random.randint(0, len(self.vertices))
-            random_size = np.random.randint(self.patch_size - self.sigma,
-                                            self.patch_size + self.sigma + 1)
-            patch_indices = find_neighbors(
-                random_node, random_size, self.neighs)
+        for _ in range(self.n_patches):
+            random_node = np.random.randint(len(self.vertices))
+            
+            # If sigma is not null, patch size can vary around its current
+            # value by +- sigma for each patch, but staying in
+            # [0, max_patch_size]
+            max_patch_size = self.patch_size
+            if "patch_size" in self.intervals.keys():
+                max_patch_size = self.intervals["patch_size"].high
+            random_size = np.random.randint(
+                max(self.patch_size - self.sigma, 0),
+                min(self.patch_size + self.sigma + 1, max_patch_size))
+            # for each neighbor, so in each direction, we seek neighbors
+            # up to a different random order, creating irregular patches
+            # in different directions
+            patch_indices = []
+            for neigh in self.neighs[random_node][1]:
+                _size = np.random.randint(random_size)
+                for ring in range(1, _size + 1):
+                    patch_indices += self.neighs[neigh][ring]
+            patch_indices = list(set(patch_indices))
             data[patch_indices] = self.replacement_value
         return data
 
@@ -128,14 +151,14 @@ class SurfNoise(RandomAugmentation):
 class SurfBlur(RandomAugmentation):
     """ An icosahedron texture Gaussian blur implementation. It uses the DiNe
     convolution filter for speed. The receptive field is controlled by sigma,
-    expressed in mm.
+    the standard deviation of the kernel.
 
     See Also
     --------
     surfify.utils.neighbors
     surfify.nn.modules.IcoDiNeConv
     """
-    def __init__(self, vertices, triangles, sigma, neighs=None):
+    def __init__(self, vertices, triangles, sigma, neighs=None, cachedir=None):
         """ Init class.
         Parameters
         ----------
@@ -150,15 +173,21 @@ class SurfBlur(RandomAugmentation):
             with `sufify.utils.neighbors`, ie. a dictionary with vertices row
             index as keys and a dictionary of neighbors vertices row indexes
             organized by rings as values.
+        cachedir: str, default None
+            the optional path to cache the neighbors function output.
         """
         super().__init__()
+        memory = Memory(cachedir, verbose=0)
+        neighbors_cached = memory.cache(neighbors)
         self.vertices = vertices
         self.triangles = triangles
-        self.sigma = sigma
-        depth = max(1, int(2 * self.sigma + 0.5))
+        max_sigma = sigma
+        if isinstance(sigma, RandomAugmentation.Interval):
+            max_sigma = sigma.high
+        depth = max(1, int(2 * max_sigma + 0.5))
         if neighs is None:
-            self.neighs = neighbors(vertices, triangles, depth=depth,
-                                    direct_neighbor=True)
+            self.neighs = neighbors_cached(vertices, triangles, depth=depth,
+                                           direct_neighbor=True)
         else:
             self.neighs = neighs
         self.neighs = np.asarray(list(self.neighs.values()))
@@ -197,7 +226,8 @@ class SurfRotation(RandomAugmentation):
     surfify.utils.rotate_data
     """
     def __init__(self, vertices, triangles, phi=5, theta=0, psi=0,
-                 interpolation="barycentric", cachedir=None):
+                 interpolation="barycentric", cachedir=None,
+                 *args, **kwargs):
         """ Init class.
 
         Parameters
@@ -218,7 +248,7 @@ class SurfRotation(RandomAugmentation):
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.vertices = vertices
         self.triangles = triangles
         self.phi = phi
