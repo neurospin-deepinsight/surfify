@@ -93,7 +93,6 @@ class SurfCutOut(RandomAugmentation):
         """
         for _ in range(self.n_patches):
             random_node = np.random.randint(len(self.vertices))
-            
             # If sigma is not null, patch size can vary around its current
             # value by +- sigma for each patch, but staying in
             # [0, max_patch_size]
