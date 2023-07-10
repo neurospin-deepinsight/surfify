@@ -78,7 +78,7 @@ class TestAugmentation(unittest.TestCase):
         self.assertTrue((data == data_blur).sum() < n_vertices)
 
     def test_hemi_mixup(self):
-        """ Test SurfBlur.
+        """ Test HemiMixUp.
         """
         vertices, _ = utils.icosahedron(order=3)
         n_vertices = len(vertices)
@@ -90,7 +90,7 @@ class TestAugmentation(unittest.TestCase):
         self.assertTrue((data == data_mixup).sum() < n_vertices)
 
     def test_group_mixup(self):
-        """ Test SurfBlur.
+        """ Test GroupMixUp.
         """
         vertices, _ = utils.icosahedron(order=3)
         n_vertices = len(vertices)
