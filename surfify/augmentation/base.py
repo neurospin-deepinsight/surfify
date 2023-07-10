@@ -227,8 +227,7 @@ class SurfRotation(RandomAugmentation):
     surfify.utils.rotate_data
     """
     def __init__(self, vertices, triangles, phi=5, theta=0, psi=0,
-                 interpolation="barycentric", cachedir=None,
-                 *args, **kwargs):
+                 interpolation="barycentric", cachedir=None):
         """ Init class.
 
         Parameters
@@ -249,7 +248,7 @@ class SurfRotation(RandomAugmentation):
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.vertices = vertices
         self.triangles = triangles
         self.phi = phi

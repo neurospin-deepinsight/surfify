@@ -7,7 +7,6 @@ Credit: A Grigis
 
 A simple example on how to build spherical neighbors using an icosahedron.
 """
-import numpy as np
 import matplotlib.pyplot as plt
 from surfify.utils import icosahedron, neighbors, get_rectangular_projection
 from surfify.plotting import plot_trisurf
