@@ -138,7 +138,8 @@ class BaseTransformer(object):
     
 
 class Transformer(BaseTransformer):
-    """ Class that can be used to register a sequence of transformations.
+    """ Class that can be used to register a sequence of transformations and
+    apply them to some data.
     """
     def __call__(self, data, *args, **kwargs):
         """ Apply the registered transformations.
@@ -157,6 +158,15 @@ class Transformer(BaseTransformer):
     
 
 def apply_chained_transforms(data, transforms, *args, **kwargs):
+    """ Function to apply a series of transforms to some data.
+
+    Parameters
+    ----------
+    data: array (N, ) or (n_channels, N)
+        the input data.
+    transforms: list of BaseTransformer.Transform
+        list of transforms to apply.
+    """
     ndim = data.ndim
     assert ndim in (1, 2)
     _data = data.copy()
