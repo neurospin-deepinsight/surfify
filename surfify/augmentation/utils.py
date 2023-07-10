@@ -135,7 +135,7 @@ class BaseTransformer(object):
     @abc.abstractmethod
     def __call__(self, data, *args, **kwargs):
         return
-    
+
 
 class Transformer(BaseTransformer):
     """ Class that can be used to register a sequence of transformations and
@@ -155,7 +155,7 @@ class Transformer(BaseTransformer):
             the transformed input data.
         """
         return apply_chained_transforms(data, self.transforms, *args, **kwargs)
-    
+
 
 def apply_chained_transforms(data, transforms, *args, **kwargs):
     """ Function to apply a series of transforms to some data.
