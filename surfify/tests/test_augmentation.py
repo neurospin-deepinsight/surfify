@@ -102,6 +102,36 @@ class TestAugmentation(unittest.TestCase):
         self.assertEqual(len(all_data[0]), len(data_mixup))
         self.assertTrue((all_data[0] == data_mixup).sum() < n_vertices)
 
+    def test_transformer(self):
+        """ Test Transformer.
+        """
+        vertices, triangles = utils.icosahedron(order=3)
+        n_vertices = len(vertices)
+        data = np.random.uniform(0, 1, (5, n_vertices))
+        transformer = augment.Transformer()
+        processor1 = augment.SurfCutOut(
+            vertices, triangles, neighs=None, patch_size=3,
+            n_patches=1, replacement_value=5, sigma=1)
+        processor2 = augment.SurfNoise(sigma=3)
+        transformer.register(processor1, probability=0.5)
+        transformer.register(processor2, randomize_per_channel=False)
+        data_transformed = transformer(data)
+        self.assertEqual(len(data), len(data_transformed))
+        self.assertTrue((data == data_transformed).sum() < 5 * n_vertices)
+
+    def test_multichannel_augmentation(self):
+        """ Test multichannel_augmentation decorator
+        """
+        vertices, triangles = utils.icosahedron(order=3)
+        n_vertices = len(vertices)
+        data = np.random.uniform(0, 1, (7, n_vertices))
+        MultiSurfBlur = augment.multichannel_augmentation(augment.SurfBlur)
+        processor = MultiSurfBlur(
+            vertices, triangles, sigma=2)
+        data_blur = processor(data)
+        self.assertEqual(len(data), len(data_blur))
+        self.assertTrue((data == data_blur).sum() < 7 * n_vertices)
+
 
 if __name__ == "__main__":
 

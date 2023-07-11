@@ -166,6 +166,11 @@ def apply_chained_transforms(data, transforms, *args, **kwargs):
         the input data.
     transforms: list of BaseTransformer.Transform
         list of transforms to apply.
+
+    Returns
+    -------
+    _data: array (N, ) or (n_channels, N)
+        the transformed input data.
     """
     ndim = data.ndim
     assert ndim in (1, 2)
@@ -185,6 +190,53 @@ def apply_chained_transforms(data, transforms, *args, **kwargs):
         trf.transform.writable = True
     _data = np.array(all_c_data)
     return _data.squeeze()
+
+
+def multichannel_augmentation(augmentation, randomize_per_channel=True):
+    """ Decorator to transform an augmentation to a multichannel one.
+
+    Parameters
+    ----------
+    augmentation: RandomAugmentation class
+        the augmentation class.
+    randomize_per_channel: bool, default True
+        optionnaly randomizes the augmentation parameter for each channel.
+
+    Returns
+    -------
+    MultiChannelAugmentation: child class of augmentation
+        augmentation applicable to multi channel data.
+    """
+    class MultiChannelAugmentation(augmentation):
+
+        def __call__(self, data, *args, **kwargs):
+            """ Function to apply a series of transforms to some data.
+
+            Parameters
+            ----------
+            data: array (N, ) or (n_channels, N)
+                the input data.
+
+            Returns
+            -------
+            _data: array (N, ) or (n_channels, N)
+                the transformed input data.
+            """
+            ndim = data.ndim
+            assert ndim in (1, 2)
+            _data = data.copy()
+            if ndim == 1:
+                _data = _data[np.newaxis]
+            all_c_data = []
+            for _c_data in _data:
+                _c_data = super().__call__(_c_data, *args, **kwargs)
+                if not randomize_per_channel:
+                    self.writable = False
+                all_c_data.append(_c_data)
+            self.writable = True
+            _data = np.array(all_c_data)
+            return _data.squeeze()
+    return MultiChannelAugmentation
 
 
 def listify(data):
