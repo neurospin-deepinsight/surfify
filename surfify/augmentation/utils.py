@@ -127,6 +127,9 @@ class BaseTransformer(object):
             a transformation.
         probability: float, default 1
             the transform is applied with the specified probability.
+        randomize_per_channel: bool, default True
+            a parameter to control if the randomization of tranformation
+            parameters must be applied channel-wise.
         """
         trf = self.Transform(transform=transform, probability=probability,
                              randomize_per_channel=randomize_per_channel)
@@ -185,7 +188,6 @@ def apply_chained_transforms(data, transforms, *args, **kwargs):
             if not trf.randomize_per_channel:
                 trf.transform.writable = False
         all_c_data.append(_c_data)
-
     for trf in transforms:
         trf.transform.writable = True
     _data = np.array(all_c_data)
@@ -236,6 +238,7 @@ def multichannel_augmentation(augmentation, randomize_per_channel=True):
             self.writable = True
             _data = np.array(all_c_data)
             return _data.squeeze()
+
     return MultiChannelAugmentation
 
 

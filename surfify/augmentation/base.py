@@ -154,8 +154,7 @@ class SurfBlur(RandomAugmentation):
 
     See Also
     --------
-    surfify.utils.neighbors
-    surfify.nn.modules.IcoDiNeConv
+    surfify.utils.neighbors, surfify.nn.modules.IcoDiNeConv
     """
     def __init__(self, vertices, triangles, sigma, neighs=None, cachedir=None):
         """ Init class.
