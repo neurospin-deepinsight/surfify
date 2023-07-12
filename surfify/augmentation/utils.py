@@ -70,12 +70,13 @@ class RandomAugmentation(object):
             augmented input data.
         """
         self._randomize()
+
         if kwargs.get("inplace", True):
             data = data.copy()
         return self.run(data, *args, **kwargs)
 
     @abc.abstractmethod
-    def run(self, data):
+    def run(self, data, *args, **kwargs):
         return
 
 
@@ -106,17 +107,18 @@ def interval(bound, dtype=float):
     return RandomAugmentation.Interval(min_val, max_val, dtype)
 
 
-class Transformer(object):
+class BaseTransformer(object):
     """ Class that can be used to register a sequence of transformations.
     """
-    Transform = namedtuple("Transform", ["transform", "probability"])
+    Transform = namedtuple("Transform", [
+        "transform", "probability", "randomize_per_channel"])
 
     def __init__(self):
         """ Init class.
         """
         self.transforms = []
 
-    def register(self, transform, probability=1):
+    def register(self, transform, probability=1, randomize_per_channel=True):
         """ Register a new transformation.
 
         Parameters
@@ -126,9 +128,19 @@ class Transformer(object):
         probability: float, default 1
             the transform is applied with the specified probability.
         """
-        trf = self.Transform(transform=transform, probability=probability)
+        trf = self.Transform(transform=transform, probability=probability,
+                             randomize_per_channel=randomize_per_channel)
         self.transforms.append(trf)
 
+    @abc.abstractmethod
+    def __call__(self, data, *args, **kwargs):
+        return
+
+
+class Transformer(BaseTransformer):
+    """ Class that can be used to register a sequence of transformations and
+    apply them to some data.
+    """
     def __call__(self, data, *args, **kwargs):
         """ Apply the registered transformations.
 
@@ -142,21 +154,89 @@ class Transformer(object):
         _data: array (N, ) or (n_channels, N)
             the transformed input data.
         """
-        ndim = data.ndim
-        assert ndim in (1, 2)
-        _data = data.copy()
-        for trf in self.transforms:
+        return apply_chained_transforms(data, self.transforms, *args, **kwargs)
+
+
+def apply_chained_transforms(data, transforms, *args, **kwargs):
+    """ Function to apply a series of transforms to some data.
+
+    Parameters
+    ----------
+    data: array (N, ) or (n_channels, N)
+        the input data.
+    transforms: list of BaseTransformer.Transform
+        list of transforms to apply.
+
+    Returns
+    -------
+    _data: array (N, ) or (n_channels, N)
+        the transformed input data.
+    """
+    ndim = data.ndim
+    assert ndim in (1, 2)
+    _data = data.copy()
+    if ndim == 1:
+        _data = _data[np.newaxis]
+    all_c_data = []
+    for _c_data in _data:
+        for trf in transforms:
             if np.random.rand() < trf.probability:
-                if ndim == 1:
-                    _data = trf.transform(data, *args, **kwargs)
-                else:
-                    _c_data = []
-                    for _data in data:
-                        _c_data.append(trf.transform(_data, *args, **kwargs))
-                        trf.transform.writable = False
-                    trf.transform.writable = True
-                    _data = np.array(_c_data)
-        return _data
+                _c_data = trf.transform(_c_data, *args, **kwargs)
+            if not trf.randomize_per_channel:
+                trf.transform.writable = False
+        all_c_data.append(_c_data)
+
+    for trf in transforms:
+        trf.transform.writable = True
+    _data = np.array(all_c_data)
+    return _data.squeeze()
+
+
+def multichannel_augmentation(augmentation, randomize_per_channel=True):
+    """ Decorator to transform an augmentation to a multichannel one.
+
+    Parameters
+    ----------
+    augmentation: RandomAugmentation class
+        the augmentation class.
+    randomize_per_channel: bool, default True
+        optionnaly randomizes the augmentation parameter for each channel.
+
+    Returns
+    -------
+    MultiChannelAugmentation: child class of augmentation
+        augmentation applicable to multi channel data.
+    """
+    class MultiChannelAugmentation(augmentation):
+
+        def __call__(self, data, *args, **kwargs):
+            """ Function to apply a series of transforms to some data.
+
+            Parameters
+            ----------
+            data: array (N, ) or (n_channels, N)
+                the input data.
+
+            Returns
+            -------
+            _data: array (N, ) or (n_channels, N)
+                the transformed input data.
+            """
+            ndim = data.ndim
+            assert ndim in (1, 2)
+            _data = data.copy()
+            if ndim == 1:
+                _data = _data[np.newaxis]
+            all_c_data = []
+            for _c_data in _data:
+                _c_data = super().__call__(_c_data, *args, **kwargs)
+                if not randomize_per_channel:
+                    self.writable = False
+                all_c_data.append(_c_data)
+            self.writable = True
+            _data = np.array(all_c_data)
+            return _data.squeeze()
+    return MultiChannelAugmentation
 
 
 def listify(data):

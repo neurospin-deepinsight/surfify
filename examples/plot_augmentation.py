@@ -8,10 +8,8 @@ Credit: A Grigis & C Ambroise
 A simple example on how to use augmentations in the spherical domain.
 """
 
-import os
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import axes3d
 from surfify.utils import icosahedron, neighbors, min_depth_to_get_n_neighbors
 from surfify.plotting import plot_trisurf
 from surfify.augmentation import (
@@ -23,7 +21,7 @@ neighs = neighbors(vertices, triangles, direct_neighbor=True)
 max_depth = min_depth_to_get_n_neighbors(np.ceil(len(vertices) / 4))
 
 
-def display(vertices, triangles, texture, aug, add_axis=False, *args,
+def display(vertices, triangles, texture, aug, add_axis=False, alpha=1, *args,
             **kwargs):
     """ Display augmented data.
     """
@@ -32,7 +30,7 @@ def display(vertices, triangles, texture, aug, add_axis=False, *args,
         figsize=(10, 10))
     axs = axs.flatten()
     plot_trisurf(vertices, triangles, texture, ax=axs[0], fig=fig,
-                 alpha=0.3, colorbar=False, edgecolors="white",
+                 alpha=alpha, colorbar=False, edgecolors="white",
                  linewidths=0.2)
     if add_axis:
         axs[0].plot([0, 0], [0, 0], [-1, 1], c="red")
@@ -45,7 +43,7 @@ def display(vertices, triangles, texture, aug, add_axis=False, *args,
             axs[idx].plot([0, 0], [-1, 1], [0, 0], c="blue")
             axs[idx].plot([-1, 1], [0, 0], [0, 0], c="green")
         plot_trisurf(vertices, triangles, _texture, ax=axs[idx], fig=fig,
-                     alpha=0.3, colorbar=False, edgecolors="white",
+                     alpha=alpha, colorbar=False, edgecolors="white",
                      linewidths=0.2)
     fig.tight_layout()
 
@@ -60,7 +58,7 @@ aug = SurfCutOut(vertices, triangles, neighs=neighs,
                  patch_size=interval((2, max_depth), int),
                  n_patches=interval((1, 3), int),
                  sigma=1)
-display(vertices, triangles, texture, aug)
+display(vertices, triangles, texture, aug, alpha=0.3)
 
 
 #############################################################################
@@ -92,7 +90,7 @@ texture = np.array([1, ] * len(vertices))
 aug = SurfRotation(vertices, triangles, phi=interval((5, 180), float), theta=0,
                    psi=0)
 texture[neighs[0]] = 0
-display(vertices, triangles, texture, aug, add_axis=True)
+display(vertices, triangles, texture, aug, add_axis=True, alpha=0.5)
 
 
 #############################################################################

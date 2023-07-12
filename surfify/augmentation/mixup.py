@@ -51,7 +51,7 @@ class MixUpAugmentation(RandomAugmentation):
 
 
 class HemiMixUp(MixUpAugmentation):
-    """ Randomly permutes a subject’s measurements at specific vertices
+    """ Randomly permutes a subject's measurements at specific vertices
     across hemispheres, assuming a vertex-to-vertex correspondence between
     hemispheres.
     """

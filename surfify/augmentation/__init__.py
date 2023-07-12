@@ -14,4 +14,5 @@ Surface augmentations.
 # Imports
 from .base import SurfCutOut, SurfNoise, SurfRotation, SurfBlur
 from .mixup import HemiMixUp, GroupMixUp
-from .utils import interval, Transformer
+from .utils import (interval, BaseTransformer, Transformer,
+                    apply_chained_transforms, multichannel_augmentation)

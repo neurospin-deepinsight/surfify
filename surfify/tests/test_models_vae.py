@@ -38,7 +38,7 @@ class TestModelsVAE(unittest.TestCase):
         pass
 
     def test_forward(self):
-        """ Test SphericalVAE forward.
+        """ Test SphericalVAEs with DiNe and RePa forwards.
         """
         model = models.SphericalVAE(
             input_channels=self.n_classes, input_order=self.order,
@@ -88,7 +88,7 @@ class TestModelsGVAE(unittest.TestCase):
         pass
 
     def test_forward(self):
-        """ Test SphericalVAE forward.
+        """ Test SphericalVAE with SpMa forward.
         """
         model = models.SphericalVAE(
             input_channels=self.n_classes, input_dim=self.input_dim,
