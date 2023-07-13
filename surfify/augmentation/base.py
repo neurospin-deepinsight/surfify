@@ -158,6 +158,7 @@ class SurfBlur(RandomAugmentation):
     """
     def __init__(self, vertices, triangles, sigma, neighs=None, cachedir=None):
         """ Init class.
+
         Parameters
         ----------
         vertices: array (N, 3)

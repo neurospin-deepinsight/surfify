@@ -1,9 +1,34 @@
 .. -*- mode: rst -*-
 
-Version 0.2.0
+
+Version 0.3.0
 =============
 
 :Date: work in progress
+
+Added
+-----
+
+Changed
+-------
+
+Deprecated
+----------
+
+Fixed
+-----
+
+Contributors
+------------
+
+The following people contributed to this release (from ``git shortlog -ns v0.3.0``)::
+
+
+
+Version 0.2.0
+=============
+
+:Date: July 13, 2023
 
 Added
 -----
@@ -37,6 +62,7 @@ Contributors
 ------------
 
 The following people contributed to this release (from ``git shortlog -ns v0.2.0``)::
+
 
 
 Version 0.1.0
