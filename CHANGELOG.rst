@@ -63,6 +63,9 @@ Contributors
 
 The following people contributed to this release (from ``git shortlog -ns v0.2.0``)::
 
+   82  Antoine Grigis
+   40  Corentin Ambroise
+
 
 
 Version 0.1.0
@@ -97,4 +100,4 @@ Contributors
 The following people contributed to this release (from ``git shortlog -ns v0.1.0``)::
 
    55  Antoine Grigis
-   20  CorentinAmbroise
+   20  Corentin Ambroise

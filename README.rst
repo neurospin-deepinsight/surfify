@@ -74,7 +74,7 @@ Important links
 ===============
 
 - `Official source code repo <https://github.com/neurospin-deepinsight/surfify>`_
-- `HTML stable documentation <https://surfify.readthedocs.io/en/v0.1.0>`_
+- `HTML stable documentation <https://surfify.readthedocs.io/en/v0.2.0>`_
 - `HTML documentation <https://surfify.readthedocs.io/en/latest>`_
 - `Release notes <https://github.com/neurospin-deepinsight/surfify/blob/master/CHANGELOG.rst>`_
 
