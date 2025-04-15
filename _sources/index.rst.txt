@@ -1,0 +1,15 @@
+..  surfify documentation master file
+
+
+PyTorch toolbox to work with spherical surfaces.
+
+
+
+.. toctree::
+    :maxdepth: 1
+    :hidden:
+
+    generated/installation
+    generated/documentation
+    generated/search
+
