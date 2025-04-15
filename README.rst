@@ -136,7 +136,7 @@ Examples are available in the `gallery <https://neurospin-deepinsight.github.io/
 Install
 -------
 
-The code has been developed for PyTorch version 1.8.1 and torchvision version 0.9.1, but should work with newer versions as well. Make sure you have installed all the package dependencies. Complete instructions are available `here <https://neurospin-deepinsight.github.io/surfify/generated/installation.html>`_.
+The code is tested for the current stable PyTorch and torchvision versions, but should work with other versions as well. Make sure you have installed all the package dependencies. Complete instructions are available `here <https://neurospin-deepinsight.github.io/surfify/generated/installation.html>`_.
 
 
 Contributing

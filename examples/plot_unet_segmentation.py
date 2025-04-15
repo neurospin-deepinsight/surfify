@@ -95,5 +95,5 @@ print("Test Error: \n Accuracy: {0:>0.1f}%, Avg loss: {1:>8f}".format(
 # Finally the predicted labels of the first sample are displayed. As expected
 # they corresspond exactly to the ground truth.
 
-plotting.plot_trisurf(ico_vertices, ico_triangles, y_pred[0], is_label=True)
+plotting.plot_trisurf(ico_vertices, ico_triangles, y_preds[0], is_label=True)
 plt.show()

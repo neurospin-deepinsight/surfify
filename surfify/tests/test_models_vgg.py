@@ -90,7 +90,7 @@ class TestModelsGVGG(unittest.TestCase):
             for ch_idx in range(X.shape[1]):
                 _X.append(utils.text2grid(ico_vertices, X[sample_idx, ch_idx]))
             self.X.append(_X)
-        self.X = np.asarray(self.X)
+        self.X = np.asarray(self.X).astype(np.float32)
         self.X = torch.from_numpy(self.X)
         self.y = torch.from_numpy(self.y)
 

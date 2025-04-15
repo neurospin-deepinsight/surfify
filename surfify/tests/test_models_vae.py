@@ -79,7 +79,7 @@ class TestModelsGVAE(unittest.TestCase):
                     ico_vertices, X[sample_idx, ch_idx], resx=self.input_dim,
                     resy=self.input_dim))
             self.X.append(_X)
-        self.X = np.asarray(self.X)
+        self.X = np.asarray(self.X).astype(np.float32)
         self.X = torch.from_numpy(self.X)
 
     def tearDown(self):
