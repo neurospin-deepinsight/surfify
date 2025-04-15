@@ -12,7 +12,6 @@ The spherical UNet architecture.
 """
 
 # Imports
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
@@ -67,13 +66,10 @@ class GraphicalUNet(nn.Module):
         act: torch.nn.functional, default relu
             the nonlinearity to use.
         """
-        from torch_sparse import spspmm
         import torch_geometric.nn as gnn
-        from torch_geometric.utils import (
-            add_self_loops, sort_edge_index, remove_self_loops)
         from torch_geometric.utils.repeat import repeat
 
-        super(GraphicalUNet, self).__init__()
+        super().__init__()
         assert depth >= 1
         self.in_channels = in_channels
         self.hidden_channels = hidden_channels
@@ -96,7 +92,7 @@ class GraphicalUNet(nn.Module):
             channels = new_channels
 
         self.up_convs = torch.nn.ModuleList()
-        for i in range(depth - 1):
+        for _i in range(depth - 1):
             new_channels = channels // 2
             in_channels = channels if sum_res else channels + new_channels
             self.up_convs.append(gnn.GCNConv(in_channels, new_channels,
@@ -166,6 +162,10 @@ class GraphicalUNet(nn.Module):
         return x
 
     def augment_adj(self, edge_index, edge_weight, num_nodes):
+        from torch_sparse import spspmm
+        from torch_geometric.utils import (
+            add_self_loops, sort_edge_index, remove_self_loops)
+
         edge_index, edge_weight = remove_self_loops(edge_index, edge_weight)
         edge_index, edge_weight = add_self_loops(edge_index, edge_weight,
                                                  num_nodes=num_nodes)
@@ -184,12 +184,12 @@ class SphericalUNet(SphericalBase):
     The architecture is built upon specific spherical surface convolution,
     pooling, and transposed convolution modules. It has an encoder path and
     a decoder path, with a user-defined resolution steps. Different from the
-    standard U-Net, all 3×3 convolution are replaced with the RePa or DiNe
-    convolution, 2×2 up-convolution with surface transposed convolution or
-    surface upsampling, and 2×2 max pooling with surface max/mean pooling.
-    In addition to the standard U-Net, before each convolution layer’s
+    standard U-Net, all 3x3 convolution are replaced with the RePa or DiNe
+    convolution, 2x2 up-convolution with surface transposed convolution or
+    surface upsampling, and 2x2 max pooling with surface max/mean pooling.
+    In addition to the standard U-Net, before each convolution layer's
     rectified linear units (ReLU) activation function, a batch normalization
-    layer is added. At the final layer, 1×1 convolution is replaced by
+    layer is added. At the final layer, 1x1 convolution is replaced by
     vertex-wise filter. The number of feature channels are double after each
     surface pooling layer and halve at each transposed convolution or up
     sampling layer.
@@ -265,7 +265,7 @@ class SphericalUNet(SphericalBase):
             set this folder to use smart caching speedup.
         """
         logger.debug("SphericalUNet init...")
-        super(SphericalUNet, self).__init__(
+        super().__init__(
             input_order=in_order, n_layers=depth,
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
@@ -303,7 +303,7 @@ class SphericalUNet(SphericalBase):
                     None if idx == 0
                     else self.ico[order + 1].down_indices),
                 pool_mode=("max" if self.up_mode == "maxpad" else "mean"),
-                first=(True if idx == 0 else False))
+                first=(idx == 0))
             setattr(self, "down{0}".format(idx + 1), block)
 
         cnt = 1
@@ -393,7 +393,7 @@ class DownBlock(nn.Module):
         first: bool, default False
             if set skip the pooling block.
         """
-        super(DownBlock, self).__init__()
+        super().__init__()
         self.first = first
         if not first:
             self.pooling = IcoPool(
@@ -455,7 +455,7 @@ class UpBlock(nn.Module):
             'maxpad' for max pooling shifted zero padding, and 'zeropad' for
             classical zero padding.
         """
-        super(UpBlock, self).__init__()
+        super().__init__()
         self.up_mode = up_mode
         if up_mode == "interp":
             self.up = IcoUpSample(in_ch, out_ch, up_neigh_indices)
@@ -485,10 +485,8 @@ class UpBlock(nn.Module):
         logger.debug("- UpBlock")
         logger.debug(debug_msg("input", x1))
         logger.debug(debug_msg("skip", x2))
-        if self.up_mode == "maxpad":
-            x1 = self.up(x1, max_pool_indices)
-        else:
-            x1 = self.up(x1)
+        x1 = (self.up(x1, max_pool_indices) if self.up_mode == "maxpad"
+              else self.up(x1))
         logger.debug(debug_msg("upsampling", x1))
         x = torch.cat((x1, x2), 1)
         logger.debug(debug_msg("cat", x))
@@ -503,9 +501,9 @@ class SphericalGUNet(nn.Module):
     The architecture is built upon specific spherical surface convolution,
     pooling, and transposed convolution modules. It has an encoder path and
     a decoder path, with a user-defined resolution steps. Different from the
-    standard U-Net, all 3×3 convolution are replaced with the SpMa
+    standard U-Net, all 3x3 convolution are replaced with the SpMa
     convolution.
-    In addition to the standard U-Net, before each convolution layer’s
+    In addition to the standard U-Net, before each convolution layer's
     rectified linear units (ReLU) activation function, a batch normalization
     layer is added. The number of feature channels are double after each
     surface pooling layer and halve at each transposed convolution or up
@@ -543,7 +541,7 @@ class SphericalGUNet(nn.Module):
             number of convolutional filters for the first conv.
         """
         logger.debug("SphericalGUNet init...")
-        super(SphericalGUNet, self).__init__()
+        super().__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.input_dim = input_dim
@@ -560,7 +558,7 @@ class SphericalGUNet(nn.Module):
             block = DownGBlock(
                 in_ch=self.filts[idx],
                 out_ch=self.filts[idx + 1],
-                first=(True if idx == 0 else False))
+                first=(idx == 0))
             setattr(self, "down{0}".format(idx + 1), block)
 
         cnt = 1
@@ -616,7 +614,7 @@ class DownGBlock(nn.Module):
         first: bool, default False
             if set skip the pooling block.
         """
-        super(DownGBlock, self).__init__()
+        super().__init__()
         self.first = first
         if not first:
             self.pooling = nn.MaxPool2d(kernel_size=2, stride=2)
@@ -659,7 +657,7 @@ class UpGBlock(nn.Module):
         out_ch: int
             output features/channels.
         """
-        super(UpGBlock, self).__init__()
+        super().__init__()
         self.up = IcoSpMaConvTranspose(
             in_feats=in_ch, out_feats=out_ch, kernel_size=4, stride=2, pad=1,
             zero_pad=3)

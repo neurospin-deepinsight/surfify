@@ -18,7 +18,7 @@ import numpy as np
 from joblib import Memory
 import torch.nn as nn
 from ..utils import (
-    icosahedron, neighbors, number_of_ico_vertices, downsample, interpolate,
+    icosahedron, neighbors, downsample, interpolate,
     neighbors_rec, get_logger)
 from ..nn import IcoDiNeConv, IcoRePaConv, IcoPool
 
@@ -73,7 +73,7 @@ class SphericalBase(nn.Module):
         cachedir: str, default None
             set this folder to use smart caching speedup.
         """
-        super(SphericalBase, self).__init__()
+        super().__init__()
         self.input_order = input_order
         self.n_layers = n_layers
         self.conv_mode = conv_mode

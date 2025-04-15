@@ -111,8 +111,9 @@ class GenericSurfDataset(Dataset):
         for idx, pattern in enumerate(patterns):
             _regex = os.path.join(root, pattern)
             _sidx = subject_in_patterns[idx]
-            _files = dict((self.sanitize_subject(path.split(os.sep)[_sidx]), path)
-                           for path in glob.glob(_regex))
+            _files = dict(
+                (self.sanitize_subject(path.split(os.sep)[_sidx]), path)
+                for path in glob.glob(_regex))
             self._df[f"data{idx}"] = [
                 _files.get(subject) for subject in self._df["participant_id"]]
             self.mod_names.append(f"data{idx}")
@@ -140,7 +141,7 @@ class GenericSurfDataset(Dataset):
         else:
             self.down_indices = None
         if patch:
-             self.patch_indices = patch_tri(
+            self.patch_indices = patch_tri(
                 order=ico_order, standard_ico=False,
                 size=(ico_order - target_ico_order), direct_neighbor=True)
 

@@ -64,7 +64,7 @@ class SphericalVAE(nn.Module):
     >>> print(out[0].shape, out[1].shape)
     """
     def __init__(self, input_channels=1, input_order=5, input_dim=192,
-                 latent_dim=64, conv_flts=[32, 32, 64, 64], fusion_level=1,
+                 latent_dim=64, conv_flts=(32, 32, 64, 64), fusion_level=1,
                  activation="LeakyReLU", batch_norm=False, conv_mode="DiNe",
                  cachedir=None, encoder=None, decoder=None, *args, **kwargs):
         """ Init class.
@@ -113,7 +113,7 @@ class SphericalVAE(nn.Module):
             encoder = SphericalHemiFusionEncoder(
                 input_channels, input_order, latent_dim * 2, conv_flts,
                 fusion_level, activation, batch_norm, conv_mode,
-                cachedir=cachedir, *args, **kwargs)
+                *args, **kwargs, cachedir=cachedir)
         if use_grid and decoder is None:
             decoder = HemiFusionDecoder(
                 [input_channels, input_dim, input_dim], encoder.flatten_dim,
@@ -123,7 +123,7 @@ class SphericalVAE(nn.Module):
             decoder = SphericalHemiFusionDecoder(
                 input_channels, input_order, latent_dim, conv_flts,
                 fusion_level, activation, batch_norm, conv_mode,
-                cachedir=cachedir, *args, **kwargs)
+                *args, **kwargs, cachedir=cachedir)
         self.encoder = encoder
         self.decoder = decoder
 
@@ -204,7 +204,7 @@ class SphericalVAE(nn.Module):
 
 class SphericalHemiFusionEncoder(SphericalBase):
     def __init__(self, input_channels, input_order, latent_dim,
-                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
+                 conv_flts=(64, 128, 128, 256, 256), fusion_level=1,
                  activation="LeakyReLU", batch_norm=False,
                  conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
                  dynamic_repa_zoom=False, standard_ico=False, cachedir=None):
@@ -236,7 +236,7 @@ class SphericalHemiFusionEncoder(SphericalBase):
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
             standard_ico=standard_ico, cachedir=cachedir)
         self.input_channels = input_channels
-        self.conv_flts = conv_flts
+        self.conv_flts = list(conv_flts)
         self.activation = getattr(nn, activation)(inplace=True)
         self.n_vertices_down = len(
             self.ico[self.input_order - self.n_layers].vertices)
@@ -332,7 +332,7 @@ class SphericalHemiFusionEncoder(SphericalBase):
 
 class SphericalHemiFusionDecoder(SphericalBase):
     def __init__(self, input_channels, input_order, latent_dim,
-                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
+                 conv_flts=(64, 128, 128, 256, 256), fusion_level=1,
                  activation="LeakyReLU", batch_norm=False,
                  conv_mode="DiNe", dine_size=1, repa_size=5, repa_zoom=5,
                  dynamic_repa_zoom=False, standard_ico=False, cachedir=None):
@@ -365,7 +365,7 @@ class SphericalHemiFusionDecoder(SphericalBase):
             standard_ico=standard_ico, cachedir=cachedir)
         self.input_channels = input_channels
         self.latent_dim = latent_dim
-        self.conv_flts = conv_flts
+        self.conv_flts = list(conv_flts)
 
         self.activation = getattr(nn, activation)(inplace=True)
         self.n_vertices_down = len(
@@ -505,7 +505,7 @@ def compute_output_dim(input_dim, convnet):
 
 class HemiFusionEncoder(nn.Module):
     def __init__(self, input_channels, input_dim, latent_dim,
-                 conv_flts=[64, 128, 128, 256, 256], fusion_level=1,
+                 conv_flts=(64, 128, 128, 256, 256), fusion_level=1,
                  activation="LeakyReLU", batch_norm=False):
         """ Init class.
 
@@ -533,7 +533,7 @@ class HemiFusionEncoder(nn.Module):
         self.input_channels = input_channels
         self.input_dim = input_dim
         self.latent_dim = latent_dim
-        self.conv_flts = conv_flts
+        self.conv_flts = list(conv_flts)
         self.n_layers = len(self.conv_flts)
         if fusion_level > self.n_layers or fusion_level <= 0:
             raise ValueError("Impossible to use input fusion level with "
@@ -621,7 +621,7 @@ class HemiFusionEncoder(nn.Module):
 
 class HemiFusionDecoder(nn.Module):
     def __init__(self, output_shape, before_latent_dim,
-                 latent_dim, conv_flts=[64, 128, 128, 256, 256],
+                 latent_dim, conv_flts=(64, 128, 128, 256, 256),
                  fusion_level=1, activation="LeakyReLU", batch_norm=False):
         """ Init class.
 
@@ -650,7 +650,7 @@ class HemiFusionDecoder(nn.Module):
         super().__init__()
 
         self.before_latent_dim = before_latent_dim
-        self.conv_flts = conv_flts.copy()
+        self.conv_flts = list(conv_flts)
         self.n_layers = len(conv_flts)
         self.conv_flts.insert(0, output_shape[0]*2)
         self.output_shape = output_shape

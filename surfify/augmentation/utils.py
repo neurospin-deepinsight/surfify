@@ -18,7 +18,7 @@ import numpy as np
 from collections import namedtuple
 
 
-class RandomAugmentation(object):
+class RandomAugmentation:
     """ Apply an augmentation with random parameters defined in intervals.
     """
     Interval = namedtuple("Interval", ["low", "high", "dtype"])
@@ -107,7 +107,7 @@ def interval(bound, dtype=float):
     return RandomAugmentation.Interval(min_val, max_val, dtype)
 
 
-class BaseTransformer(object):
+class BaseTransformer:
     """ Class that can be used to register a sequence of transformations.
     """
     Transform = namedtuple("Transform", [
@@ -255,7 +255,7 @@ def listify(data):
     out: list
         the liftify input data.
     """
-    if isinstance(data, list) or isinstance(data, tuple):
+    if isinstance(data, (list, tuple)):
         return data
     else:
         return [data]

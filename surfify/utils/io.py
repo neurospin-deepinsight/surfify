@@ -28,8 +28,8 @@ logger = getLogger("surfify")
 def decompose_cifti(cifti_file, raw=False):
     """ Decompose CIFTI data.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     cifti_file: str
         the path to a CIFTI image.
     raw: bool, default False
@@ -60,9 +60,9 @@ def decompose_cifti(cifti_file, raw=False):
 
 
 def surf_data_from_cifti(data, axis, surf_name, raw=False):
-    """ Load CIFTI surface data.
-    From: https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/
-          master/we-nibabel-markiewicz/NiBabel.ipynb
+    """ Load CIFTI surface data (see here <https://nbviewer.org/github/
+    neurohackademy/nh2020-curriculum/blob/master/we-nibabel-markiewicz/
+    NiBabel.ipynb>`_).
     """
     assert isinstance(axis, nibabel.cifti2.BrainModelAxis)
     for name, data_indices, model in axis.iter_structures():
@@ -79,15 +79,14 @@ def surf_data_from_cifti(data, axis, surf_name, raw=False):
 
 
 def volume_from_cifti(data, axis, raw=False):
-    """ Load CIFTI volume data.
-    From: https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/
-          master/we-nibabel-markiewicz/NiBabel.ipynb
+    """ Load CIFTI volume data (see here <https://nbviewer.org/github/
+    neurohackademy/nh2020-curriculum/blob/master/we-nibabel-markiewicz/
+    NiBabel.ipynb>`_).
     """
     assert isinstance(axis, nibabel.cifti2.BrainModelAxis)
     data = data.T[axis.volume_mask]
     if raw:
         return data
-    volmask = axis.volume_mask
     vox_indices = tuple(axis.voxel[axis.volume_mask].T)
     vol_data = np.zeros(axis.volume_shape + data.shape[1:],
                         dtype=data.dtype)
@@ -111,9 +110,8 @@ def ungzip(path):
     assert path.endswith(".gz")
     dest_path = path.replace(".gz", "")
     if not os.path.isfile(dest_path):
-        with gzip.open(path, "rb") as f_in:
-            with open(dest_path, "wb") as f_out:
-                shutil.copyfileobj(f_in, f_out)
+        with gzip.open(path, "rb") as f_in, open(dest_path, "wb") as f_out:
+            shutil.copyfileobj(f_in, f_out)
     return dest_path
 
 
@@ -200,7 +198,7 @@ def write_freesurfer(vertices, triangles, surf_file):
                                          volume_info=None)
 
 
-class HidePrints(object):
+class HidePrints:
     """ This function securely redirect the standard outputs and errors. The
     resulting object can be used as a context manager. On completion of the
     context the default context is restored.
@@ -272,10 +270,9 @@ def compute_and_store(func, cachedir=None):
                 for name in params if name in wrapped_params}
             # we want to use arguments that are common to both function by name
             cached_func_args = dict(
-                (name, kwargs[name]) for name in common_args
-                if name in kwargs.keys())
+                (name, kwargs[name]) for name in common_args if name in kwargs)
             for name in common_args:
-                if name not in cached_func_args.keys():
+                if name not in cached_func_args:
                     # if the param's index is lower than the len of args and is
                     # not entered as kwargs, then it uses the default value
                     if common_args[name] < len(args):

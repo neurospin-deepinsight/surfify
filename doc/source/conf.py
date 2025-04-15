@@ -12,6 +12,7 @@ import sys
 import os
 import datetime
 import subprocess
+import collections
 from distutils.version import LooseVersion
 import sphinx
 import pysphinxdoc
@@ -282,3 +283,11 @@ latex_documents = [
 # -- Options for Texinfo output ---------------------------------------------
 
 autodoc_default_flags = ["members", "undoc-members"]
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    if type(obj) is collections._tuplegetter:
+        return True
+    return True
+ 
+def setup(sphinx):
+    app.connect("autodoc-skip-member", autodoc_skip_member)

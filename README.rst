@@ -26,7 +26,26 @@ surfify: Deep Learning Spherical Toolbox
 
 \:+1: If you are using the code please add a star to the repository :+1:
 
-PyTorch toolbox to work with spherical surfaces.
+PyTorch toolbox to work with brain spherical surfaces.
+
+This work is made available by a `community of people <./AUTHORS.rst>`_, amoung which the CEA Neurospin BAOBAB laboratory.
+
+.. image:: ./doc/source/_static/carousel/overview.png
+    :width: 800px
+    :align: center
+
+
+Important links
+---------------
+
+- `Official source code repo <https://github.com/neurospin-deepinsight/surfify>`_
+- `HTML documentation <https://neurospin-deepinsight.github.io/surfify>`_
+- `Release notes <./CHANGELOG.rst>`_
+
+
+Content
+-------
+
 Define different spherical convolution strategies, namely:
 
 * RePa: Rectangular Patch convolution method.
@@ -107,56 +126,27 @@ Surface vision transformer rountines:
       eprint={2303.11909},
       archivePrefix={arXiv}
     }
-
-This work is made available by a `community of people
-<https://github.com/neurospin-deepinsight/surfify/blob/master/AUTHORS.rst>`_, amoung which the
-CEA Neurospin BAOBAB laboratory.
-
-.. image:: ./doc/source/_static/carousel/nihms-1568058-f0003.jpg
-    :width: 400px
-    :align: center
-    
-.. image:: ./doc/source/_static/carousel/nihms-1568058-f0006.jpg
-    :width: 400px
-    :align: center
-    
-Important links
-===============
-
-- `Official source code repo <https://github.com/neurospin-deepinsight/surfify>`_
-- `HTML stable documentation <https://surfify.readthedocs.io/en/v0.2.0>`_
-- `HTML documentation <https://surfify.readthedocs.io/en/latest>`_
-- `Release notes <https://github.com/neurospin-deepinsight/surfify/blob/master/CHANGELOG.rst>`_
-
+ 
 Where to start
-==============
+--------------
 
-Examples are available in the
-`gallery <https://surfify.readthedocs.io/en/latest/auto_gallery/index.html>`_.
-You can also refer to the
-`API documentation <https://surfify.readthedocs.io/en/latest/generated/documentation.html>`_.
+Examples are available in the `gallery <https://neurospin-deepinsight.github.io/surfify/auto_gallery/index.html>`_. You can also refer to the `API documentation <https://neurospin-deepinsight.github.io/surfify/generated/documentation.html>`_.
 
 
 Install
-=======
+-------
 
-The code has been developed for PyTorch version 1.8.1 and torchvision
-version 0.9.1, but should work with newer versions as well.
-Make sure you have installed all the package dependencies.
-Complete instructions are available `here
-<https://surfify.readthedocs.io/en/latest/generated/installation.html>`_.
+The code has been developed for PyTorch version 1.8.1 and torchvision version 0.9.1, but should work with newer versions as well. Make sure you have installed all the package dependencies. Complete instructions are available `here <https://neurospin-deepinsight.github.io/surfify/generated/installation.html>`_.
+
 
 Contributing
-============
+------------
 
-If you want to contribute to pySAP, be sure to review the `contribution guidelines`_.
-
-.. _contribution guidelines: ./CONTRIBUTING.md
+If you want to contribute to surfify, be sure to review the `contribution guidelines <./CONTRIBUTING.rst>`_.
 
 
 License
-=======
+-------
 
-This project is under the following
-`LICENSE <https://github.com/neurospin-deepinsight/surfify/blob/master/LICENSE.rst>`_.
+This project is under the following `LICENSE <./LICENSE.rst>`_.
 

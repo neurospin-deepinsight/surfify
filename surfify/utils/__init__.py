@@ -60,7 +60,7 @@ def setup_logging(level="info", logfile=None):
         logging.root.removeHandler(logging.root.handlers[-1])
     while len(logger.handlers) > 0:
         logger.removeHandler(logger.handlers[-1])
-    level = LEVELS.get(level, None)
+    level = LEVELS.get(level)
     if level is None:
         raise ValueError("Unknown logging level.")
     logger.setLevel(level)

@@ -97,7 +97,7 @@ class SurfCutOut(RandomAugmentation):
             # value by +- sigma for each patch, but staying in
             # [0, max_patch_size]
             max_patch_size = self.patch_size
-            if "patch_size" in self.intervals.keys():
+            if "patch_size" in self.intervals:
                 max_patch_size = self.intervals["patch_size"].high
             random_size = np.random.randint(
                 max(self.patch_size - self.sigma, 0),

@@ -69,13 +69,27 @@ extend-select = [
     "RUF",
 ]
 ignore = [
+    "I001",
+    "C402",
+    "C419",
+    "UP009",
     "UP015",
+    "UP030",
+    "UP032",
     "B023",
     "B028",
     "B904",
+    "N806",
+    "N812",
     "PYI024",
     "RUF005",
     "RUF012",
+    "FURB187",
+]
+
+[tool.ruff]
+extend-exclude = [
+    "tests",
 ]
 
 [tool.ruff.lint.per-file-ignores]

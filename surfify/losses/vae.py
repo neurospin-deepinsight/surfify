@@ -37,7 +37,7 @@ def log_likelihood(recon, xs):
         dim=tuple(range(1, recon.ndim)))
 
 
-class SphericalVAELoss(object):
+class SphericalVAELoss:
     """ Spherical VAE Loss.
     """
     def __init__(self, beta=9, left_mask=None, right_mask=None, use_mse=True):
@@ -54,7 +54,7 @@ class SphericalVAELoss(object):
         use_mse: bool, default True
             optionally uses the log likelihood.
         """
-        super(SphericalVAELoss, self).__init__()
+        super().__init__()
         self.beta = beta
         self.left_mask = left_mask
         self.right_mask = right_mask
@@ -69,7 +69,7 @@ class SphericalVAELoss(object):
                 "This loss needs intermediate layers outputs. Please register "
                 "an appropriate callback.")
         q = self.layer_outputs["q"]
-        z = self.layer_outputs["z"]
+        # z = self.layer_outputs["z"]
         if self.left_mask is None:
             device = left_x.device
             self.left_mask = torch.ones(

@@ -16,11 +16,10 @@ import os
 import tempfile
 import collections
 import numpy as np
-from time import time
 import networkx as nx
 from scipy.spatial import transform
 from sklearn.neighbors import BallTree, NearestNeighbors
-from .io import HidePrints, read_gifti
+from .io import HidePrints
 
 
 def normalize(vertex):
@@ -149,10 +148,7 @@ def neighbors(vertices, triangles, depth=1, direct_neighbor=False):
                     zip(angles, ring_neighs), key=lambda pair: pair[0])]
                 node_neighs[ring] = ring_neighs
                 n_neighs += 6 * ring
-                if ring > 1:
-                    _center_neighs = node_neighs[ring - 1]
-                else:
-                    _center_neighs = [node]
+                _center_neighs = node_neighs[ring - 1] if ring > 1 else [node]
                 _node_missing_neighs = [
                     _node for _node in _center_neighs if degrees[_node] == 5]
                 for _node, _counts in _missing_neighs.items():
@@ -695,7 +691,7 @@ def patch_tri(order=3, standard_ico=False, name="freesurfer", size=1,
                 zip(angles, locs), key=lambda pair: pair[0])]
         patches.append(locs)
     patches = np.array(patches)
-    return patches    
+    return patches
 
 
 def number_of_ico_vertices(order=3):
@@ -864,7 +860,8 @@ def interpolate(vertices, target_vertices, target_triangles):
     interp_indices = collections.OrderedDict()
     graph = vertex_adjacency_graph(target_vertices, target_triangles)
     common_vertices = downsample(target_vertices, vertices)
-    missing_vertices = set(range(len(target_vertices))) - set(common_vertices)
+    # missing_vertices = (set(range(len(target_vertices))) -
+    #                     set(common_vertices))
     for node in sorted(graph.nodes):
         if node in common_vertices:
             interp_indices[node] = [node] * 2

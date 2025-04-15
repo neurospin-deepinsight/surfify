@@ -15,7 +15,7 @@ Spherical implementation of the torch vision VGG.
 import torch
 import torch.nn as nn
 from ..utils import get_logger, debug_msg
-from ..nn import IcoUpConv, IcoPool, IcoSpMaConv
+from ..nn import IcoPool, IcoSpMaConv
 from .base import SphericalBase
 
 
@@ -98,7 +98,7 @@ class SphericalVGG(SphericalBase):
         """
         logger.debug("SphericalVGG init...")
         cfg = cfg
-        super(SphericalVGG, self).__init__(
+        super().__init__(
             input_order=input_order, n_layers=cfg.count("M"),
             conv_mode=conv_mode, dine_size=dine_size, repa_size=repa_size,
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
@@ -117,7 +117,7 @@ class SphericalVGG(SphericalBase):
             self.ico[self.input_order - self.n_layers + 1].vertices)
         self.top_final = self.final_flt * 7
         self._make_encoder()
-        self.avgpool = nn.AdaptiveAvgPool1d((7))
+        self.avgpool = nn.AdaptiveAvgPool1d(7)
         self.classifier = nn.Sequential(
             nn.Linear(self.top_final, hidden_dim),
             nn.ReLU(True),
@@ -291,7 +291,7 @@ class SphericalGVGG(nn.Module):
             initialize network weights.
         """
         logger.debug("SphericalGVGG init...")
-        super(SphericalGVGG, self).__init__()
+        super().__init__()
         self.input_channels = input_channels
         self.cfg = cfg
         self.n_classes = n_classes

@@ -16,7 +16,6 @@ import numpy as np
 from matplotlib import cm
 import matplotlib.colors as colors
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import axes3d
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 
@@ -74,7 +73,6 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
             texture = np.asarray([np.mean(texture[tri]) for tri in triangles])
 
     # Display tri surface
-    x, y, z = vertices[:, 0], vertices[:, 1], vertices[:, 2]
     triangle_vertices = np.array([vertices[tri] for tri in triangles])
     if texture is not None:
         norm = colors.Normalize(vmin=vmin, vmax=vmax, clip=False)

@@ -12,7 +12,6 @@ Module that provides spherical layers.
 """
 
 # Imports
-import logging
 import collections
 import torch
 import torch.nn as nn
@@ -64,7 +63,7 @@ class IcoSpMaConv(nn.Module):
         pad: int or tuple (pad_azimuth, pad_elevation), default 0
             the size of the padding.
         """
-        super(IcoSpMaConv, self).__init__()
+        super().__init__()
         self.in_feats = in_feats
         self.out_feats = out_feats
         self.kernel_size = kernel_size
@@ -129,7 +128,7 @@ class IcoSpMaConvTranspose(nn.Module):
         zero_pad: int or tuple, default 0
             add a zero padding in both axes before the transpose convolution.
         """
-        super(IcoSpMaConvTranspose, self).__init__()
+        super().__init__()
         self.in_feats = in_feats
         self.out_feats = out_feats
         self.kernel_size = kernel_size
@@ -194,7 +193,7 @@ class IcoRePaConv(nn.Module):
             neigh_indices: array (N, k, 3) - the neighbors indices.
             neigh_weights: array (N, k, 3) - the neighbors distances.
         """
-        super(IcoRePaConv, self).__init__()
+        super().__init__()
         self.in_feats = in_feats
         self.out_feats = out_feats
         self.neigh_indices, self.neigh_weights = neighs
@@ -277,7 +276,7 @@ class IcoDiNeConv(nn.Module):
         bias: bool, default True
             the layer will learn / not learn an additive bias.
         """
-        super(IcoDiNeConv, self).__init__()
+        super().__init__()
         self.in_feats = in_feats
         self.out_feats = out_feats
         self.neigh_indices = neigh_indices
@@ -345,7 +344,7 @@ class IcoPool(nn.Module):
         pooling_type: str, default 'mean'
             the pooling type: 'mean' or 'max'.
         """
-        super(IcoPool, self).__init__()
+        super().__init__()
         self.down_indices = down_indices
         self.down_neigh_indices = down_neigh_indices[down_indices]
         self.n_vertices, self.neigh_size = self.down_neigh_indices.shape
@@ -422,7 +421,7 @@ class IcoUpConv(nn.Module):
         down_indices: array
             downsampling indices at sampling i
         """
-        super(IcoUpConv, self).__init__()
+        super().__init__()
         self.in_feats = in_feats
         self.out_feats = out_feats
         self.up_neigh_indices = up_neigh_indices
@@ -537,7 +536,7 @@ class IcoGenericUpConv(nn.Module):
         down_indices: array
             downsampling indices at sampling i
         """
-        super(IcoGenericUpConv, self).__init__()
+        super().__init__()
         self.in_feats = in_feats
         self.out_feats = out_feats
         self.up_neigh_indices = up_neigh_indices
@@ -634,7 +633,7 @@ class IcoUpSample(nn.Module):
         up_neigh_indices: array
             upsampling neighborhood indices.
         """
-        super(IcoUpSample, self).__init__()
+        super().__init__()
         self.up_neigh_indices = up_neigh_indices
         self.n_vertices, self.neigh_size = up_neigh_indices.shape
         self.in_feats = in_feats
@@ -708,7 +707,7 @@ class IcoFixIndexUpSample(nn.Module):
         up_neigh_indices: array
             upsampling neighborhood indices.
         """
-        super(IcoFixIndexUpSample, self).__init__()
+        super().__init__()
         self.up_neigh_indices = up_neigh_indices
         self.n_vertices, self.neigh_size = up_neigh_indices.shape
         self.in_feats = in_feats
@@ -726,7 +725,7 @@ class IcoFixIndexUpSample(nn.Module):
         logger.debug(debug_msg("input", x))
         n_vertices = x.size(2) * 4 - 6
         assert self.n_vertices == n_vertices
-        n_features = x.size(1)
+        # n_features = x.size(1)
         logger.debug("  up neighbors indices: {0}".format(
             self.up_neigh_indices.shape))
         x = x[:, :, self.up_neigh_indices[:, 0]]
@@ -797,7 +796,7 @@ class IcoMaxIndexUpSample(nn.Module):
         down_indices: array
             downsampling indices at sampling i.
         """
-        super(IcoMaxIndexUpSample, self).__init__()
+        super().__init__()
         self.up_neigh_indices = up_neigh_indices
         self.neigh_indices = up_neigh_indices[down_indices]
         self.down_indices = down_indices
