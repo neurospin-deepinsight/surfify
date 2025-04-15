@@ -11,10 +11,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         python-version: [3.9, 3.12]
 
     steps:
@@ -31,10 +32,10 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install nose nose-exclude coverage coveralls
         python -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-        pip install --progress-bar off .
+        python -m pip install --progress-bar off .
     - name: Run unit tests
       run: |
-        python -m unittest
+        nosetests --with-coverage --cover-package=surfify --verbosity=2
     - name: Coveralls
       if: matrix.python-version == 3.9
       env:

@@ -95,12 +95,6 @@ extend-exclude = [
 [tool.ruff.lint.per-file-ignores]
 "*/__init__.py" = ["F401"]
 
-[tool.nosetests]
-verbosity = "2"
-nologcapture = "0"
-cover-package = "surfify"
-with-coverage = "1"
-
 [tool.build_sphinx]
 source-dir = "doc"
 build-dir = "doc/build"

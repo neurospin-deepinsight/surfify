@@ -8,6 +8,7 @@ Credit: C Ambroise
 A simple example on how to match two icosahedrons of the same order.
 """
 import os
+import math
 import warnings
 import numpy as np
 from scipy.spatial import transform
@@ -88,7 +89,7 @@ print(fs_row_idx)
 
 import itertools
 permutations = itertools.permutations(range(4))
-n_permutations = np.math.factorial(4)
+n_permutations = math.factorial(4)
 it = 0
 best_rmse = rmse
 best_rotation = rotation
@@ -102,7 +103,7 @@ while rmse > 0 and it < n_permutations:
     if rmse < best_rmse:
         best_rmse = rmse
         best_rotation = rotation
-print("Number of permutations tested {}/{}".format(it, np.math.factorial(4)))
+print("Number of permutations tested {}/{}".format(it, math.factorial(4)))
 print(best_rotation.as_matrix())
 print(best_rmse)
 

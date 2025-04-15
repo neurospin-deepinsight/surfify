@@ -12,6 +12,7 @@ Coordinate system tools.
 """
 
 # Imports
+import math
 import warnings
 import itertools
 import numpy as np
@@ -225,7 +226,7 @@ def ico2ico(vertices, ref_vertices):
                 break
 
     permutations = itertools.permutations(range(4))
-    n_permutations = np.math.factorial(4)
+    n_permutations = math.factorial(4)
     rmse = 1000
     it = 0
     best_rmse = rmse
@@ -300,9 +301,9 @@ def find_corresponding_order(array, ref_array, atol=1e-4, axis=0):
 
     Parameters
     ----------
-    array: array (N, \*)
+    array: array (N, *)
         the array to find the corresponding order for.
-    ref_array: array (N, \*)
+    ref_array: array (N, *)
         the reference array on which the order is base.
     atol: float, default 1e-4
         tolerance when matching the values.

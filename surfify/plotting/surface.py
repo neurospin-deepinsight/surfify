@@ -67,8 +67,9 @@ def plot_trisurf(vertices, triangles, texture=None, vmin=None,
             "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
     if texture is not None:
         if is_label:
-            texture = np.asarray([np.argmax(np.bincount(texture[tri]))
-                                  for tri in triangles])
+            texture = np.asarray([
+                np.argmax(np.bincount(texture[tri].astype(int)))
+                for tri in triangles])
         else:
             texture = np.asarray([np.mean(texture[tri]) for tri in triangles])
 
