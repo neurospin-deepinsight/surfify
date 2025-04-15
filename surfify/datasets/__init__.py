@@ -13,4 +13,5 @@ reference datasets. It also features some artificial data generators.
 """
 
 # Imports
+from ._generic import GenericSurfDataset
 from ._samples_generator import make_classification, ClassificationDataset

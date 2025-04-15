@@ -15,6 +15,7 @@ The spherical UNet architecture.
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as func
 from joblib import Memory
 from ..utils import number_of_ico_vertices, get_logger, debug_msg
 from ..nn import (
@@ -25,6 +26,156 @@ from .base import SphericalBase
 
 # Global parameters
 logger = get_logger()
+
+
+class GraphicalUNet(nn.Module):
+    """ The Graph U-Net model: implements a U-Net like architecture with graph
+    pooling and unpooling operations.
+
+    Notes
+    -----
+    Debuging messages can be displayed by changing the log level using
+    ``setup_logging(level='debug')``.
+
+    See Also
+    --------
+    SphericalUNet, SphericalGUNet
+
+    References
+    ----------
+    Hongyang Gao, and Shuiwang Ji, Graph U-Nets, arXiv, 2019.
+    """
+    def __init__(self, in_channels, out_channels, depth=5, hidden_channels=32,
+                 pool_ratios=0.5, sum_res=False, act=func.relu):
+        """ Init GraphicalUNet.
+
+        Parameters
+        ----------
+        in_channels: int
+            input features/channels.
+        out_channels: int
+            output features/channels.
+        depth: int, default 5
+            number of layers in the UNet.
+        hidden_channels: int, default 32
+            number of convolutional filters for the convs.
+        pool_ratios: float or list of float, default 0.5
+            graph pooling ratio for each depth.
+        sum_res: bool,default True
+            if set to False, will use concatenation for integration of skip
+            connections instead summation.
+        act: torch.nn.functional, default relu
+            the nonlinearity to use.
+        """
+        from torch_sparse import spspmm
+        import torch_geometric.nn as gnn
+        from torch_geometric.utils import (
+            add_self_loops, sort_edge_index, remove_self_loops)
+        from torch_geometric.utils.repeat import repeat
+
+        super(GraphicalUNet, self).__init__()
+        assert depth >= 1
+        self.in_channels = in_channels
+        self.hidden_channels = hidden_channels
+        self.out_channels = out_channels
+        self.depth = depth
+        self.pool_ratios = repeat(pool_ratios, depth)
+        self.act = act
+        self.sum_res = sum_res
+
+        channels = hidden_channels
+        self.down_convs = torch.nn.ModuleList()
+        self.pools = torch.nn.ModuleList()
+        self.down_convs.append(gnn.GCNConv(in_channels, channels,
+                                           improved=True))
+        for i in range(depth):
+            new_channels = channels * 2
+            self.pools.append(gnn.TopKPooling(channels, self.pool_ratios[i]))
+            self.down_convs.append(gnn.GCNConv(channels, new_channels,
+                                               improved=True))
+            channels = new_channels
+
+        self.up_convs = torch.nn.ModuleList()
+        for i in range(depth - 1):
+            new_channels = channels // 2
+            in_channels = channels if sum_res else channels + new_channels
+            self.up_convs.append(gnn.GCNConv(in_channels, new_channels,
+                                             improved=True))
+            channels = new_channels
+        new_channels = channels // 2
+        in_channels = channels if sum_res else channels + new_channels
+        self.up_convs.append(gnn.GCNConv(in_channels, out_channels,
+                                         improved=True))
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        for conv in self.down_convs:
+            conv.reset_parameters()
+        for pool in self.pools:
+            pool.reset_parameters()
+        for conv in self.up_convs:
+            conv.reset_parameters()
+
+    def forward(self, x, edge_index, batch=None):
+        if batch is None:
+            batch = edge_index.new_zeros(x.size(0))
+        edge_weight = x.new_ones(edge_index.size(1))
+
+        # print("input", x.shape)
+        x = self.down_convs[0](x, edge_index, edge_weight)
+        x = self.act(x)
+        # print("down", x.shape)
+
+        xs = [x]
+        edge_indices = [edge_index]
+        edge_weights = [edge_weight]
+        perms = []
+
+        for i in range(1, self.depth + 1):
+            # edge_index, edge_weight = self.augment_adj(
+            #    edge_index, edge_weight, x.size(0))
+            x, edge_index, edge_weight, batch, perm, _ = self.pools[i - 1](
+                x, edge_index, edge_weight, batch)
+            x = self.down_convs[i](x, edge_index, edge_weight)
+            x = self.act(x)
+            if i < self.depth:
+                xs += [x]
+                edge_indices += [edge_index]
+                edge_weights += [edge_weight]
+            perms += [perm]
+
+        for i in range(self.depth):
+            j = self.depth - 1 - i
+
+            res = xs[j]
+            edge_index = edge_indices[j]
+            edge_weight = edge_weights[j]
+            perm = perms[j]
+
+            up = torch.zeros(res.size(dim=0), x.size(dim=1), dtype=x.dtype,
+                             device=x.device)
+            up[perm] = x
+            # print("zero-pad", x.shape, up.shape)
+            x = res + up if self.sum_res else torch.cat((res, up), dim=-1)
+            # print("cat", x.shape)
+            x = self.up_convs[i](x, edge_index, edge_weight)
+            x = self.act(x) if i < self.depth - 1 else x
+            # print("up", x.shape)
+
+        return x
+
+    def augment_adj(self, edge_index, edge_weight, num_nodes):
+        edge_index, edge_weight = remove_self_loops(edge_index, edge_weight)
+        edge_index, edge_weight = add_self_loops(edge_index, edge_weight,
+                                                 num_nodes=num_nodes)
+        edge_index, edge_weight = sort_edge_index(edge_index, edge_weight,
+                                                  num_nodes)
+        edge_index, edge_weight = spspmm(edge_index, edge_weight, edge_index,
+                                         edge_weight, num_nodes, num_nodes,
+                                         num_nodes)
+        edge_index, edge_weight = remove_self_loops(edge_index, edge_weight)
+        return edge_index, edge_weight
 
 
 class SphericalUNet(SphericalBase):

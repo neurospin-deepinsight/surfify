@@ -14,7 +14,6 @@ Generate samples of synthetic data sets.
 # Imports
 import numpy as np
 from scipy.stats import norm
-import torch.nn as nn
 from torch.utils.data import Dataset
 
 

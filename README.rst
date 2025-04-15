@@ -1,9 +1,9 @@
 .. -*- mode: rst -*-
 
-|PythonVersion|_ |Coveralls|_ |Testing|_ |Pep8|_ |PyPi|_ |Doc|_
+|PythonVersion|_ |Coveralls|_ |Testing|_ |Pep8|_ |Doc|_ |PyPi|_
 
-.. |PythonVersion| image:: https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue
-.. _PythonVersion: https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue
+.. |PythonVersion| image:: https://img.shields.io/badge/python-3.9%20%7C%203.8%20%7C%203.12-blue
+.. _PythonVersion: https://img.shields.io/badge/python-3.9%20%7C%203.8%20%7C%203.12-blue
 
 .. |Coveralls| image:: https://coveralls.io/repos/neurospin-deepinsight/surfify/badge.svg?branch=master&service=github
 .. _Coveralls: https://coveralls.io/github/neurospin-deepinsight/surfify
@@ -14,11 +14,11 @@
 .. |Pep8| image:: https://github.com/neurospin-deepinsight/surfify/actions/workflows/pep8.yml/badge.svg
 .. _Pep8: https://github.com/neurospin-deepinsight/surfify/actions
 
+.. |Doc| image:: https://github.com/neurospin-deepinsight/surfify/actions/workflows/documentation.yml/badge.svg
+.. _Doc: http://neurospin-deepinsight.github.io/surfify
+
 .. |PyPi| image:: https://badge.fury.io/py/surfify.svg
 .. _PyPi: https://badge.fury.io/py/surfify
-
-.. |Doc| image:: https://readthedocs.org/projects/surfify/badge/?version=latest
-.. _Doc: https://surfify.readthedocs.io/en/latest/?badge=latest
 
 
 surfify: Deep Learning Spherical Toolbox
@@ -58,6 +58,56 @@ Define different spherical convolution strategies, namely:
         year = {2021}
   }
 
+Brain cortical augmentations:
+
+* SurfCutOut, SurfNoise, SurfRotation, SurfBlur.
+* HemiMixUp: Random permutation of a subject's measurements at specific vertices
+  across hemispheres.
+* GroupMixUp: Random bootstraping of measures at specific vertices across a
+  group of K subjects.
+
+.. code::
+
+  @inproceedings{ambroise2023cl,
+    title = {MixUp Brain-Cortical Augmentations in Self-supervised Learning},
+    author= {Corentin Ambroise and
+             Vincent Frouin and
+             Benoit Dufumier and
+             Edouard Duchesnay and
+             Antoine Grigis},
+    booktitle = {MLCN},
+    series = {Lecture Notes in Computer Science},
+    volume = {14312},
+    pages  = {102--111},
+    publisher = {Springer},
+    year  = {2023},
+    doi = {10.1007/978-3-031-44858-4\_10}
+  }
+
+Surface vision transformer rountines:
+
+* patch_tri: icosahedron multi-resolution triangular patch strategy.
+
+.. code::
+
+    @inproceedings{dahan2022sit,
+      title = {Surface Vision Transformers: Attention-Based Modelling applied to Cortical Analysis},
+      author = {Dahan, Simon and Fawaz, Abdulah and Williams, Logan Z. J. and Yang, Chunhui and Coalson, Timothy S. and Glasser, Matthew F. and Edwards, A. David and Rueckert, Daniel and Robinson, Emma C.},
+      booktitle = {MIDL},
+      pages = {282--303},
+      year = {2022},
+      volume = {172},
+      series = {Proceedings of Machine Learning Research},
+    }
+
+    @misc{dahan2024mssit,
+      title = {The Multiscale Surface Vision Transformer}, 
+      author = {Simon Dahan and Logan Z. J. Williams and Daniel Rueckert and Emma C. Robinson},
+      year = {2024},
+      eprint={2303.11909},
+      archivePrefix={arXiv}
+    }
+
 This work is made available by a `community of people
 <https://github.com/neurospin-deepinsight/surfify/blob/master/AUTHORS.rst>`_, amoung which the
 CEA Neurospin BAOBAB laboratory.
@@ -95,6 +145,13 @@ version 0.9.1, but should work with newer versions as well.
 Make sure you have installed all the package dependencies.
 Complete instructions are available `here
 <https://surfify.readthedocs.io/en/latest/generated/installation.html>`_.
+
+Contributing
+============
+
+If you want to contribute to pySAP, be sure to review the `contribution guidelines`_.
+
+.. _contribution guidelines: ./CONTRIBUTING.md
 
 
 License

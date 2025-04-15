@@ -19,7 +19,7 @@ from .sampling import (
     neighbors, neighbors_rec, get_rectangular_projection, find_neighbors,
     icosahedron, number_of_ico_vertices, order_of_ico_from_vertices,
     rotate_data, order_triangles, find_rotation_interpol_coefs,
-    number_of_neighbors, min_depth_to_get_n_neighbors)
+    number_of_neighbors, min_depth_to_get_n_neighbors, patch_tri)
 from .coord import (
     cart2sph, sph2cart, text2grid, grid2text, ico2ico, text2ico)
 

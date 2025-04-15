@@ -25,6 +25,76 @@ from logging import getLogger
 logger = getLogger("surfify")
 
 
+def decompose_cifti(cifti_file, raw=False):
+    """ Decompose CIFTI data.
+
+    Paramters
+    ---------
+    cifti_file: str
+        the path to a CIFTI image.
+    raw: bool, default False
+        if set return raw data as stored in the CIFTI file.
+
+    Returns
+    -------
+    vol: array
+        the raw/organized volume data.
+    surf_left: array
+        the raw/organized left surface data.
+    surf_right: array
+        the raw/organized right surface data.
+    """
+    img = nibabel.load(cifti_file)
+    data = img.get_fdata(dtype=np.float32)
+    hdr = img.header
+    axes = [hdr.get_axis(idx) for idx in range(img.ndim)]
+    select_axes = [axis for axis in axes
+                   if isinstance(axis, nibabel.cifti2.BrainModelAxis)]
+    assert len(select_axes) == 1
+    brain_models = select_axes[0]
+    return (volume_from_cifti(data, brain_models, raw),
+            surf_data_from_cifti(data, brain_models,
+                                 "CIFTI_STRUCTURE_CORTEX_LEFT", raw),
+            surf_data_from_cifti(data, brain_models,
+                                 "CIFTI_STRUCTURE_CORTEX_RIGHT", raw))
+
+
+def surf_data_from_cifti(data, axis, surf_name, raw=False):
+    """ Load CIFTI surface data.
+    From: https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/
+          master/we-nibabel-markiewicz/NiBabel.ipynb
+    """
+    assert isinstance(axis, nibabel.cifti2.BrainModelAxis)
+    for name, data_indices, model in axis.iter_structures():
+        if name == surf_name:
+            data = data.T[data_indices]
+            if raw:
+                return data
+            vtx_indices = model.vertex
+            surf_data = np.zeros((vtx_indices.max() + 1,) + data.shape[1:],
+                                 dtype=data.dtype)
+            surf_data[vtx_indices] = data
+            return surf_data
+    raise ValueError(f"No structure named {surf_name}")
+
+
+def volume_from_cifti(data, axis, raw=False):
+    """ Load CIFTI volume data.
+    From: https://nbviewer.org/github/neurohackademy/nh2020-curriculum/blob/
+          master/we-nibabel-markiewicz/NiBabel.ipynb
+    """
+    assert isinstance(axis, nibabel.cifti2.BrainModelAxis)
+    data = data.T[axis.volume_mask]
+    if raw:
+        return data
+    volmask = axis.volume_mask
+    vox_indices = tuple(axis.voxel[axis.volume_mask].T)
+    vol_data = np.zeros(axis.volume_shape + data.shape[1:],
+                        dtype=data.dtype)
+    vol_data[vox_indices] = data
+    return nibabel.Nifti1Image(vol_data, axis.affine)
+
+
 def ungzip(path):
     """ Extract GNU zipped archive file.
 

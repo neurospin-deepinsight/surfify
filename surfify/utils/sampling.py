@@ -19,8 +19,8 @@ import numpy as np
 from time import time
 import networkx as nx
 from scipy.spatial import transform
-from sklearn.neighbors import BallTree
-from .io import HidePrints
+from sklearn.neighbors import BallTree, NearestNeighbors
+from .io import HidePrints, read_gifti
 
 
 def normalize(vertex):
@@ -464,7 +464,7 @@ def find_neighbors(start_node, order, neighbors):
     return list(set(indices))
 
 
-def build_freesurfer_ico(ico_file):
+def build_freesurfer_ico(ico_file=None):
     """ Build FreeSurfer reference icosahedron by fetching existing data
     and building lower orders using downsampling.
 
@@ -473,12 +473,16 @@ def build_freesurfer_ico(ico_file):
 
     Parameters
     ----------
-    ico_file: str
+    ico_file: str, default None
         path to the generated FreeSurfer reference icosahedron topologies.
     """
     from nilearn.surface import load_surf_mesh
     from nilearn.datasets import fetch_surf_fsaverage
 
+    if ico_file is None:
+        resource_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "resources")
+        ico_file = os.path.join(resource_dir, "freesurfer_icos.npz")
     data = {}
     for order in range(7, 2, -1):
         surf_name = "fsaverage{0}".format(order)
@@ -498,6 +502,33 @@ def build_freesurfer_ico(ico_file):
         data[surf_name + ".vertices"] = vertices
         data[surf_name + ".triangles"] = triangles
     np.savez(ico_file, **data)
+
+
+def build_fslr_ref(ref_file=None):
+    """ Build FSLR reference by fetching existing data.
+
+    Parameters
+    ----------
+    ref_file: str, default None
+        path to the generated FSLR reference topologies.
+    """
+    from nilearn.surface import load_surf_mesh
+    from neuromaps.datasets import fetch_fslr
+
+    if ref_file is None:
+        resource_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "resources")
+        ref_file = os.path.join(resource_dir, "fslr_refs.npz")
+    data = {}
+    for den in ("4k", "8k", "32k", "164k"):
+        surf_name = "fslr{0}".format(den)
+        with HidePrints(hide_err=True):
+            with tempfile.TemporaryDirectory() as tmpdir:
+                fslr = fetch_fslr(density=den, data_dir=tmpdir)
+                vertices, triangles = load_surf_mesh(fslr["sphere"].L)
+            data[surf_name + ".vertices"] = vertices.astype(np.float32)
+            data[surf_name + ".triangles"] = triangles
+    np.savez(ref_file, **data)
 
 
 def icosahedron(order=3, standard_ico=False):
@@ -521,8 +552,7 @@ def icosahedron(order=3, standard_ico=False):
     order: int, default 3
         the icosahedron order.
     standard_ico: bool, default False
-        optionally uses a standard icosahedron tessalation. FreeSurfer
-        tesselation is used by default.
+        optionally uses a standard icosahedron tessalation.
 
     Returns
     -------
@@ -564,7 +594,7 @@ def icosahedron(order=3, standard_ico=False):
     return vertices, triangles
 
 
-def middle_point(point_1, point_2, vertices, middle_point_cache):
+def middle_point(point_1, point_2, vertices, middle_point_cache=None):
     """ Find a middle point and project it to the unit sphere.
 
     This function is only used to build an icosahedron geometry.
@@ -573,7 +603,7 @@ def middle_point(point_1, point_2, vertices, middle_point_cache):
     smaller_index = min(point_1, point_2)
     greater_index = max(point_1, point_2)
     key = "{0}-{1}".format(smaller_index, greater_index)
-    if key in middle_point_cache:
+    if middle_point_cache is not None and key in middle_point_cache:
         return middle_point_cache[key]
 
     # If it's not in cache, then we can cut it
@@ -582,9 +612,90 @@ def middle_point(point_1, point_2, vertices, middle_point_cache):
     middle = [sum(elems) / 2. for elems in zip(vert_1, vert_2)]
     vertices.append(normalize(middle))
     index = len(vertices) - 1
-    middle_point_cache[key] = index
+    if middle_point_cache is not None:
+        middle_point_cache[key] = index
 
     return index
+
+
+def patch_tri(order=3, standard_ico=False, name="freesurfer", size=1,
+              direct_neighbor=False):
+    """ Build triangular patches that map the icosahedron.
+
+    This is the base function for Vision Transformers.
+
+    See Also
+    --------
+
+    Examples
+    --------
+    >>> from surfify.utils import icosahedron, patch_tri
+    >>> import matplotlib.pyplot as plt
+    >>> from surfify.plotting import plot_trisurf
+    >>> ico3_verts, ico3_tris = icosahedron(order=3)
+    >>> patches = patch_tri(order=3, size=1, size=1)
+    >>> fig, ax = plt.subplots(1, 1, subplot_kw={
+            "projection": "3d", "aspect": "auto"}, figsize=(10, 10))
+    >>> plot_trisurf(ico2_verts, triangles=ico2_tris, colorbar=False, fig=fig,
+                     ax=ax)
+    >>> for cnt, idx in enumerate(patches[10]):
+    >>>     point = ico3_verts[idx]
+    >>>     ax.scatter(point[0], point[1], point[2], marker="o", s=100)
+    >>> plt.show()
+
+    Parameters
+    ----------
+    order: int, default 3
+        the icosahedron order.
+    standard_ico: bool, default False
+        optionally uses a standard icosahedron tessalation. FreeSurfer
+        tesselation is used by default.
+    name: str, default 'freesurfer'
+        use pre-difined tesselations: freesurfer or fslr.
+    size: int, default 1
+        the patch size.
+    direct_neighbor: bool, default False
+        order patch vertices.
+
+    Returns
+    --------
+    patches: array
+        triangular patches containing icosahedron indices.
+    """
+    assert (order - size) > 1, "Wrong patch definition!"
+    vertices, triangles = icosahedron(order, standard_ico)
+    lower_vertices, lower_triangles = icosahedron(order - size, standard_ico)
+    patches = []
+    for tri in lower_triangles:
+        _vertices = [lower_vertices[idx] for idx in tri]
+        _triangles = [[0, 1, 2]]
+        for _ in range(order - size):
+            subdiv = []
+            for _tri in _triangles:
+                v1 = middle_point(_tri[0], _tri[1], _vertices)
+                v2 = middle_point(_tri[1], _tri[2], _vertices)
+                v3 = middle_point(_tri[2], _tri[0], _vertices)
+                subdiv.append([_tri[0], v1, v3])
+                subdiv.append([_tri[1], v2, v1])
+                subdiv.append([_tri[2], v3, v2])
+                subdiv.append([v1, v2, v3])
+            _triangles = subdiv
+        neigh = NearestNeighbors(n_neighbors=1)
+        neigh.fit(vertices)
+        _, locs = neigh.kneighbors(_vertices)
+        locs = np.unique(locs.squeeze())
+        if direct_neighbor:
+            center = np.mean(lower_vertices[tri], axis=1)
+            center /= np.linalg.norm(center)
+            angles = np.asarray([
+                get_angle_with_xaxis(center, center, vec)
+                for vec in vertices[locs]])
+            angles = np.degrees(angles)
+            locs = [x for _, x in sorted(
+                zip(angles, locs), key=lambda pair: pair[0])]
+        patches.append(locs)
+    patches = np.array(patches)
+    return patches    
 
 
 def number_of_ico_vertices(order=3):
@@ -1005,7 +1116,6 @@ def downsample_ico(vertices, triangles, by=1, down_indices=None):
                     if (set(candidates) not in new_triangles and
                             len(candidates) == 3):
                         new_triangles.append(set(candidates))
-
         new_triangles = np.array([list(tri) for tri in new_triangles])
         vertices = new_vertices
         triangles = new_triangles
