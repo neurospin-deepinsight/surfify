@@ -9,8 +9,13 @@ Version 0.3.0
 Added
 -----
 
+* patch_tri: Triangular icosahedron patching.
+* build_fslr_ref: Construct the resource containing the FSLR spheres.
+
 Changed
 -------
+
+* use pynose insteaad of nose.
 
 Deprecated
 ----------
