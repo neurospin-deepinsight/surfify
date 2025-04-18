@@ -16,7 +16,8 @@ from surfify.utils import (
     interpolate, interpolate_data,
     neighbors, neighbors_rec,
     icosahedron, number_of_ico_vertices, order_of_ico_from_vertices,
-    setup_logging, find_neighbors, order_triangles, rotate_data)
+    setup_logging, find_neighbors, order_triangles, rotate_data,
+    patch_tri)
 
 
 class TestUtilsSampling(unittest.TestCase):
@@ -32,6 +33,21 @@ class TestUtilsSampling(unittest.TestCase):
         """ Run after each test.
         """
         pass
+
+    def test_patch_tri(self):
+        """ Test patch_tri function.
+        """
+        res = {
+            3: {"num_patches": 1280, "num_vertices": 45},
+            4: {"num_patches": 320, "num_vertices": 153},
+            5: {"num_patches": 80, "num_vertices": 561},
+            6: {"num_patches": 20, "num_vertices": 2145}
+        }
+        for size in range(3, 7):
+            patches = patch_tri(order=6, size=size, direct_neighbor=True,
+                                n_jobs=-1)
+            self.assertTrue(res[size]["num_patches"] == patches.shape[0])
+            self.assertTrue(res[size]["num_vertices"] == patches.shape[1])
 
     def test_icosahedron(self):
         """ Test icosahedron function.

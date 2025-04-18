@@ -18,6 +18,7 @@ import collections
 import numpy as np
 import networkx as nx
 from scipy.spatial import transform
+from joblib import Parallel, delayed
 from sklearn.neighbors import BallTree, NearestNeighbors
 from .io import HidePrints
 
@@ -614,8 +615,8 @@ def middle_point(point_1, point_2, vertices, middle_point_cache=None):
     return index
 
 
-def patch_tri(order=3, standard_ico=False, name="freesurfer", size=1,
-              direct_neighbor=False):
+def patch_tri(order=6, standard_ico=False, size=3, direct_neighbor=False,
+              n_jobs=1):
     """ Build triangular patches that map the icosahedron.
 
     This is the base function for Vision Transformers.
@@ -641,57 +642,69 @@ def patch_tri(order=3, standard_ico=False, name="freesurfer", size=1,
 
     Parameters
     ----------
-    order: int, default 3
+    order: int, default 6
         the icosahedron order.
     standard_ico: bool, default False
         optionally uses a standard icosahedron tessalation. FreeSurfer
         tesselation is used by default.
-    name: str, default 'freesurfer'
-        use pre-difined tesselations: freesurfer or fslr.
-    size: int, default 1
+    size: int, default 3
         the patch size.
     direct_neighbor: bool, default False
         order patch vertices.
+    n_jobs: int, default 1
+        the maximum number of concurrently running jobs.
 
     Returns
     --------
     patches: array
         triangular patches containing icosahedron indices.
     """
-    assert (order - size) > 1, "Wrong patch definition!"
+    assert (order - size) >= 0, "Wrong patch definition!"
     vertices, triangles = icosahedron(order, standard_ico)
     lower_vertices, lower_triangles = icosahedron(order - size, standard_ico)
+    neigh = NearestNeighbors(n_neighbors=1)
+    neigh.fit(vertices)
     patches = []
-    for tri in lower_triangles:
-        _vertices = [lower_vertices[idx] for idx in tri]
-        _triangles = [[0, 1, 2]]
-        for _ in range(order - size):
-            subdiv = []
-            for _tri in _triangles:
-                v1 = middle_point(_tri[0], _tri[1], _vertices)
-                v2 = middle_point(_tri[1], _tri[2], _vertices)
-                v3 = middle_point(_tri[2], _tri[0], _vertices)
-                subdiv.append([_tri[0], v1, v3])
-                subdiv.append([_tri[1], v2, v1])
-                subdiv.append([_tri[2], v3, v2])
-                subdiv.append([v1, v2, v3])
-            _triangles = subdiv
-        neigh = NearestNeighbors(n_neighbors=1)
-        neigh.fit(vertices)
-        _, locs = neigh.kneighbors(_vertices)
-        locs = np.unique(locs.squeeze())
-        if direct_neighbor:
-            center = np.mean(lower_vertices[tri], axis=1)
-            center /= np.linalg.norm(center)
-            angles = np.asarray([
-                get_angle_with_xaxis(center, center, vec)
-                for vec in vertices[locs]])
-            angles = np.degrees(angles)
-            locs = [x for _, x in sorted(
-                zip(angles, locs), key=lambda pair: pair[0])]
-        patches.append(locs)
+    patches = Parallel(n_jobs=n_jobs)(delayed(_patch_tri_iter)(
+        vertices, lower_vertices, tri, size, neigh, direct_neighbor)
+            for tri in lower_triangles)
     patches = np.array(patches)
     return patches
+
+
+def _patch_tri_iter(vertices, lower_vertices, tri, size, neigh,
+                    direct_neighbor):
+    """ Build a triangular patch from input triangle.
+
+    See Also
+    --------
+    patch_tri
+    """
+    _vertices = [lower_vertices[idx] for idx in tri]
+    _triangles = [[0, 1, 2]]
+    for _ in range(size):
+        subdiv = []
+        for _tri in _triangles:
+            v1 = middle_point(_tri[0], _tri[1], _vertices)
+            v2 = middle_point(_tri[1], _tri[2], _vertices)
+            v3 = middle_point(_tri[2], _tri[0], _vertices)
+            subdiv.append([_tri[0], v1, v3])
+            subdiv.append([_tri[1], v2, v1])
+            subdiv.append([_tri[2], v3, v2])
+            subdiv.append([v1, v2, v3])
+        _triangles = subdiv
+    locs = neigh.kneighbors(_vertices, return_distance=False)
+    locs = np.unique(locs.squeeze())
+    if direct_neighbor:
+        center = np.mean(lower_vertices[tri], axis=1)
+        center /= np.linalg.norm(center)
+        angles = np.asarray([
+            get_angle_with_xaxis(center, center, vec)
+            for vec in vertices[locs]])
+        angles = np.degrees(angles)
+        locs = [x for _, x in sorted(
+            zip(angles, locs), key=lambda pair: pair[0])]
+    return locs
 
 
 def number_of_ico_vertices(order=3):
