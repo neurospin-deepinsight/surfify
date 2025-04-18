@@ -9,6 +9,7 @@ Version 0.3.0
 Added
 -----
 
+* GenericSurfDataset: add generic (aug,contrastive,patch) dataset.
 * patch_tri: Triangular icosahedron patching.
 * build_fslr_ref: Construct the resource containing the FSLR spheres.
 

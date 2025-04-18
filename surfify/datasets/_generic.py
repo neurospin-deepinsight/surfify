@@ -34,6 +34,8 @@ class GenericSurfDataset(Dataset):
         data that can be retrieved by nibabel.load.
     subject_in_patterns: int or list of int
         the folder level where the subject identifiers can be retrieved.
+    ico_order: int
+        the input data ico order.
     targets: str or list of str
         the dataset will also return these tabular data. A 'participants.tsv'
         file containing subject information (including the requested targets)
@@ -58,15 +60,15 @@ class GenericSurfDataset(Dataset):
         optionaly, keep only a subset of subjects (for debuging purposes).
     withdraw_subjects: list of str, default None
         optionaly, provide a list of subjects to remove from the dataset.
-    ico_order: int, default 7
-        the input data ico order.
-    target_ico_order: int, default 5
+    target_ico_order: int, default None
         the desired ico order (data will be downsample to this resolution).
+    size: int, default 3
+        the patch size.
     """
-    def __init__(self, root, patterns, subject_in_patterns, targets,
+    def __init__(self, root, patterns, subject_in_patterns, ico_order, targets,
                  target_mapping=None, split="train", transforms=None,
                  mask=None, contrastive=False, patch=False, n_max=None,
-                 withdraw_subjects=None, ico_order=7, target_ico_order=5):
+                 withdraw_subjects=None, target_ico_order=None, size=3):
 
         # Sanity
         if not isinstance(patterns, (list, tuple)):
@@ -90,12 +92,16 @@ class GenericSurfDataset(Dataset):
         self.root = root
         self.patterns = patterns
         self.n_modalities = len(patterns)
+        self.ico_order = ico_order
         self.targets = targets
         self.target_mapping = target_mapping
         self.split = split
         self.transforms = transforms
         self.mask = mask
         self.contrastive = contrastive
+        self.patch = patch
+        self.target_ico_order = target_ico_order
+        self.size = size
 
         # Load subjects / data location
         self.info_df = pd.read_csv(participant_file, sep="\t")
@@ -133,17 +139,17 @@ class GenericSurfDataset(Dataset):
         self.target = self._df[targets].values
 
         # Cache some parameters
-        if ico_order != target_ico_order:
+        if target_ico_order is not None:
             ico_verts, ico_tris = icosahedron(order=ico_order)
             target_ico_verts, target_ico_tris = icosahedron(
                 order=target_ico_order)
             self.down_indices = downsample(ico_verts, target_ico_verts)
         else:
             self.down_indices = None
-        if patch:
+        if self.patch:
             self.patch_indices = patch_tri(
-                order=ico_order, standard_ico=False,
-                size=(ico_order - target_ico_order), direct_neighbor=True)
+                order=target_ico_order, size=size, direct_neighbor=True,
+                n_jobs=-1)
 
     def sanitize_subject(self, subject):
         return subject.replace("sub-", "").split("_")[0]
@@ -151,25 +157,41 @@ class GenericSurfDataset(Dataset):
     def __repr__(self):
         return (f"{self.__class__.__name__}<split='{self.split}',"
                 f"modalities={self.n_modalities},targets={self.targets},"
-                f"contrastive={self.contrastive}>")
+                f"contrastive={self.contrastive},patch={self.patch}>")
 
     def __getitem__(self, idx):
+        """ Get an item of the dataset.
+
+        Paraemters
+        ----------
+        idx: int
+            the item location in the dataset.
+
+        Returns
+        -------
+        Xi: array (<n_patches>, 2|1, n_vertices)
+            the returned texture data (3d for patched data, 2d otherwise).
+        yi: array (n_aux, )
+            the returned auxiliary variables.
+        """
         data = []
         for path, trf in zip(self.data[idx], self.transforms):
             arr = nibabel.load(path).get_fdata().astype(np.float32).squeeze()
-            print(arr.shape)
             if self.mask is not None:
                 arr[np.where(self.mask == 0)] = 0
             if self.down_indices is not None:
                 arr = arr[self.down_indices]
-            print(arr.shape)
             arr = np.expand_dims(arr, axis=0)
             if self.contrastive:
                 assert trf is not None
                 arr = np.stack((trf(arr), trf(arr)), axis=0)
             elif trf is not None:
                 arr = trf(arr)
+            if self.patch:
+                arr = np.asarray([
+                    arr[:, indices] for indices in self.patch_indices])
             data.append(arr)
+
         return *data, *self.target[idx]
 
     def __len__(self):
