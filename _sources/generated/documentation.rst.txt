@@ -420,6 +420,8 @@ This is the classes and functions reference in surfify. Please refer to the gall
 
           `surfify.utils.coord.text2ico <surfify.utils.coord.text2ico.html>`_
 
+          `surfify.utils.sampling._patch_tri_iter <surfify.utils.sampling._patch_tri_iter.html>`_
+
           `surfify.utils.sampling.build_freesurfer_ico <surfify.utils.sampling.build_freesurfer_ico.html>`_
 
           `surfify.utils.sampling.build_fslr_ref <surfify.utils.sampling.build_fslr_ref.html>`_

@@ -158,83 +158,16 @@
                     <div class="document">
                         <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>This page is a reference documentation. It only explains the class signature, and not how to use it. Please refer to the <a class="reference internal" href="../auto_gallery/index.html#sphx-glr-auto-gallery"><span class="std std-ref">gallery</span></a> for the big picture.</p>
+<p>This page is a reference documentation. It only explains the function signature, and not how to use it. Please refer to the <a class="reference internal" href="../auto_gallery/index.html#sphx-glr-auto-gallery"><span class="std std-ref">gallery</span></a> for the big picture.</p>
 </div>
-<dl class="py class">
-<dt class="sig sig-object py" id="surfify.datasets._generic.GenericSurfDataset">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surfify.datasets._generic.</span></span><span class="sig-name descname"><span class="pre">GenericSurfDataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patterns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject_in_patterns</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ico_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_mapping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transforms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contrastive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">withdraw_subjects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_ico_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/surfify/datasets/_generic.html#GenericSurfDataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfify.datasets._generic.GenericSurfDataset" title="Link to this definition">¶</a></dt>
-<dd><p>A scalable neuroimaging dataset.</p>
-<dl class="field-list">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>root</strong> : str</p>
-<blockquote>
-<div><p>the location where are stored the data.</p>
-</div></blockquote>
-<p><strong>patterns</strong> : str or list of str</p>
-<blockquote>
-<div><p>the regex that can be used to retrieve the images of interest or any
-data that can be retrieved by nibabel.load.</p>
-</div></blockquote>
-<p><strong>subject_in_patterns</strong> : int or list of int</p>
-<blockquote>
-<div><p>the folder level where the subject identifiers can be retrieved.</p>
-</div></blockquote>
-<p><strong>ico_order</strong> : int</p>
-<blockquote>
-<div><p>the input data ico order.</p>
-</div></blockquote>
-<p><strong>targets</strong> : str or list of str</p>
-<blockquote>
-<div><p>the dataset will also return these tabular data. A ‘participants.tsv’
-file containing subject information (including the requested targets)
-is expected at the root.</p>
-</div></blockquote>
-<p><strong>target_mapping</strong> : dict, default None</p>
-<blockquote>
-<div><p>optionaly, define a dictionary specifying different replacement values
-for different existing values. See pandas DataFrame.replace
-documentation for more information.</p>
-</div></blockquote>
-<p><strong>split</strong> : str, default ‘train’</p>
-<blockquote>
-<div><p>define the split to be considered. A ‘&lt;split&gt;.tsv’ file containg the
-subject to include us expected at the root.</p>
-</div></blockquote>
-<p><strong>transforms</strong> : callable or list of callable, default None</p>
-<blockquote>
-<div><p>a function that can be called to augment the input images.</p>
-</div></blockquote>
-<p><strong>mask</strong> : array, default None</p>
-<blockquote>
-<div><p>optionnaly, mask the input image.</p>
-</div></blockquote>
-<p><strong>contrastive</strong> : bool, default False</p>
-<blockquote>
-<div><p>optionaly, create a contrastive dataset that will return a pair of
-augmented images.</p>
-</div></blockquote>
-<p><strong>patch</strong> : bool, default False</p>
-<blockquote>
-<div><p>optionaly, return triangular patches.</p>
-</div></blockquote>
-<p><strong>n_max</strong> : int, default None</p>
-<blockquote>
-<div><p>optionaly, keep only a subset of subjects (for debuging purposes).</p>
-</div></blockquote>
-<p><strong>withdraw_subjects</strong> : list of str, default None</p>
-<blockquote>
-<div><p>optionaly, provide a list of subjects to remove from the dataset.</p>
-</div></blockquote>
-<p><strong>target_ico_order</strong> : int, default None</p>
-<blockquote>
-<div><p>the desired ico order (data will be downsample to this resolution).</p>
-</div></blockquote>
-<p><strong>size</strong> : int, default 3</p>
-<blockquote>
-<div><p>the patch size.</p>
-</div></blockquote>
-</dd>
-</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="surfify.utils.sampling._patch_tri_iter">
+<span class="sig-prename descclassname"><span class="pre">surfify.utils.sampling.</span></span><span class="sig-name descname"><span class="pre">_patch_tri_iter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neigh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct_neighbor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/surfify/utils/sampling.html#_patch_tri_iter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfify.utils.sampling._patch_tri_iter" title="Link to this definition">¶</a></dt>
+<dd><p>Build a triangular patch from input triangle.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="surfify.utils.sampling.patch_tri.html#surfify.utils.sampling.patch_tri" title="surfify.utils.sampling.patch_tri"><code class="xref py py-obj docutils literal notranslate"><span class="pre">patch_tri</span></code></a></p>
+</div>
 </dd></dl>
 
 

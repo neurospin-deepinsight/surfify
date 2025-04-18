@@ -169,6 +169,7 @@ Search in API documentation of SURFIFY
         <li><a href='surfify.utils.sampling.order_triangles.html'>surfify.utils.order_triangles</a></li>
         <li><a href='surfify.utils.sampling.patch_tri.html'>surfify.utils.patch_tri</a></li>
         <li><a href='surfify.utils.sampling.rotate_data.html'>surfify.utils.rotate_data</a></li>
+        <li><a href='surfify.utils.sampling._patch_tri_iter.html'>surfify.utils.sampling._patch_tri_iter</a></li>
         <li><a href='surfify.utils.sampling.build_freesurfer_ico.html'>surfify.utils.sampling.build_freesurfer_ico</a></li>
         <li><a href='surfify.utils.sampling.build_fslr_ref.html'>surfify.utils.sampling.build_fslr_ref</a></li>
         <li><a href='surfify.utils.sampling.downsample.html'>surfify.utils.sampling.downsample</a></li>

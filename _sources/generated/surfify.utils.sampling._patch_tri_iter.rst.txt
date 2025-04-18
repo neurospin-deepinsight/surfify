@@ -6,9 +6,9 @@
 
     This page is a reference documentation. It only explains the function signature, and not how to use it. Please refer to the :ref:`gallery <sphx_glr_auto_gallery>` for the big picture.
 
-.. autofunction:: surfify.utils.sampling.min_depth_to_get_n_neighbors
+.. autofunction:: surfify.utils.sampling._patch_tri_iter
 
-.. minigallery:: surfify.utils.sampling.min_depth_to_get_n_neighbors surfify.utils.min_depth_to_get_n_neighbors
+.. minigallery:: surfify.utils.sampling._patch_tri_iter
     :add-heading: Examples
     :heading-level: -
 

@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:23.591** total execution time for 5 files **from all galleries**:
+**00:22.401** total execution time for 5 files **from all galleries**:
 
 .. container::
 
@@ -33,17 +33,17 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_auto_gallery_plot_augmentation.py` (``../examples/plot_augmentation.py``)
-     - 00:11.040
-     - 108.5
+     - 00:10.546
+     - 106.4
    * - :ref:`sphx_glr_auto_gallery_plot_unet_segmentation.py` (``../examples/plot_unet_segmentation.py``)
-     - 00:05.577
-     - 294.8
+     - 00:05.413
+     - 296.5
    * - :ref:`sphx_glr_auto_gallery_plot_match_icosahedron.py` (``../examples/plot_match_icosahedron.py``)
-     - 00:02.802
-     - 79.5
+     - 00:02.438
+     - 79.1
    * - :ref:`sphx_glr_auto_gallery_plot_spherical_neighbors.py` (``../examples/plot_spherical_neighbors.py``)
-     - 00:02.305
-     - 198.4
+     - 00:02.194
+     - 198.3
    * - :ref:`sphx_glr_auto_gallery_plot_project_texture.py` (``../examples/plot_project_texture.py``)
-     - 00:01.867
-     - 89.2
+     - 00:01.811
+     - 88.0

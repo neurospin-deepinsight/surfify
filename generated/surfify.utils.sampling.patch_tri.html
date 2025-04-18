@@ -162,12 +162,12 @@
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="surfify.utils.sampling.patch_tri">
-<span class="sig-prename descclassname"><span class="pre">surfify.utils.sampling.</span></span><span class="sig-name descname"><span class="pre">patch_tri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_ico</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'freesurfer'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct_neighbor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/surfify/utils/sampling.html#patch_tri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfify.utils.sampling.patch_tri" title="Link to this definition">¶</a></dt>
+<span class="sig-prename descclassname"><span class="pre">surfify.utils.sampling.</span></span><span class="sig-name descname"><span class="pre">patch_tri</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_ico</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct_neighbor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/surfify/utils/sampling.html#patch_tri"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfify.utils.sampling.patch_tri" title="Link to this definition">¶</a></dt>
 <dd><p>Build triangular patches that map the icosahedron.</p>
 <p>This is the base function for Vision Transformers.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>order</strong> : int, default 3</p>
+<dd class="field-odd"><p><strong>order</strong> : int, default 6</p>
 <blockquote>
 <div><p>the icosahedron order.</p>
 </div></blockquote>
@@ -176,17 +176,17 @@
 <div><p>optionally uses a standard icosahedron tessalation. FreeSurfer
 tesselation is used by default.</p>
 </div></blockquote>
-<p><strong>name</strong> : str, default ‘freesurfer’</p>
-<blockquote>
-<div><p>use pre-difined tesselations: freesurfer or fslr.</p>
-</div></blockquote>
-<p><strong>size</strong> : int, default 1</p>
+<p><strong>size</strong> : int, default 3</p>
 <blockquote>
 <div><p>the patch size.</p>
 </div></blockquote>
 <p><strong>direct_neighbor</strong> : bool, default False</p>
 <blockquote>
 <div><p>order patch vertices.</p>
+</div></blockquote>
+<p><strong>n_jobs</strong> : int, default 1</p>
+<blockquote>
+<div><p>the maximum number of concurrently running jobs.</p>
 </div></blockquote>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

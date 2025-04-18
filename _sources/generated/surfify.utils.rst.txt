@@ -65,6 +65,7 @@ Spherical sampling & associated utilities.
 .. rst-class:: documentation-contents
 
   **Functions**:
+    * `surfify.utils.sampling._patch_tri_iter <surfify.utils.sampling._patch_tri_iter.html>`_
     * `surfify.utils.sampling.build_freesurfer_ico <surfify.utils.sampling.build_freesurfer_ico.html>`_
     * `surfify.utils.sampling.build_fslr_ref <surfify.utils.sampling.build_fslr_ref.html>`_
     * `surfify.utils.sampling.downsample <surfify.utils.sampling.downsample.html>`_
