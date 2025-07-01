@@ -41,7 +41,8 @@ jobs:
     - name: Compute documentation
       run: |
         mkdir -p tmp/doc
-        sphinxdoc -v 2 -p . -n surfify -o tmp/doc
+        DIR=$(pwd)
+        sphinxdoc -v 2 -p . -n surfify -o $DIR/tmp/doc
         cd tmp/doc
         make raw-html
         ls source/_static
@@ -92,7 +93,8 @@ jobs:
     - name: Compute documentation
       run: |
         mkdir -p tmp/doc
-        sphinxdoc -v 2 -p . -n surfify -o tmp/doc
+        DIR=$(pwd)
+        sphinxdoc -v 2 -p . -n surfify -o $DIR/tmp/doc
         cd tmp/doc
         make raw-html
         ls source/_static
