@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
 ##########################################################################
-# NSAp - Copyright (C) CEA, 2021
+# NSAp - Copyright (C) CEA, 2021 - 2025
 # Distributed under the terms of the CeCILL-B license, as published by
 # the CEA-CNRS-INRIA. Refer to the LICENSE file or to
 # http://www.cecill.info/licences/Licence_CeCILL-B_V1-en.html
@@ -22,3 +21,5 @@ from .vgg import (
     SphericalVGG11BN, SphericalVGG13BN, SphericalVGG16BN, SphericalVGG19BN,
     SphericalGVGG11, SphericalGVGG13, SphericalGVGG16, SphericalGVGG19,
     SphericalGVGG11BN, SphericalGVGG13BN, SphericalGVGG16BN, SphericalGVGG19BN)
+from .sit import SiT
+from .simclr import SimCLR
