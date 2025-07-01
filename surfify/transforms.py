@@ -28,8 +28,9 @@ class RandomCompose:
             application order is mandatory.
         """
         transform_split = sorted([
-            int(name.split("_")[1]) for name in transforms
-             if name.startswith("transform_")])
+            int(name.split("_")[1])
+            for name in transforms if name.startswith("transform_")
+        ])
         probability_split = sorted([
             int(name.split("_")[1]) for name in transforms
             if name.startswith("probability_")])

@@ -51,8 +51,16 @@ surfify = [
     "resources/*.npz",
 ]
 
+
 [tool.ruff.lint]
+preview = true
 extend-select = [
+    "E225", # missing whitespace around operator
+    "E261", # at least two spaces before inline comment
+    "E222", # multiple spaces after operator
+    "W291", # trailing whitespace
+    "E501", # `line-too-long` rule
+    "W505", # doc-line-too-long
     "B",    # flake8-bugbear
     "C4",   # flake8-comprehensions
     "ISC",  # flake8-implicit-str-concat
@@ -85,14 +93,21 @@ ignore = [
     "RUF005",
     "RUF012",
     "FURB187",
-    "N803",  # Argument name `X` should be lowercase
+    "N803",    # Argument name should be lowercase
+    "RUF059",  # Unpacked variable is never used
+    "RUF052",  # Local dummy variable is accessed
+    "FURB118", # Use `operator.itemgetter` instead of defining a lambda
 
 ]
 
 [tool.ruff]
+line-length = 79
 extend-exclude = [
     "tests",
 ]
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 79
 
 [tool.ruff.lint.per-file-ignores]
 "*/__init__.py" = ["F401"]

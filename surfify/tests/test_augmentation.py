@@ -48,7 +48,7 @@ class TestAugmentation(unittest.TestCase):
         n_vertices = len(vertices)
         data = np.ones((n_vertices, ), dtype=int)
         processor = augment.SurfCutOut(
-            vertices, triangles, neighs=None, patch_size=3,
+            vertices=vertices, triangles=triangles, neighs=None, patch_size=3,
             n_patches=1, replacement_value=5)
         data_cut = processor(data)
         self.assertEqual(len(data), len(data_cut))
@@ -72,7 +72,7 @@ class TestAugmentation(unittest.TestCase):
         n_vertices = len(vertices)
         data = np.random.uniform(0, 1, n_vertices)
         processor = augment.SurfBlur(
-            vertices, triangles, sigma=2)
+            vertices=vertices, triangles=triangles, sigma=2)
         data_blur = processor(data)
         self.assertEqual(len(data), len(data_blur))
         self.assertTrue((data == data_blur).sum() < n_vertices)
@@ -110,7 +110,7 @@ class TestAugmentation(unittest.TestCase):
         data = np.random.uniform(0, 1, (5, n_vertices))
         transformer = augment.Transformer()
         processor1 = augment.SurfCutOut(
-            vertices, triangles, neighs=None, patch_size=3,
+            vertices=vertices, triangles=triangles, neighs=None, patch_size=3,
             n_patches=1, replacement_value=5, sigma=1)
         processor2 = augment.SurfNoise(sigma=3)
         transformer.register(processor1, probability=0.5)
@@ -127,7 +127,7 @@ class TestAugmentation(unittest.TestCase):
         data = np.random.uniform(0, 1, (7, n_vertices))
         MultiSurfBlur = augment.multichannel_augmentation(augment.SurfBlur)
         processor = MultiSurfBlur(
-            vertices, triangles, sigma=2)
+            vertices=vertices, triangles=triangles, sigma=2)
         data_blur = processor(data)
         self.assertEqual(len(data), len(data_blur))
         self.assertTrue((data == data_blur).sum() < 7 * n_vertices)

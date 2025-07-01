@@ -103,7 +103,7 @@ class SiT(nn.Module):
         Returns
         -------
         x: Tensor (n_samples, n_channels, n_patches, n_vertices)
-            the output data.        
+            the output data.
         """
         logger.debug("Rearange...")
         logger.debug(debug_msg("input", x))
@@ -162,7 +162,7 @@ class FeedForward(nn.Module):
 class Attention(nn.Module):
     def __init__(self, dim, heads=8, dim_head=64, dropout=0.):
         super().__init__()
-        inner_dim = dim_head *  heads
+        inner_dim = dim_head * heads
         project_out = not (heads == 1 and dim_head == dim)
         self.heads = heads
         self.scale = dim_head ** -0.5
@@ -197,7 +197,8 @@ class Transformer(nn.Module):
         self.layers = nn.ModuleList([])
         for _ in range(depth):
             self.layers.append(nn.ModuleList([
-                Attention(dim, heads=heads, dim_head=dim_head, dropout=dropout),
+                Attention(dim, heads=heads, dim_head=dim_head,
+                          dropout=dropout),
                 FeedForward(dim, mlp_dim, dropout=dropout)
             ]))
 

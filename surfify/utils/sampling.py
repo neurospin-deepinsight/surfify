@@ -568,10 +568,12 @@ def icosahedron(order=3, standard_ico=False):
                 v1 = middle_point(tri[0], tri[1], vertices, middle_point_cache)
                 v2 = middle_point(tri[1], tri[2], vertices, middle_point_cache)
                 v3 = middle_point(tri[2], tri[0], vertices, middle_point_cache)
-                subdiv.append([tri[0], v1, v3])
-                subdiv.append([tri[1], v2, v1])
-                subdiv.append([tri[2], v3, v2])
-                subdiv.append([v1, v2, v3])
+                subdiv.extend([
+                    [tri[0], v1, v3],
+                    [tri[1], v2, v1],
+                    [tri[2], v3, v2],
+                    [v1, v2, v3]
+                ])
             triangles = subdiv
         vertices = np.asarray(vertices)
         triangles = np.asarray(triangles)
@@ -688,10 +690,12 @@ def _patch_tri_iter(vertices, lower_vertices, tri, size, neigh,
             v1 = middle_point(_tri[0], _tri[1], _vertices)
             v2 = middle_point(_tri[1], _tri[2], _vertices)
             v3 = middle_point(_tri[2], _tri[0], _vertices)
-            subdiv.append([_tri[0], v1, v3])
-            subdiv.append([_tri[1], v2, v1])
-            subdiv.append([_tri[2], v3, v2])
-            subdiv.append([v1, v2, v3])
+            subdiv.extend([
+                [_tri[0], v1, v3],
+                [_tri[1], v2, v1],
+                [_tri[2], v3, v2],
+                [v1, v2, v3]
+            ])
         _triangles = subdiv
     locs = neigh.kneighbors(_vertices, return_distance=False)
     locs = np.unique(locs.squeeze())

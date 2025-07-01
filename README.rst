@@ -2,23 +2,23 @@
 
 |PythonVersion|_ |Coveralls|_ |Testing|_ |Pep8|_ |Doc|_ |PyPi|_
 
-.. |PythonVersion| image:: https://img.shields.io/badge/python-3.9%20%7C%203.8%20%7C%203.12-blue
-.. _PythonVersion: https://img.shields.io/badge/python-3.9%20%7C%203.8%20%7C%203.12-blue
+.. |PythonVersion| image:: https://img.shields.io/badge/python-3.9%20%7C%203.12-blue
+.. _PythonVersion: target:: https://img.shields.io/badge/python-3.9%20%7C%203.12-blue
 
 .. |Coveralls| image:: https://coveralls.io/repos/neurospin-deepinsight/surfify/badge.svg?branch=master&service=github
-.. _Coveralls: https://coveralls.io/github/neurospin-deepinsight/surfify
+.. _Coveralls: target:: https://coveralls.io/github/neurospin-deepinsight/surfify
 
 .. |Testing| image:: https://github.com/neurospin-deepinsight/surfify/actions/workflows/testing.yml/badge.svg
-.. _Testing: https://github.com/neurospin-deepinsight/surfify/actions
+.. _Testing: target:: https://github.com/neurospin-deepinsight/surfify/actions
 
 .. |Pep8| image:: https://github.com/neurospin-deepinsight/surfify/actions/workflows/pep8.yml/badge.svg
-.. _Pep8: https://github.com/neurospin-deepinsight/surfify/actions
+.. _Pep8: target:: https://github.com/neurospin-deepinsight/surfify/actions
 
 .. |Doc| image:: https://github.com/neurospin-deepinsight/surfify/actions/workflows/documentation.yml/badge.svg
-.. _Doc: http://neurospin-deepinsight.github.io/surfify
+.. _Doc: target:: http://neurospin-deepinsight.github.io/surfify
 
 .. |PyPi| image:: https://badge.fury.io/py/surfify.svg
-.. _PyPi: https://badge.fury.io/py/surfify
+.. _PyPi: target:: https://badge.fury.io/py/surfify
 
 
 surfify: Deep Learning Spherical Toolbox

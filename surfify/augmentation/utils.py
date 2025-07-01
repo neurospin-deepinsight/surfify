@@ -133,7 +133,7 @@ class BaseTransformer:
             parameters must be applied channel-wise.
         """
         trf = Transform(transform=transform, probability=probability,
-                             randomize_per_channel=randomize_per_channel)
+                        randomize_per_channel=randomize_per_channel)
         self.transforms.append(trf)
 
     @abc.abstractmethod

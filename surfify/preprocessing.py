@@ -42,8 +42,8 @@ class StandardScaler(_StandardScaler):
             If True, center the data before scaling.
             This does not work (and will raise an exception) when attempted on
             sparse matrices, because centering them entails building a dense
-            matrix which in common use cases is likely to be too large to fit in
-            memory.
+            matrix which in common use cases is likely to be too large to fit
+            in memory.
         with_std: bool, default=True
             If True, scale the data to unit variance (or equivalently,
             unit standard deviation).
