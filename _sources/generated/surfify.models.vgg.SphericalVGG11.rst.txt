@@ -8,6 +8,7 @@
 
 .. autoclass:: surfify.models.vgg.SphericalVGG11
      :members:
+     :show-inheritance:
 
 .. minigallery:: surfify.models.vgg.SphericalVGG11 surfify.models.SphericalVGG11
     :add-heading: Examples

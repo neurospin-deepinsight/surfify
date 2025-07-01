@@ -43,9 +43,9 @@
 					<i class="fas fa-arrow-left"></i>
 				</div>
 				
-				<div class="logo"">
+				<!-- <div class="logo"">
 					<h3><a href="../index.html">Sidebar Menu</a></h3>
-				</div>
+				</div> -->
 
                 <!-- info setup -->
                     <p class="doc-version">
@@ -78,10 +78,10 @@
 					<li>
 						<a href="search.html"><i class="fas fa-search"></i> Search</a>
 					</li>
-					<li>
+					<!-- <li>
 						<a href="https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx"><i class="fas fa-external-link-alt"></i> NeuroSpin webPage</a>
-					</li>
-					<li>
+					</li> -->
+					<!-- <li>
 						<a href="#otherSections" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle" role="button" aria-controls="otherSections">
 							<i class="fas fa-sync"></i>Sections Shortcuts
 						</a>
@@ -142,21 +142,21 @@
                             <li>API</li>
                             <li><a href="surfify.html">surfify</a></li><li><a href="surfify.augmentation.html">surfify.augmentation</a></li><li><a href="surfify.datasets.html">surfify.datasets</a></li><li><a href="surfify.losses.html">surfify.losses</a></li><li><a href="surfify.models.html">surfify.models</a></li><li><a href="surfify.nn.html">surfify.nn</a></li><li><a href="surfify.plotting.html">surfify.plotting</a></li><li><a href="surfify.utils.html">surfify.utils</a></li>
 						</ul>
-					</li>
+					</li> -->
 				</ul>
 				
                 <!-- go top page -->
-				<div class="to-top">
+				<!-- <div class="to-top">
 					<a class="btn btn-primary btn-customized-3" href="#" role="button">
 	                    <i class="fas fa-arrow-up"></i> Top
 	                </a>
-				</div>
+				</div> -->
 			
                 <!-- change color -->
-				<div class="dark-light-buttons">
+				<!-- <div class="dark-light-buttons">
 					<a class="btn btn-primary btn-customized-4 btn-customized-dark" href="#" role="button">Dark</a>
 					<a class="btn btn-primary btn-customized-4 btn-customized-light" href="#" role="button">Light</a>
-				</div>
+				</div> -->
 			
 			</nav>
 			<!-- End sidebar -->
@@ -194,7 +194,8 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="surfify.models.unet.SphericalUNet">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surfify.models.unet.</span></span><span class="sig-name descname"><span class="pre">SphericalUNet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">in_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_filts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'DiNe'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dine_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repa_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repa_zoom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dynamic_repa_zoom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">up_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'interp'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standard_ico</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cachedir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/surfify/models/unet.html#SphericalUNet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfify.models.unet.SphericalUNet" title="Link to this definition">¶</a></dt>
-<dd><p>The Spherical U-Net architecture.</p>
+<dd><p>Bases: <a class="reference internal" href="surfify.models.base.SphericalBase.html#surfify.models.base.SphericalBase" title="surfify.models.base.SphericalBase"><code class="xref py py-class docutils literal notranslate"><span class="pre">SphericalBase</span></code></a></p>
+<p>The Spherical U-Net architecture.</p>
 <p>The architecture is built upon specific spherical surface convolution,
 pooling, and transposed convolution modules. It has an encoder path and
 a decoder path, with a user-defined resolution steps. Different from the
@@ -304,7 +305,7 @@ and ‘zeropad’ for classical zero padding.</p>
 </dd></dl>
 
 <section id="examples">
-<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp'><span></span></div>
+<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp' style='margin-top: -20px;'><span></span></div>
 <div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer section-5-box wow fadeInUp" tooltip="Credit: A Grigis"><img alt="" src="../_images/sphx_glr_plot_unet_segmentation_thumb.png" />
 <p><a class="reference internal" href="../auto_gallery/plot_unet_segmentation.html#sphx-glr-auto-gallery-plot-unet-segmentation-py"><span class="std std-ref">UNet segmentation</span></a></p>
   <div class="sphx-glr-thumbnail-title">UNet segmentation</div>
@@ -325,7 +326,7 @@ and ‘zeropad’ for classical zero padding.</p>
 			                    	<a href="https://www.facebook.com/pages/NeuroSpin/171075046414933"><i class="fab fa-facebook-f"></i></a>
 									<a href="https://www.youtube.com/CEASaclay"><i class="fab fa-youtube"></i></a>
 									<a href="https://twitter.com/neurospin_91"><i class="fab fa-twitter"></i></a>
-									<a href="https://github.com/AGrigis/pysphinxdoc"><i class="fab fa-github"></i></a>
+									<a href="https://gaia.neurospin.fr"><i class="fa fa-link"></i></a>
                                     <p>&copy; 2025, 
 surfify developers
  <antoine.grigis@cea.fr></p>

@@ -8,6 +8,7 @@
 
 .. autoclass:: surfify.models.vae.HemiFusionEncoder
      :members:
+     :show-inheritance:
 
 .. minigallery:: surfify.models.vae.HemiFusionEncoder surfify.models.HemiFusionEncoder
     :add-heading: Examples

@@ -43,9 +43,9 @@
 					<i class="fas fa-arrow-left"></i>
 				</div>
 				
-				<div class="logo"">
+				<!-- <div class="logo"">
 					<h3><a href="../index.html">Sidebar Menu</a></h3>
-				</div>
+				</div> -->
 
                 <!-- info setup -->
                     <p class="doc-version">
@@ -78,10 +78,10 @@
 					<li>
 						<a href="../generated/search.html"><i class="fas fa-search"></i> Search</a>
 					</li>
-					<li>
+					<!-- <li>
 						<a href="https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx"><i class="fas fa-external-link-alt"></i> NeuroSpin webPage</a>
-					</li>
-					<li>
+					</li> -->
+					<!-- <li>
 						<a href="#otherSections" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle" role="button" aria-controls="otherSections">
 							<i class="fas fa-sync"></i>Sections Shortcuts
 						</a>
@@ -156,21 +156,21 @@
                             <li>API</li>
                             <li><a href="../generated/surfify.html">surfify</a></li><li><a href="../generated/surfify.augmentation.html">surfify.augmentation</a></li><li><a href="../generated/surfify.datasets.html">surfify.datasets</a></li><li><a href="../generated/surfify.losses.html">surfify.losses</a></li><li><a href="../generated/surfify.models.html">surfify.models</a></li><li><a href="../generated/surfify.nn.html">surfify.nn</a></li><li><a href="../generated/surfify.plotting.html">surfify.plotting</a></li><li><a href="../generated/surfify.utils.html">surfify.utils</a></li>
 						</ul>
-					</li>
+					</li> -->
 				</ul>
 				
                 <!-- go top page -->
-				<div class="to-top">
+				<!-- <div class="to-top">
 					<a class="btn btn-primary btn-customized-3" href="#" role="button">
 	                    <i class="fas fa-arrow-up"></i> Top
 	                </a>
-				</div>
+				</div> -->
 			
                 <!-- change color -->
-				<div class="dark-light-buttons">
+				<!-- <div class="dark-light-buttons">
 					<a class="btn btn-primary btn-customized-4 btn-customized-dark" href="#" role="button">Dark</a>
 					<a class="btn btn-primary btn-customized-4 btn-customized-light" href="#" role="button">Light</a>
-				</div>
+				</div> -->
 			
 			</nav>
 			<!-- End sidebar -->
@@ -207,7 +207,7 @@
 to download the full example code.</p>
 </div>
 <section class="sphx-glr-example-title" id="unet-segmentation">
-<span id="sphx-glr-auto-gallery-plot-unet-segmentation-py"></span><h1>UNet segmentation<a class="headerlink" href="#unet-segmentation" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp'><span></span></div>
+<span id="sphx-glr-auto-gallery-plot-unet-segmentation-py"></span><h1>UNet segmentation<a class="headerlink" href="#unet-segmentation" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp' style='margin-top: -20px;'><span></span></div>
 <p>Credit: A Grigis</p>
 <p>A simple example on how to use the SphericalUNet architecture on the
 classification dataset.</p>
@@ -223,7 +223,7 @@ classification dataset.</p>
 </pre></div>
 </div>
 <section id="inspect-dataset">
-<h2>Inspect dataset<a class="headerlink" href="#inspect-dataset" title="Link to this heading">¶</a><i class='fas fa-angle-right'></i></h2>
+<h2 style='border-bottom: 1px solid #d3dbd5'>Inspect dataset<a class="headerlink" href="#inspect-dataset" title="Link to this heading">¶</a></h2>
 <p>First we load the classification dataset (with 3 classes) and inspect the
 genrated labels.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">standard_ico</span> <span class="o">=</span> <span class="kc">True</span>
@@ -246,7 +246,7 @@ Data: (40, 3, 642) (642,)
 </div>
 </section>
 <section id="train-the-model">
-<h2>Train the model<a class="headerlink" href="#train-the-model" title="Link to this heading">¶</a><i class='fas fa-angle-right'></i></h2>
+<h2 style='border-bottom: 1px solid #d3dbd5'>Train the model<a class="headerlink" href="#train-the-model" title="Link to this heading">¶</a></h2>
 <p>We now train the SphericalUNet model using a CrossEntropy loss and a SGD
 optimizer. As it is obvious to segment the input classification dataset
 an accuracy of 100% is expected.</p>
@@ -291,53 +291,53 @@ an accuracy of 100% is expected.</p>
     <span class="mi">100</span> <span class="o">*</span> <span class="n">correct</span><span class="p">,</span> <span class="n">test_loss</span><span class="p">))</span>
 </pre></div>
 </div>
-<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>loss 0: 1.134707  [    0/   40]
-loss 0: 1.014813  [    5/   40]
-loss 0: 0.864763  [   10/   40]
-loss 0: 0.754588  [   15/   40]
-loss 0: 0.680471  [   20/   40]
-loss 0: 0.590075  [   25/   40]
-loss 0: 0.488082  [   30/   40]
-loss 0: 0.389534  [   35/   40]
-loss 5: 0.006665  [    0/   40]
-loss 5: 0.005701  [    5/   40]
-loss 5: 0.004468  [   10/   40]
-loss 5: 0.003258  [   15/   40]
-loss 5: 0.002416  [   20/   40]
-loss 5: 0.002094  [   25/   40]
-loss 5: 0.002181  [   30/   40]
-loss 5: 0.002428  [   35/   40]
-loss 10: 0.000070  [    0/   40]
-loss 10: 0.000060  [    5/   40]
-loss 10: 0.000055  [   10/   40]
-loss 10: 0.000051  [   15/   40]
-loss 10: 0.000049  [   20/   40]
-loss 10: 0.000047  [   25/   40]
-loss 10: 0.000046  [   30/   40]
-loss 10: 0.000045  [   35/   40]
-loss 15: 0.000023  [    0/   40]
-loss 15: 0.000019  [    5/   40]
-loss 15: 0.000016  [   10/   40]
-loss 15: 0.000013  [   15/   40]
-loss 15: 0.000011  [   20/   40]
-loss 15: 0.000009  [   25/   40]
-loss 15: 0.000007  [   30/   40]
-loss 15: 0.000006  [   35/   40]
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>loss 0: 1.133550  [    0/   40]
+loss 0: 0.845464  [    5/   40]
+loss 0: 0.677621  [   10/   40]
+loss 0: 0.552599  [   15/   40]
+loss 0: 0.472418  [   20/   40]
+loss 0: 0.402918  [   25/   40]
+loss 0: 0.333181  [   30/   40]
+loss 0: 0.265815  [   35/   40]
+loss 5: 0.005202  [    0/   40]
+loss 5: 0.004530  [    5/   40]
+loss 5: 0.003283  [   10/   40]
+loss 5: 0.001831  [   15/   40]
+loss 5: 0.001079  [   20/   40]
+loss 5: 0.001129  [   25/   40]
+loss 5: 0.001902  [   30/   40]
+loss 5: 0.003305  [   35/   40]
+loss 10: 0.000237  [    0/   40]
+loss 10: 0.000174  [    5/   40]
+loss 10: 0.000131  [   10/   40]
+loss 10: 0.000100  [   15/   40]
+loss 10: 0.000078  [   20/   40]
+loss 10: 0.000062  [   25/   40]
+loss 10: 0.000051  [   30/   40]
+loss 10: 0.000044  [   35/   40]
+loss 15: 0.000002  [    0/   40]
+loss 15: 0.000002  [    5/   40]
+loss 15: 0.000002  [   10/   40]
+loss 15: 0.000002  [   15/   40]
+loss 15: 0.000002  [   20/   40]
+loss 15: 0.000002  [   25/   40]
+loss 15: 0.000002  [   30/   40]
+loss 15: 0.000003  [   35/   40]
 Test Error:
- Accuracy: 100.0%, Avg loss: 0.000001
+ Accuracy: 100.0%, Avg loss: 0.000012
 </pre></div>
 </div>
 </section>
 <section id="inspect-the-predicted-labels">
-<h2>Inspect the predicted labels<a class="headerlink" href="#inspect-the-predicted-labels" title="Link to this heading">¶</a><i class='fas fa-angle-right'></i></h2>
+<h2 style='border-bottom: 1px solid #d3dbd5'>Inspect the predicted labels<a class="headerlink" href="#inspect-the-predicted-labels" title="Link to this heading">¶</a></h2>
 <p>Finally the predicted labels of the first sample are displayed. As expected
 they corresspond exactly to the ground truth.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><a href="../generated/surfify.plotting.plot_trisurf.html#surfify.plotting.plot_trisurf" title="surfify.plotting.plot_trisurf" class="sphx-glr-backref-module-surfify-plotting sphx-glr-backref-type-py-function"><span class="n">plotting</span><span class="o">.</span><span class="n">plot_trisurf</span></a><span class="p">(</span><span class="n">ico_vertices</span><span class="p">,</span> <span class="n">ico_triangles</span><span class="p">,</span> <span class="n">y_preds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">is_label</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_unet_segmentation_002.png" srcset="../_images/sphx_glr_plot_unet_segmentation_002.png" alt="plot unet segmentation" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.413 seconds)</p>
-<p><strong>Estimated memory usage:</strong>  297 MB</p>
+<img src="../_images/sphx_glr_plot_unet_segmentation_002.png" srcset="../_images/sphx_glr_plot_unet_segmentation_002.png" alt="plot unet segmentation" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 5.260 seconds)</p>
+<p><strong>Estimated memory usage:</strong>  295 MB</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-gallery-plot-unet-segmentation-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/32648f0ccf11c48108f31fafee8e2a92/plot_unet_segmentation.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">plot_unet_segmentation.ipynb</span></code></a></p>
@@ -368,7 +368,7 @@ they corresspond exactly to the ground truth.</p>
 			                    	<a href="https://www.facebook.com/pages/NeuroSpin/171075046414933"><i class="fab fa-facebook-f"></i></a>
 									<a href="https://www.youtube.com/CEASaclay"><i class="fab fa-youtube"></i></a>
 									<a href="https://twitter.com/neurospin_91"><i class="fab fa-twitter"></i></a>
-									<a href="https://github.com/AGrigis/pysphinxdoc"><i class="fab fa-github"></i></a>
+									<a href="https://gaia.neurospin.fr"><i class="fa fa-link"></i></a>
                                     <p>&copy; 2025, 
 surfify developers
  <antoine.grigis@cea.fr></p>

@@ -43,9 +43,9 @@
 					<i class="fas fa-arrow-left"></i>
 				</div>
 				
-				<div class="logo"">
+				<!-- <div class="logo"">
 					<h3><a href="../index.html">Sidebar Menu</a></h3>
-				</div>
+				</div> -->
 
                 <!-- info setup -->
                     <p class="doc-version">
@@ -78,10 +78,10 @@
 					<li>
 						<a href="search.html"><i class="fas fa-search"></i> Search</a>
 					</li>
-					<li>
+					<!-- <li>
 						<a href="https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx"><i class="fas fa-external-link-alt"></i> NeuroSpin webPage</a>
-					</li>
-					<li>
+					</li> -->
+					<!-- <li>
 						<a href="#otherSections" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle" role="button" aria-controls="otherSections">
 							<i class="fas fa-sync"></i>Sections Shortcuts
 						</a>
@@ -111,21 +111,21 @@
                             <li>API</li>
                             <li><a href="surfify.html">surfify</a></li><li><a href="surfify.augmentation.html">surfify.augmentation</a></li><li><a href="surfify.datasets.html">surfify.datasets</a></li><li><a href="surfify.losses.html">surfify.losses</a></li><li><a href="surfify.models.html">surfify.models</a></li><li><a href="surfify.nn.html">surfify.nn</a></li><li><a href="surfify.plotting.html">surfify.plotting</a></li><li><a href="surfify.utils.html">surfify.utils</a></li>
 						</ul>
-					</li>
+					</li> -->
 				</ul>
 				
                 <!-- go top page -->
-				<div class="to-top">
+				<!-- <div class="to-top">
 					<a class="btn btn-primary btn-customized-3" href="#" role="button">
 	                    <i class="fas fa-arrow-up"></i> Top
 	                </a>
-				</div>
+				</div> -->
 			
                 <!-- change color -->
-				<div class="dark-light-buttons">
+				<!-- <div class="dark-light-buttons">
 					<a class="btn btn-primary btn-customized-4 btn-customized-dark" href="#" role="button">Dark</a>
 					<a class="btn btn-primary btn-customized-4 btn-customized-light" href="#" role="button">Light</a>
-				</div>
+				</div> -->
 			
 			</nav>
 			<!-- End sidebar -->
@@ -157,7 +157,7 @@
                     
                     <div class="document">
                         <section id="api-documentation-of-surfify">
-<h1>API documentation of SURFIFY<a class="headerlink" href="#api-documentation-of-surfify" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp'><span></span></div>
+<h1>API documentation of <code class="docutils literal notranslate"><span class="pre">surfify</span></code><a class="headerlink" href="#api-documentation-of-surfify" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp' style='margin-top: -20px;'><span></span></div>
 <p>This is the classes and functions reference in surfify. Please refer to the gallery for further details, as the class and function raw specifications may not be enough to give full guidelines on their uses.</p>
 <!-- Block section -->
 
@@ -233,9 +233,8 @@ surfify.utils
 </div>
 </div><dl class="documentation-contents">
 <dt><strong>Contents</strong>:</dt><dd><ul>
-<li><p><a class="reference external" href="surfify.html">surfify</a></p></li>
 <li><dl>
-<dt><a class="reference external" href="surfify.augmentation.html">surfify.augmentation</a></dt><dd>
+<dt><a class="reference external" href="surfify.html">surfify</a></dt><dd>
 <script type="text/javascript">
     function showhide(element){
         if (!document.getElementById)
@@ -250,6 +249,29 @@ surfify.utils
 <a href="javascript:showhide(document.getElementById('hiddencodeblock1'))">
 [+ show/hide members]</a><br />
 <div id="hiddencodeblock1" style="display: none"><div class="admonition">
+<p><a class="reference external" href="surfify.transforms.RandomCompose.html">surfify.transforms.RandomCompose</a></p>
+<p><a class="reference external" href="surfify.preprocessing.StandardScaler.html">surfify.preprocessing.StandardScaler</a></p>
+</div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl>
+<dt><a class="reference external" href="surfify.augmentation.html">surfify.augmentation</a></dt><dd>
+<script type="text/javascript">
+    function showhide(element){
+        if (!document.getElementById)
+            return
+
+        if (element.style.display == "block")
+            element.style.display = "none"
+        else
+            element.style.display = "block"
+    };
+</script>
+<a href="javascript:showhide(document.getElementById('hiddencodeblock2'))">
+[+ show/hide members]</a><br />
+<div id="hiddencodeblock2" style="display: none"><div class="admonition">
 <p><a class="reference external" href="surfify.augmentation.utils.BaseTransformer.html">surfify.augmentation.BaseTransformer</a></p>
 <p><a class="reference external" href="surfify.augmentation.mixup.GroupMixUp.html">surfify.augmentation.GroupMixUp</a></p>
 <p><a class="reference external" href="surfify.augmentation.mixup.HemiMixUp.html">surfify.augmentation.HemiMixUp</a></p>
@@ -270,6 +292,7 @@ surfify.utils
 <p><a class="reference external" href="surfify.augmentation.mixup.MixUpAugmentation.html">surfify.augmentation.mixup.MixUpAugmentation</a></p>
 <p><a class="reference external" href="surfify.augmentation.utils.BaseTransformer.html">surfify.augmentation.utils.BaseTransformer</a></p>
 <p><a class="reference external" href="surfify.augmentation.utils.RandomAugmentation.html">surfify.augmentation.utils.RandomAugmentation</a></p>
+<p><a class="reference external" href="surfify.augmentation.utils.Transform.html">surfify.augmentation.utils.Transform</a></p>
 <p><a class="reference external" href="surfify.augmentation.utils.Transformer.html">surfify.augmentation.utils.Transformer</a></p>
 <p><a class="reference external" href="surfify.augmentation.utils.apply_chained_transforms.html">surfify.augmentation.utils.apply_chained_transforms</a></p>
 <p><a class="reference external" href="surfify.augmentation.utils.interval.html">surfify.augmentation.utils.interval</a></p>
@@ -293,9 +316,9 @@ surfify.utils
             element.style.display = "block"
     };
 </script>
-<a href="javascript:showhide(document.getElementById('hiddencodeblock2'))">
+<a href="javascript:showhide(document.getElementById('hiddencodeblock3'))">
 [+ show/hide members]</a><br />
-<div id="hiddencodeblock2" style="display: none"><div class="admonition">
+<div id="hiddencodeblock3" style="display: none"><div class="admonition">
 <p><a class="reference external" href="surfify.datasets._samples_generator.ClassificationDataset.html">surfify.datasets.ClassificationDataset</a></p>
 <p><a class="reference external" href="surfify.datasets._generic.GenericSurfDataset.html">surfify.datasets.GenericSurfDataset</a></p>
 <p><a class="reference external" href="surfify.datasets._samples_generator.make_classification.html">surfify.datasets.make_classification</a></p>
@@ -320,9 +343,9 @@ surfify.utils
             element.style.display = "block"
     };
 </script>
-<a href="javascript:showhide(document.getElementById('hiddencodeblock3'))">
+<a href="javascript:showhide(document.getElementById('hiddencodeblock4'))">
 [+ show/hide members]</a><br />
-<div id="hiddencodeblock3" style="display: none"><div class="admonition">
+<div id="hiddencodeblock4" style="display: none"><div class="admonition">
 <p><a class="reference external" href="surfify.losses.vae.SphericalVAELoss.html">surfify.losses.SphericalVAELoss</a></p>
 <p><a class="reference external" href="surfify.losses.vae.SphericalVAELoss.html">surfify.losses.vae.SphericalVAELoss</a></p>
 <p><a class="reference external" href="surfify.losses.vae.log_likelihood.html">surfify.losses.vae.log_likelihood</a></p>
@@ -344,11 +367,13 @@ surfify.utils
             element.style.display = "block"
     };
 </script>
-<a href="javascript:showhide(document.getElementById('hiddencodeblock4'))">
+<a href="javascript:showhide(document.getElementById('hiddencodeblock5'))">
 [+ show/hide members]</a><br />
-<div id="hiddencodeblock4" style="display: none"><div class="admonition">
+<div id="hiddencodeblock5" style="display: none"><div class="admonition">
 <p><a class="reference external" href="surfify.models.vae.HemiFusionDecoder.html">surfify.models.HemiFusionDecoder</a></p>
 <p><a class="reference external" href="surfify.models.vae.HemiFusionEncoder.html">surfify.models.HemiFusionEncoder</a></p>
+<p><a class="reference external" href="surfify.models.sit.SiT.html">surfify.models.SiT</a></p>
+<p><a class="reference external" href="surfify.models.simclr.SimCLR.html">surfify.models.SimCLR</a></p>
 <p><a class="reference external" href="surfify.models.base.SphericalBase.html">surfify.models.SphericalBase</a></p>
 <p><a class="reference external" href="surfify.models.unet.SphericalGUNet.html">surfify.models.SphericalGUNet</a></p>
 <p><a class="reference external" href="surfify.models.vgg.SphericalGVGG.html">surfify.models.SphericalGVGG</a></p>
@@ -373,6 +398,14 @@ surfify.utils
 <p><a class="reference external" href="surfify.models.vgg.SphericalVGG16BN.html">surfify.models.SphericalVGG16BN</a></p>
 <p><a class="reference external" href="surfify.models.vgg.SphericalVGG19.html">surfify.models.SphericalVGG19</a></p>
 <p><a class="reference external" href="surfify.models.vgg.SphericalVGG19BN.html">surfify.models.SphericalVGG19BN</a></p>
+<p><a class="reference external" href="surfify.models.base.Ico.html">surfify.models.base.Ico</a></p>
+<p><a class="reference external" href="surfify.models.base.SphericalBase.html">surfify.models.base.SphericalBase</a></p>
+<p><a class="reference external" href="surfify.models.vae.HemiFusionDecoder.html">surfify.models.vae.HemiFusionDecoder</a></p>
+<p><a class="reference external" href="surfify.models.vae.HemiFusionEncoder.html">surfify.models.vae.HemiFusionEncoder</a></p>
+<p><a class="reference external" href="surfify.models.vae.SphericalHemiFusionDecoder.html">surfify.models.vae.SphericalHemiFusionDecoder</a></p>
+<p><a class="reference external" href="surfify.models.vae.SphericalHemiFusionEncoder.html">surfify.models.vae.SphericalHemiFusionEncoder</a></p>
+<p><a class="reference external" href="surfify.models.vae.SphericalVAE.html">surfify.models.vae.SphericalVAE</a></p>
+<p><a class="reference external" href="surfify.models.vae.compute_output_dim.html">surfify.models.vae.compute_output_dim</a></p>
 <p><a class="reference external" href="surfify.models.vgg.SphericalGVGG.html">surfify.models.vgg.SphericalGVGG</a></p>
 <p><a class="reference external" href="surfify.models.vgg.SphericalGVGG11.html">surfify.models.vgg.SphericalGVGG11</a></p>
 <p><a class="reference external" href="surfify.models.vgg.SphericalGVGG11BN.html">surfify.models.vgg.SphericalGVGG11BN</a></p>
@@ -392,7 +425,11 @@ surfify.utils
 <p><a class="reference external" href="surfify.models.vgg.SphericalVGG19.html">surfify.models.vgg.SphericalVGG19</a></p>
 <p><a class="reference external" href="surfify.models.vgg.SphericalVGG19BN.html">surfify.models.vgg.SphericalVGG19BN</a></p>
 <p><a class="reference external" href="surfify.models.vgg.class_factory.html">surfify.models.vgg.class_factory</a></p>
-<p><a class="reference external" href="surfify.models.base.SphericalBase.html">surfify.models.base.SphericalBase</a></p>
+<p><a class="reference external" href="surfify.models.sit.Attention.html">surfify.models.sit.Attention</a></p>
+<p><a class="reference external" href="surfify.models.sit.FeedForward.html">surfify.models.sit.FeedForward</a></p>
+<p><a class="reference external" href="surfify.models.sit.SiT.html">surfify.models.sit.SiT</a></p>
+<p><a class="reference external" href="surfify.models.sit.Transformer.html">surfify.models.sit.Transformer</a></p>
+<p><a class="reference external" href="surfify.models.simclr.SimCLR.html">surfify.models.simclr.SimCLR</a></p>
 <p><a class="reference external" href="surfify.models.unet.DownBlock.html">surfify.models.unet.DownBlock</a></p>
 <p><a class="reference external" href="surfify.models.unet.DownGBlock.html">surfify.models.unet.DownGBlock</a></p>
 <p><a class="reference external" href="surfify.models.unet.GraphicalUNet.html">surfify.models.unet.GraphicalUNet</a></p>
@@ -400,12 +437,6 @@ surfify.utils
 <p><a class="reference external" href="surfify.models.unet.SphericalUNet.html">surfify.models.unet.SphericalUNet</a></p>
 <p><a class="reference external" href="surfify.models.unet.UpBlock.html">surfify.models.unet.UpBlock</a></p>
 <p><a class="reference external" href="surfify.models.unet.UpGBlock.html">surfify.models.unet.UpGBlock</a></p>
-<p><a class="reference external" href="surfify.models.vae.HemiFusionDecoder.html">surfify.models.vae.HemiFusionDecoder</a></p>
-<p><a class="reference external" href="surfify.models.vae.HemiFusionEncoder.html">surfify.models.vae.HemiFusionEncoder</a></p>
-<p><a class="reference external" href="surfify.models.vae.SphericalHemiFusionDecoder.html">surfify.models.vae.SphericalHemiFusionDecoder</a></p>
-<p><a class="reference external" href="surfify.models.vae.SphericalHemiFusionEncoder.html">surfify.models.vae.SphericalHemiFusionEncoder</a></p>
-<p><a class="reference external" href="surfify.models.vae.SphericalVAE.html">surfify.models.vae.SphericalVAE</a></p>
-<p><a class="reference external" href="surfify.models.vae.compute_output_dim.html">surfify.models.vae.compute_output_dim</a></p>
 </div>
 </div>
 </dd>
@@ -424,9 +455,9 @@ surfify.utils
             element.style.display = "block"
     };
 </script>
-<a href="javascript:showhide(document.getElementById('hiddencodeblock5'))">
+<a href="javascript:showhide(document.getElementById('hiddencodeblock6'))">
 [+ show/hide members]</a><br />
-<div id="hiddencodeblock5" style="display: none"><div class="admonition">
+<div id="hiddencodeblock6" style="display: none"><div class="admonition">
 <p><a class="reference external" href="surfify.nn.modules.IcoDiNeConv.html">surfify.nn.IcoDiNeConv</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoFixIndexUpSample.html">surfify.nn.IcoFixIndexUpSample</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoGenericUpConv.html">surfify.nn.IcoGenericUpConv</a></p>
@@ -437,6 +468,7 @@ surfify.utils
 <p><a class="reference external" href="surfify.nn.modules.IcoSpMaConvTranspose.html">surfify.nn.IcoSpMaConvTranspose</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoUpConv.html">surfify.nn.IcoUpConv</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoUpSample.html">surfify.nn.IcoUpSample</a></p>
+<p><a class="reference external" href="surfify.nn.functional.circular_pad.html">surfify.nn.functional.circular_pad</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoDiNeConv.html">surfify.nn.modules.IcoDiNeConv</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoFixIndexUpSample.html">surfify.nn.modules.IcoFixIndexUpSample</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoGenericUpConv.html">surfify.nn.modules.IcoGenericUpConv</a></p>
@@ -447,7 +479,6 @@ surfify.utils
 <p><a class="reference external" href="surfify.nn.modules.IcoSpMaConvTranspose.html">surfify.nn.modules.IcoSpMaConvTranspose</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoUpConv.html">surfify.nn.modules.IcoUpConv</a></p>
 <p><a class="reference external" href="surfify.nn.modules.IcoUpSample.html">surfify.nn.modules.IcoUpSample</a></p>
-<p><a class="reference external" href="surfify.nn.functional.circular_pad.html">surfify.nn.functional.circular_pad</a></p>
 </div>
 </div>
 </dd>
@@ -466,9 +497,9 @@ surfify.utils
             element.style.display = "block"
     };
 </script>
-<a href="javascript:showhide(document.getElementById('hiddencodeblock6'))">
+<a href="javascript:showhide(document.getElementById('hiddencodeblock7'))">
 [+ show/hide members]</a><br />
-<div id="hiddencodeblock6" style="display: none"><div class="admonition">
+<div id="hiddencodeblock7" style="display: none"><div class="admonition">
 <p><a class="reference external" href="surfify.plotting.surface.plot_trisurf.html">surfify.plotting.plot_trisurf</a></p>
 <p><a class="reference external" href="surfify.plotting.surface.plot_trisurf.html">surfify.plotting.surface.plot_trisurf</a></p>
 </div>
@@ -489,9 +520,9 @@ surfify.utils
             element.style.display = "block"
     };
 </script>
-<a href="javascript:showhide(document.getElementById('hiddencodeblock7'))">
+<a href="javascript:showhide(document.getElementById('hiddencodeblock8'))">
 [+ show/hide members]</a><br />
-<div id="hiddencodeblock7" style="display: none"><div class="admonition">
+<div id="hiddencodeblock8" style="display: none"><div class="admonition">
 <p><a class="reference external" href="surfify.utils.coord.cart2sph.html">surfify.utils.cart2sph</a></p>
 <p><a class="reference external" href="surfify.utils.debug_msg.html">surfify.utils.debug_msg</a></p>
 <p><a class="reference external" href="surfify.utils.sampling.downsample.html">surfify.utils.downsample</a></p>
@@ -526,6 +557,16 @@ surfify.utils
 <p><a class="reference external" href="surfify.utils.coord.sph2cart.html">surfify.utils.coord.sph2cart</a></p>
 <p><a class="reference external" href="surfify.utils.coord.text2grid.html">surfify.utils.coord.text2grid</a></p>
 <p><a class="reference external" href="surfify.utils.coord.text2ico.html">surfify.utils.coord.text2ico</a></p>
+<p><a class="reference external" href="surfify.utils.io.HidePrints.html">surfify.utils.io.HidePrints</a></p>
+<p><a class="reference external" href="surfify.utils.io.compute_and_store.html">surfify.utils.io.compute_and_store</a></p>
+<p><a class="reference external" href="surfify.utils.io.decompose_cifti.html">surfify.utils.io.decompose_cifti</a></p>
+<p><a class="reference external" href="surfify.utils.io.read_freesurfer.html">surfify.utils.io.read_freesurfer</a></p>
+<p><a class="reference external" href="surfify.utils.io.read_gifti.html">surfify.utils.io.read_gifti</a></p>
+<p><a class="reference external" href="surfify.utils.io.surf_data_from_cifti.html">surfify.utils.io.surf_data_from_cifti</a></p>
+<p><a class="reference external" href="surfify.utils.io.ungzip.html">surfify.utils.io.ungzip</a></p>
+<p><a class="reference external" href="surfify.utils.io.volume_from_cifti.html">surfify.utils.io.volume_from_cifti</a></p>
+<p><a class="reference external" href="surfify.utils.io.write_freesurfer.html">surfify.utils.io.write_freesurfer</a></p>
+<p><a class="reference external" href="surfify.utils.io.write_gifti.html">surfify.utils.io.write_gifti</a></p>
 <p><a class="reference external" href="surfify.utils.sampling._patch_tri_iter.html">surfify.utils.sampling._patch_tri_iter</a></p>
 <p><a class="reference external" href="surfify.utils.sampling.build_freesurfer_ico.html">surfify.utils.sampling.build_freesurfer_ico</a></p>
 <p><a class="reference external" href="surfify.utils.sampling.build_fslr_ref.html">surfify.utils.sampling.build_fslr_ref</a></p>
@@ -552,16 +593,6 @@ surfify.utils
 <p><a class="reference external" href="surfify.utils.sampling.rotate_data.html">surfify.utils.sampling.rotate_data</a></p>
 <p><a class="reference external" href="surfify.utils.sampling.triangles_to_edges.html">surfify.utils.sampling.triangles_to_edges</a></p>
 <p><a class="reference external" href="surfify.utils.sampling.vertex_adjacency_graph.html">surfify.utils.sampling.vertex_adjacency_graph</a></p>
-<p><a class="reference external" href="surfify.utils.io.HidePrints.html">surfify.utils.io.HidePrints</a></p>
-<p><a class="reference external" href="surfify.utils.io.compute_and_store.html">surfify.utils.io.compute_and_store</a></p>
-<p><a class="reference external" href="surfify.utils.io.decompose_cifti.html">surfify.utils.io.decompose_cifti</a></p>
-<p><a class="reference external" href="surfify.utils.io.read_freesurfer.html">surfify.utils.io.read_freesurfer</a></p>
-<p><a class="reference external" href="surfify.utils.io.read_gifti.html">surfify.utils.io.read_gifti</a></p>
-<p><a class="reference external" href="surfify.utils.io.surf_data_from_cifti.html">surfify.utils.io.surf_data_from_cifti</a></p>
-<p><a class="reference external" href="surfify.utils.io.ungzip.html">surfify.utils.io.ungzip</a></p>
-<p><a class="reference external" href="surfify.utils.io.volume_from_cifti.html">surfify.utils.io.volume_from_cifti</a></p>
-<p><a class="reference external" href="surfify.utils.io.write_freesurfer.html">surfify.utils.io.write_freesurfer</a></p>
-<p><a class="reference external" href="surfify.utils.io.write_gifti.html">surfify.utils.io.write_gifti</a></p>
 </div>
 </div>
 </dd>
@@ -587,7 +618,7 @@ surfify.utils
 			                    	<a href="https://www.facebook.com/pages/NeuroSpin/171075046414933"><i class="fab fa-facebook-f"></i></a>
 									<a href="https://www.youtube.com/CEASaclay"><i class="fab fa-youtube"></i></a>
 									<a href="https://twitter.com/neurospin_91"><i class="fab fa-twitter"></i></a>
-									<a href="https://github.com/AGrigis/pysphinxdoc"><i class="fab fa-github"></i></a>
+									<a href="https://gaia.neurospin.fr"><i class="fa fa-link"></i></a>
                                     <p>&copy; 2025, 
 surfify developers
  <antoine.grigis@cea.fr></p>

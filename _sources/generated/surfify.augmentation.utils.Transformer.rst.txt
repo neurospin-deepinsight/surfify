@@ -8,8 +8,9 @@
 
 .. autoclass:: surfify.augmentation.utils.Transformer
      :members:
+     :show-inheritance:
 
-.. minigallery:: surfify.augmentation.Transformer surfify.augmentation.utils.Transformer
+.. minigallery:: surfify.augmentation.utils.Transformer surfify.augmentation.Transformer
     :add-heading: Examples
     :heading-level: -
 

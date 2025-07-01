@@ -43,9 +43,9 @@
 					<i class="fas fa-arrow-left"></i>
 				</div>
 				
-				<div class="logo"">
+				<!-- <div class="logo"">
 					<h3><a href="../index.html">Sidebar Menu</a></h3>
-				</div>
+				</div> -->
 
                 <!-- info setup -->
                     <p class="doc-version">
@@ -78,10 +78,10 @@
 					<li>
 						<a href="search.html"><i class="fas fa-search"></i> Search</a>
 					</li>
-					<li>
+					<!-- <li>
 						<a href="https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx"><i class="fas fa-external-link-alt"></i> NeuroSpin webPage</a>
-					</li>
-					<li>
+					</li> -->
+					<!-- <li>
 						<a href="#otherSections" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle" role="button" aria-controls="otherSections">
 							<i class="fas fa-sync"></i>Sections Shortcuts
 						</a>
@@ -94,54 +94,6 @@
                                         
                                         
                                         
-                                    
-                                        
-                                        
-                                        
-                                    
-                                        
-                                        
-                                        
-                                            
-                                            
-                                    
-                                        
-                                        
-                                        
-                                            
-                                            
-                                    
-                                
-                                    
-                                        
-                                        
-                                        
-                                    
-                                        
-                                        
-                                        
-                                            
-                                            
-                                    
-                                
-                                    
-                                        
-                                        
-                                        
-                                    
-                                        
-                                        
-                                        
-                                            
-                                            
-                                    
-                                
-                                    
-                                        
-                                        
-                                        
-                                    
-                                
                                     
                                         
                                         
@@ -181,14 +133,6 @@
                                 
                                     <li>SECTIONS</li>
                                     
-						                <li> <a href='#surfify.augmentation.utils.BaseTransformer.Transform'>Basetransformer.transform</a> </li>                                    
-                                    
-						                <li> <a href='#surfify.augmentation.utils.BaseTransformer.Transform.probability'>Basetransformer.transform.probability</a> </li>                                    
-                                    
-						                <li> <a href='#surfify.augmentation.utils.BaseTransformer.Transform.randomize_per_channel'>Basetransformer.transform.randomize_per_channel</a> </li>                                    
-                                    
-						                <li> <a href='#surfify.augmentation.utils.BaseTransformer.Transform.transform'>Basetransformer.transform.transform</a> </li>                                    
-                                    
 						                <li> <a href='#surfify.augmentation.utils.BaseTransformer.register'>Basetransformer.register()</a> </li>                                    
                                     
 						                <li> <a href='#examples'>Examples</a> </li>                                    
@@ -198,21 +142,21 @@
                             <li>API</li>
                             <li><a href="surfify.html">surfify</a></li><li><a href="surfify.augmentation.html">surfify.augmentation</a></li><li><a href="surfify.datasets.html">surfify.datasets</a></li><li><a href="surfify.losses.html">surfify.losses</a></li><li><a href="surfify.models.html">surfify.models</a></li><li><a href="surfify.nn.html">surfify.nn</a></li><li><a href="surfify.plotting.html">surfify.plotting</a></li><li><a href="surfify.utils.html">surfify.utils</a></li>
 						</ul>
-					</li>
+					</li> -->
 				</ul>
 				
                 <!-- go top page -->
-				<div class="to-top">
+				<!-- <div class="to-top">
 					<a class="btn btn-primary btn-customized-3" href="#" role="button">
 	                    <i class="fas fa-arrow-up"></i> Top
 	                </a>
-				</div>
+				</div> -->
 			
                 <!-- change color -->
-				<div class="dark-light-buttons">
+				<!-- <div class="dark-light-buttons">
 					<a class="btn btn-primary btn-customized-4 btn-customized-dark" href="#" role="button">Dark</a>
 					<a class="btn btn-primary btn-customized-4 btn-customized-light" href="#" role="button">Light</a>
-				</div>
+				</div> -->
 			
 			</nav>
 			<!-- End sidebar -->
@@ -250,32 +194,9 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="surfify.augmentation.utils.BaseTransformer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">surfify.augmentation.utils.</span></span><span class="sig-name descname"><span class="pre">BaseTransformer</span></span><a class="reference internal" href="../_modules/surfify/augmentation/utils.html#BaseTransformer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfify.augmentation.utils.BaseTransformer" title="Link to this definition">¶</a></dt>
-<dd><p>Class that can be used to register a sequence of transformations.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class that can be used to register a sequence of transformations.</p>
 <p>Init class.</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="surfify.augmentation.utils.BaseTransformer.Transform">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probability</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomize_per_channel</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#surfify.augmentation.utils.BaseTransformer.Transform" title="Link to this definition">¶</a></dt>
-<dd><p>Create new instance of Transform(transform, probability, randomize_per_channel)</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="surfify.augmentation.utils.BaseTransformer.Transform.probability">
-<span class="sig-name descname"><span class="pre">probability</span></span><a class="headerlink" href="#surfify.augmentation.utils.BaseTransformer.Transform.probability" title="Link to this definition">¶</a></dt>
-<dd><p>Alias for field number 1</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="surfify.augmentation.utils.BaseTransformer.Transform.randomize_per_channel">
-<span class="sig-name descname"><span class="pre">randomize_per_channel</span></span><a class="headerlink" href="#surfify.augmentation.utils.BaseTransformer.Transform.randomize_per_channel" title="Link to this definition">¶</a></dt>
-<dd><p>Alias for field number 2</p>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="surfify.augmentation.utils.BaseTransformer.Transform.transform">
-<span class="sig-name descname"><span class="pre">transform</span></span><a class="headerlink" href="#surfify.augmentation.utils.BaseTransformer.Transform.transform" title="Link to this definition">¶</a></dt>
-<dd><p>Alias for field number 0</p>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="surfify.augmentation.utils.BaseTransformer.register">
 <span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">probability</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomize_per_channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/surfify/augmentation/utils.html#BaseTransformer.register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#surfify.augmentation.utils.BaseTransformer.register" title="Link to this definition">¶</a></dt>
@@ -302,7 +223,7 @@ parameters must be applied channel-wise.</p>
 </dd></dl>
 
 <section id="examples">
-<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp'><span></span></div>
+<h1>Examples<a class="headerlink" href="#examples" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp' style='margin-top: -20px;'><span></span></div>
 <div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer section-5-box wow fadeInUp" tooltip="Credit: A Grigis &amp; C Ambroise"><img alt="" src="../_images/sphx_glr_plot_augmentation_thumb.png" />
 <p><a class="reference internal" href="../auto_gallery/plot_augmentation.html#sphx-glr-auto-gallery-plot-augmentation-py"><span class="std std-ref">Spherical augmentations</span></a></p>
   <div class="sphx-glr-thumbnail-title">Spherical augmentations</div>
@@ -323,7 +244,7 @@ parameters must be applied channel-wise.</p>
 			                    	<a href="https://www.facebook.com/pages/NeuroSpin/171075046414933"><i class="fab fa-facebook-f"></i></a>
 									<a href="https://www.youtube.com/CEASaclay"><i class="fab fa-youtube"></i></a>
 									<a href="https://twitter.com/neurospin_91"><i class="fab fa-twitter"></i></a>
-									<a href="https://github.com/AGrigis/pysphinxdoc"><i class="fab fa-github"></i></a>
+									<a href="https://gaia.neurospin.fr"><i class="fa fa-link"></i></a>
                                     <p>&copy; 2025, 
 surfify developers
  <antoine.grigis@cea.fr></p>

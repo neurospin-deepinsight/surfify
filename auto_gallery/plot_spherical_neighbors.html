@@ -43,9 +43,9 @@
 					<i class="fas fa-arrow-left"></i>
 				</div>
 				
-				<div class="logo"">
+				<!-- <div class="logo"">
 					<h3><a href="../index.html">Sidebar Menu</a></h3>
-				</div>
+				</div> -->
 
                 <!-- info setup -->
                     <p class="doc-version">
@@ -78,10 +78,10 @@
 					<li>
 						<a href="../generated/search.html"><i class="fas fa-search"></i> Search</a>
 					</li>
-					<li>
+					<!-- <li>
 						<a href="https://joliot.cea.fr/drf/joliot/Pages/Entites_de_recherche/NeuroSpin.aspx"><i class="fas fa-external-link-alt"></i> NeuroSpin webPage</a>
-					</li>
-					<li>
+					</li> -->
+					<!-- <li>
 						<a href="#otherSections" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle" role="button" aria-controls="otherSections">
 							<i class="fas fa-sync"></i>Sections Shortcuts
 						</a>
@@ -142,21 +142,21 @@
                             <li>API</li>
                             <li><a href="../generated/surfify.html">surfify</a></li><li><a href="../generated/surfify.augmentation.html">surfify.augmentation</a></li><li><a href="../generated/surfify.datasets.html">surfify.datasets</a></li><li><a href="../generated/surfify.losses.html">surfify.losses</a></li><li><a href="../generated/surfify.models.html">surfify.models</a></li><li><a href="../generated/surfify.nn.html">surfify.nn</a></li><li><a href="../generated/surfify.plotting.html">surfify.plotting</a></li><li><a href="../generated/surfify.utils.html">surfify.utils</a></li>
 						</ul>
-					</li>
+					</li> -->
 				</ul>
 				
                 <!-- go top page -->
-				<div class="to-top">
+				<!-- <div class="to-top">
 					<a class="btn btn-primary btn-customized-3" href="#" role="button">
 	                    <i class="fas fa-arrow-up"></i> Top
 	                </a>
-				</div>
+				</div> -->
 			
                 <!-- change color -->
-				<div class="dark-light-buttons">
+				<!-- <div class="dark-light-buttons">
 					<a class="btn btn-primary btn-customized-4 btn-customized-dark" href="#" role="button">Dark</a>
 					<a class="btn btn-primary btn-customized-4 btn-customized-light" href="#" role="button">Light</a>
-				</div>
+				</div> -->
 			
 			</nav>
 			<!-- End sidebar -->
@@ -193,7 +193,7 @@
 to download the full example code.</p>
 </div>
 <section class="sphx-glr-example-title" id="spherical-neighbors">
-<span id="sphx-glr-auto-gallery-plot-spherical-neighbors-py"></span><h1>Spherical neighbors<a class="headerlink" href="#spherical-neighbors" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp'><span></span></div>
+<span id="sphx-glr-auto-gallery-plot-spherical-neighbors-py"></span><h1>Spherical neighbors<a class="headerlink" href="#spherical-neighbors" title="Link to this heading">¶</a></h1><div class='divider-1 wow fadeInUp' style='margin-top: -20px;'><span></span></div>
 <p>Credit: A Grigis</p>
 <p>A simple example on how to build spherical neighbors using an icosahedron.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
@@ -202,7 +202,7 @@ to download the full example code.</p>
 </pre></div>
 </div>
 <section id="direct-neighbor">
-<h2>Direct Neighbor<a class="headerlink" href="#direct-neighbor" title="Link to this heading">¶</a><i class='fas fa-angle-right'></i></h2>
+<h2 style='border-bottom: 1px solid #d3dbd5'>Direct Neighbor<a class="headerlink" href="#direct-neighbor" title="Link to this heading">¶</a></h2>
 <p>Display direct neighbors for some vertices.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">vertices</span><span class="p">,</span> <span class="n">triangles</span> <span class="o">=</span> <a href="../generated/surfify.utils.icosahedron.html#surfify.utils.icosahedron" title="surfify.utils.icosahedron" class="sphx-glr-backref-module-surfify-utils sphx-glr-backref-type-py-function"><span class="n">icosahedron</span></a><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 <span class="n">neighs</span> <span class="o">=</span> <a href="../generated/surfify.utils.neighbors.html#surfify.utils.neighbors" title="surfify.utils.neighbors" class="sphx-glr-backref-module-surfify-utils sphx-glr-backref-type-py-function"><span class="n">neighbors</span></a><span class="p">(</span><span class="n">vertices</span><span class="p">,</span> <span class="n">triangles</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">direct_neighbor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -220,7 +220,7 @@ to download the full example code.</p>
 </div>
 <img src="../_images/sphx_glr_plot_spherical_neighbors_001.png" srcset="../_images/sphx_glr_plot_spherical_neighbors_001.png" alt="plot spherical neighbors" class = "sphx-glr-single-img"/></section>
 <section id="rectagular-tangent-plane-neighbor">
-<h2>Rectagular Tangent Plane Neighbor<a class="headerlink" href="#rectagular-tangent-plane-neighbor" title="Link to this heading">¶</a><i class='fas fa-angle-right'></i></h2>
+<h2 style='border-bottom: 1px solid #d3dbd5'>Rectagular Tangent Plane Neighbor<a class="headerlink" href="#rectagular-tangent-plane-neighbor" title="Link to this heading">¶</a></h2>
 <p>Display 3x3 rectangular tangent plane neighbors for some vertices and
 the associated projection on the sphere.</p>
 <div class="highlight-Python notranslate"><div class="highlight"><pre><span></span><span class="n">zoom</span> <span class="o">=</span> <span class="mi">2</span>
@@ -248,7 +248,7 @@ the associated projection on the sphere.</p>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_spherical_neighbors_002.png" srcset="../_images/sphx_glr_plot_spherical_neighbors_002.png" alt="plot spherical neighbors" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 2.194 seconds)</p>
+<img src="../_images/sphx_glr_plot_spherical_neighbors_002.png" srcset="../_images/sphx_glr_plot_spherical_neighbors_002.png" alt="plot spherical neighbors" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 2.280 seconds)</p>
 <p><strong>Estimated memory usage:</strong>  198 MB</p>
 <div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-gallery-plot-spherical-neighbors-py">
 <div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
@@ -280,7 +280,7 @@ the associated projection on the sphere.</p>
 			                    	<a href="https://www.facebook.com/pages/NeuroSpin/171075046414933"><i class="fab fa-facebook-f"></i></a>
 									<a href="https://www.youtube.com/CEASaclay"><i class="fab fa-youtube"></i></a>
 									<a href="https://twitter.com/neurospin_91"><i class="fab fa-twitter"></i></a>
-									<a href="https://github.com/AGrigis/pysphinxdoc"><i class="fab fa-github"></i></a>
+									<a href="https://gaia.neurospin.fr"><i class="fa fa-link"></i></a>
                                     <p>&copy; 2025, 
 surfify developers
  <antoine.grigis@cea.fr></p>
