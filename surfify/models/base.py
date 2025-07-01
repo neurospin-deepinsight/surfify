@@ -24,6 +24,9 @@ from ..nn import IcoDiNeConv, IcoRePaConv, IcoPool
 
 # Global parameters
 logger = get_logger()
+Ico = namedtuple("Ico", ["order", "vertices", "triangles",
+                         "neighbor_indices", "down_indices", "up_indices",
+                         "conv_neighbor_indices"])
 
 
 class SphericalBase(nn.Module):
@@ -38,10 +41,6 @@ class SphericalBase(nn.Module):
     >>> ico_info = SphericalBase.build_ico_info(input_order=3, n_layers=2)
     >>> print(ico_info.keys())
     """
-    Ico = namedtuple("Ico", ["order", "vertices", "triangles",
-                             "neighbor_indices", "down_indices", "up_indices",
-                             "conv_neighbor_indices"])
-
     def __init__(self, input_order, n_layers, conv_mode="DiNe",
                  dine_size=1, repa_size=5, repa_zoom=5,
                  dynamic_repa_zoom=False, standard_ico=False, cachedir=None):
@@ -186,7 +185,7 @@ class SphericalBase(nn.Module):
                 conv_neighs = (conv_neighs, conv_weights)
             else:
                 raise ValueError("Unexptected convolution mode.")
-            ico[order] = cls.Ico(
+            ico[order] = Ico(
                 order=order, vertices=vertices, triangles=triangles,
                 neighbor_indices=neighs, down_indices=None, up_indices=None,
                 conv_neighbor_indices=conv_neighs)

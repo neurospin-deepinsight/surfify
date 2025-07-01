@@ -85,6 +85,8 @@ ignore = [
     "RUF005",
     "RUF012",
     "FURB187",
+    "N803",  # Argument name `X` should be lowercase
+
 ]
 
 [tool.ruff]

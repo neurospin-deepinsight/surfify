@@ -18,7 +18,7 @@ import itertools
 import numpy as np
 import torch
 from surfify.utils import (
-    neighbors, rotate_data, find_rotation_interpol_coefs)
+    neighbors, rotate_data, find_rotation_interpol_coefs, icosahedron)
 from surfify.nn import IcoDiNeConv
 from surfify.utils.io import compute_and_store
 from .utils import RandomAugmentation
@@ -32,15 +32,18 @@ class SurfCutOut(RandomAugmentation):
     --------
     surfify.utils.neighbors
     """
-    def __init__(self, vertices, triangles, neighs=None, patch_size=3,
-                 n_patches=1, sigma=0, replacement_value=0, cachedir=None):
+    def __init__(self, ico_order=None, vertices=None, triangles=None,
+                 neighs=None, patch_size=3, n_patches=1, sigma=0,
+                 replacement_value=0, cachedir=None):
         """ Init class.
 
         Parameters
         ----------
-        vertices: array (N, 3)
+        ico_order: int, default None
+            the ico order to work with.
+        vertices: array (N, 3), default None
             icosahedron's vertices.
-        triangles: array (M, 3)
+        triangles: array (M, 3), default None
             icosahdron's triangles.
         neighs: dict, default None
             optionnaly specify the DiNe neighboors of each vertex as build
@@ -63,14 +66,20 @@ class SurfCutOut(RandomAugmentation):
         super().__init__()
         memory = Memory(cachedir, verbose=0)
         neighbors_cached = memory.cache(neighbors)
-        self.vertices = vertices
-        self.triangles = triangles
+        if vertices is not None and triangles is not None:
+            self.vertices = vertices
+            self.triangles = triangles
+        elif ico_order is not None:
+            self.vertices, self.triangles = icosahedron(ico_order)
+        else:
+            raise ValueError("You must specify the 'ico_order' or the "
+                             "'vertices' and 'triangles' parameters!")
         max_depth = patch_size
         if isinstance(patch_size, RandomAugmentation.Interval):
             max_depth = patch_size.high
         if neighs is None or type(neighs[0]) is not dict:
             self.neighs = neighbors_cached(
-                vertices, triangles, depth=max_depth)
+                self.vertices, self.triangles, depth=max_depth)
         else:
             self.neighs = neighs
         self.patch_size = patch_size
@@ -156,17 +165,20 @@ class SurfBlur(RandomAugmentation):
     --------
     surfify.utils.neighbors, surfify.nn.modules.IcoDiNeConv
     """
-    def __init__(self, vertices, triangles, sigma, neighs=None, cachedir=None):
+    def __init__(self, sigma, ico_order=None, vertices=None, triangles=None,
+                 neighs=None, cachedir=None):
         """ Init class.
 
         Parameters
         ----------
-        vertices: array (N, 3)
-            icosahedron's vertices.
-        triangles: array (M, 3)
-            icosahdron's triangles.
         sigma: float
             sigma parameter of the gaussian filter.
+        ico_order: int, default None
+            the ico order to work with.
+        vertices: array (N, 3), default None
+            icosahedron's vertices.
+        triangles: array (M, 3), default None
+            icosahdron's triangles.
         neighs: dict, default None
             optionnaly specify the DiNe neighboors of each vertex as build
             with `sufify.utils.neighbors`, ie. a dictionary with vertices row
@@ -178,16 +190,23 @@ class SurfBlur(RandomAugmentation):
         super().__init__()
         memory = Memory(cachedir, verbose=0)
         neighbors_cached = memory.cache(neighbors)
-        self.vertices = vertices
-        self.triangles = triangles
+        if vertices is not None and triangles is not None:
+            self.vertices = vertices
+            self.triangles = triangles
+        elif ico_order is not None:
+            self.vertices, self.triangles = icosahedron(ico_order)
+        else:
+            raise ValueError("You must specify the 'ico_order' or the "
+                             "'vertices' and 'triangles' parameters!")
         self.sigma = sigma
         max_sigma = sigma
         if isinstance(sigma, RandomAugmentation.Interval):
             max_sigma = sigma.high
         depth = max(1, int(2 * max_sigma + 0.5))
         if neighs is None:
-            self.neighs = neighbors_cached(vertices, triangles, depth=depth,
-                                           direct_neighbor=True)
+            self.neighs = neighbors_cached(
+                self.vertices, self.triangles, depth=depth,
+                direct_neighbor=True)
         else:
             self.neighs = neighs
         self.neighs = np.asarray(list(self.neighs.values()))

@@ -17,6 +17,10 @@ import numbers
 import numpy as np
 from collections import namedtuple
 
+# Global parameters
+Transform = namedtuple(
+    "Transform", ["transform", "probability", "randomize_per_channel"])
+
 
 class RandomAugmentation:
     """ Apply an augmentation with random parameters defined in intervals.
@@ -110,9 +114,6 @@ def interval(bound, dtype=float):
 class BaseTransformer:
     """ Class that can be used to register a sequence of transformations.
     """
-    Transform = namedtuple("Transform", [
-        "transform", "probability", "randomize_per_channel"])
-
     def __init__(self):
         """ Init class.
         """
@@ -131,7 +132,7 @@ class BaseTransformer:
             a parameter to control if the randomization of tranformation
             parameters must be applied channel-wise.
         """
-        trf = self.Transform(transform=transform, probability=probability,
+        trf = Transform(transform=transform, probability=probability,
                              randomize_per_channel=randomize_per_channel)
         self.transforms.append(trf)
 

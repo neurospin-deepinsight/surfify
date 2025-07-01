@@ -54,7 +54,7 @@ def display(vertices, triangles, texture, aug, add_axis=False, alpha=1, *args,
 #
 
 texture = np.array([1, ] * len(vertices))
-aug = SurfCutOut(vertices, triangles, neighs=neighs,
+aug = SurfCutOut(vertices=vertices, triangles=triangles, neighs=neighs,
                  patch_size=interval((2, max_depth), int),
                  n_patches=interval((1, 3), int),
                  sigma=1)
@@ -133,7 +133,7 @@ print(neigh_ind)
 #
 
 texture = np.random.uniform(0, 3, len(vertices))
-aug1 = SurfCutOut(vertices, triangles, neighs=neighs,
+aug1 = SurfCutOut(vertices=vertices, triangles=triangles, neighs=neighs,
                   patch_size=interval((1, max_depth), int),
                   n_patches=interval((1, 3), int))
 aug2 = SurfNoise(sigma=interval((1, 3), float))

@@ -236,6 +236,7 @@ class SphericalHemiFusionEncoder(SphericalBase):
             repa_zoom=repa_zoom, dynamic_repa_zoom=dynamic_repa_zoom,
             standard_ico=standard_ico, cachedir=cachedir)
         self.input_channels = input_channels
+        self.latent_size = latent_dim
         self.conv_flts = list(conv_flts)
         self.activation = getattr(nn, activation)(inplace=True)
         self.n_vertices_down = len(
